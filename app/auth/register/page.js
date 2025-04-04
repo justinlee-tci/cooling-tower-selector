@@ -243,8 +243,7 @@ export default function Register() {
         </svg>
         <h3 className="text-xl font-bold mb-2 text-black">Please Verify Your Email</h3>
         <p className="text-gray-700 mb-4">
-          We've sent a verification link to <span className="font-medium">{registeredEmail}</span>. Please check your inbox and click the link to activate your account.
-        </p>
+        We&apos;ve sent a verification link to <span className="font-medium">{registeredEmail}</span>        </p>
         <button
           onClick={handleClosePopup}
           className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium"
