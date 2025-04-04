@@ -25,16 +25,14 @@ ChartJS.register(
   Legend
 );
 
-// Add formatDate helper function at the top
 const formatDate = (dateString) => {
   if (!dateString) return '';
-  return dateString.split('T')[0]; // This will return just the YYYY-MM-DD part
+  return dateString.split('T')[0];
 };
 
-export default function PerformancePage() {
+function PerformanceContent() {
   const searchParams = useSearchParams();
 
-  // Extract parameters to match the handlePerformanceCurve function
   const params = {
     modelName: searchParams.get('model') || '',
     projectName: searchParams.get('projectName') || '',
@@ -47,13 +45,11 @@ export default function PerformancePage() {
     coldWaterTemp: searchParams.get('coldWater') || '',
     wetBulbTemp: searchParams.get('wetBulb') || '',
     dryBulbTemp: searchParams.get('dryBulb') || '',
-    date: formatDate(searchParams.get('date')) || '' // Apply formatDate here
+    date: formatDate(searchParams.get('date')) || ''
   };
 
-  // Calculate ranges
   const designRange = parseFloat(params.hotWaterTemp) - parseFloat(params.coldWaterTemp);
-  
-  // State for editable values
+
   const [ranges, setRanges] = useState([
     designRange * 0.6,
     designRange * 0.8,
@@ -64,27 +60,22 @@ export default function PerformancePage() {
 
   const [wbtValues, setWbtValues] = useState([15, 20, 25, 30, 35]);
 
-  // Function to handle range input changes
   const handleRangeChange = (index, value) => {
     const newRanges = [...ranges];
     newRanges[index] = parseFloat(value) || 0;
     setRanges(newRanges);
   };
 
-  // Function to handle WBT input changes
   const handleWbtChange = (index, value) => {
     const newWbtValues = [...wbtValues];
     newWbtValues[index] = parseFloat(value) || 0;
     setWbtValues(newWbtValues);
   };
 
-  // Function to calculate CWT for each flow rate (mock calculation - replace with actual formula)
   const calculateCWT = (wbt, range, flowRatePercent) => {
-    // This is a placeholder calculation - replace with actual cooling tower performance calculation
     return parseFloat(params.hotWaterTemp) - (range * (1 - (wbt / 100)) * (flowRatePercent / 100));
   };
 
-  // Generate datasets for each flow rate separately
   const createDatasetForFlowRate = (flowRate) => {
     return ranges.map((range, rangeIndex) => ({
       label: `Range ${(range).toFixed(1)}°C`,
@@ -127,7 +118,6 @@ export default function PerformancePage() {
     datasets: createDatasetForFlowRate(flowRate)
   });
 
-  // Add this before the graphs section
   const PerformanceTable = () => {
     return (
       <div className="mt-8 overflow-x-auto">
@@ -210,10 +200,8 @@ export default function PerformancePage() {
 
   return (
     <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
-      {/* Title */}
       <h2 className="text-xl font-bold text-gray-900 mb-6">Performance Curve</h2>
 
-      {/* Project Info Header */}
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-gray-900">Project Details</h3>
@@ -243,7 +231,6 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      {/* Input Parameters */}
       <div className="mt-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Input Parameters</h3>
         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
@@ -274,41 +261,43 @@ export default function PerformancePage() {
         </div>
       </div>
 
-      {/* Performance Table */}
       <PerformanceTable />
-      <Suspense fallback={<div>Loading...</div>}>
-  <div className="mt-8 space-y-12">
-    {/* 90% Flow Rate Graph */}
-    <div>
-      <h3 className="text-lg font-bold text-gray-900 mb-4">
-        Performance Curve - 90% Flow Rate ({(parseFloat(params.waterFlowRate) * 0.9).toFixed(1)} m³/hr)
-      </h3>
-      <div className="w-full h-[400px]">
-        <Line data={createChartData(90)} options={chartOptions} />
-      </div>
-    </div>
+      <div className="mt-8 space-y-12">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">
+            Performance Curve - 90% Flow Rate ({(parseFloat(params.waterFlowRate) * 0.9).toFixed(1)} m³/hr)
+          </h3>
+          <div className="w-full h-[400px]">
+            <Line data={createChartData(90)} options={chartOptions} />
+          </div>
+        </div>
 
-    {/* 100% Flow Rate Graph */}
-    <div>
-      <h3 className="text-lg font-bold text-gray-900 mb-4">
-        Performance Curve - 100% Flow Rate ({parseFloat(params.waterFlowRate)} m³/hr)
-      </h3>
-      <div className="w-full h-[400px]">
-        <Line data={createChartData(100)} options={chartOptions} />
-      </div>
-    </div>
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">
+            Performance Curve - 100% Flow Rate ({parseFloat(params.waterFlowRate)} m³/hr)
+          </h3>
+          <div className="w-full h-[400px]">
+            <Line data={createChartData(100)} options={chartOptions} />
+          </div>
+        </div>
 
-    {/* 110% Flow Rate Graph */}
-    <div>
-      <h3 className="text-lg font-bold text-gray-900 mb-4">
-        Performance Curve - 110% Flow Rate ({(parseFloat(params.waterFlowRate) * 1.1).toFixed(1)} m³/hr)
-      </h3>
-      <div className="w-full h-[400px]">
-        <Line data={createChartData(110)} options={chartOptions} />
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">
+            Performance Curve - 110% Flow Rate ({(parseFloat(params.waterFlowRate) * 1.1).toFixed(1)} m³/hr)
+          </h3>
+          <div className="w-full h-[400px]">
+            <Line data={createChartData(110)} options={chartOptions} />
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</Suspense>
-    </div>
+  );
+}
+
+export default function PerformancePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PerformanceContent />
+    </Suspense>
   );
 }
