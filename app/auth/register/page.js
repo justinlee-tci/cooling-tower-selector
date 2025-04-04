@@ -1,0 +1,260 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+
+const countries = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+  "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina",
+  "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Canada", "Cape Verde", "Central African Republic",
+  "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti",
+  "Dominica", "Dominican Republic", "East Timor", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Ethiopia",
+  "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau",
+  "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Ivory Coast",
+  "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "North Korea", "South Korea", "Kuwait", "Kyrgyzstan", "Laos", "Latvia",
+  "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Macedonia", "Madagascar", "Malawi", "Malaysia",
+  "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia",
+  "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria",
+  "Norway", "Oman", "Pakistan", "Palau", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar",
+  "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino",
+  "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
+  "Solomon Islands", "Somalia", "South Africa", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Swaziland", "Sweden",
+  "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey",
+  "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan",
+  "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+].sort();
+
+export default function Register() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [company, setCompany] = useState("");
+  const [country, setCountry] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showVerificationPopup, setShowVerificationPopup] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    console.log("Form submitted");
+
+    try {
+      // Check if passwords match
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.");
+        setLoading(false);
+        return;
+      }
+
+      // Step 1: Sign up with Supabase Auth
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            company,
+            country,
+          }
+        }
+      });
+
+      if (authError) {
+        setError(authError.message);
+        console.error("Auth error: ", authError);
+        setLoading(false);
+        return;
+      }
+
+      console.log("Auth response:", data);
+      
+      if (data.user) {
+        // Step 2: Insert user into the users table
+        const { data: insertData, error: insertError } = await supabase
+          .from("users")
+          .insert([{
+            name,
+            email,
+            password, // Note: Consider using Supabase Auth only and not storing passwords
+            company,
+            country,
+            role: "user", // Using the ENUM value
+            last_logged_in: new Date().toISOString(),
+          }])
+          .select();
+
+        if (insertError) {
+          setError("Database error saving new user: " + insertError.message);
+          console.error("Insert error: ", insertError);
+          setLoading(false);
+        } else {
+          console.log("Registration successful, showing verification popup");
+          // Show verification popup instead of redirecting
+          setRegisteredEmail(email);
+          setShowVerificationPopup(true);
+          setLoading(false);
+          
+          // Clear form fields after successful registration
+          setName("");
+          setEmail("");
+          setPassword("");
+          setConfirmPassword("");
+          setCompany("");
+          setCountry("");
+        }
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setError("An unexpected error occurred. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  // Close popup when clicking outside
+  const handleOutsideClick = (e) => {
+    if (e.target.classList.contains("popup-overlay")) {
+      setShowVerificationPopup(false);
+    }
+  };
+
+  // Handle redirection to login page after closing the popup
+  const handleClosePopup = () => {
+    setShowVerificationPopup(false);
+    router.push("/auth/login");
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-200">
+      <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
+        <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Register</h2>
+        {error && <p className="text-red-600 text-lg mb-4">{error}</p>}
+        <form onSubmit={handleRegister} className="space-y-6">
+          <div>
+            <label className="block text-gray-900 text-lg mb-2">Full Name</label>
+            <input
+              type="text"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-900 text-lg mb-2">Email</label>
+            <input
+              type="email"
+              placeholder="example@domain.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-900 text-lg mb-2">Password</label>
+            <input
+              type="password"
+              placeholder="At least 6 characters"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-900 text-lg mb-2">Confirm Password</label>
+            <input
+              type="password"
+              placeholder="Re-enter your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-900 text-lg mb-2">Company</label>
+            <input
+              type="text"
+              placeholder="Your Company Name"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-gray-900 text-lg mb-2">Country</label>
+            <select
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              required
+            >
+              <option value="">Select a country</option>
+              {countries.map((countryName) => (
+                <option key={countryName} value={countryName}>
+                  {countryName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-4 text-lg font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+          >
+            {loading ? "Processing..." : "Register"}
+          </button>
+        </form>
+        <p className="text-lg mt-6 text-center text-gray-800">
+          Already have an account?{" "}
+          <a href="/auth/login" className="text-green-600 hover:underline">
+            Login
+          </a>
+        </p>
+      </div>
+
+{/* Email Verification Popup */}
+{showVerificationPopup && (
+  <div 
+    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 popup-overlay"
+    onClick={handleOutsideClick}
+  >
+    <div className="bg-white p-8 rounded-lg shadow-lg max-w-md relative">
+      <button 
+        onClick={handleClosePopup}
+        className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+      <div className="text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        <h3 className="text-xl font-bold mb-2 text-black">Please Verify Your Email</h3>
+        <p className="text-gray-700 mb-4">
+          We've sent a verification link to <span className="font-medium">{registeredEmail}</span>. Please check your inbox and click the link to activate your account.
+        </p>
+        <button
+          onClick={handleClosePopup}
+          className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium"
+        >
+          Proceed to Login
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+    </div>
+  );
+}
