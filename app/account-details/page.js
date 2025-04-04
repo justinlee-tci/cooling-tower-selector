@@ -27,7 +27,7 @@ export default function UserDetails() {
 
   useEffect(() => {
     fetchUserData();
-  }, []);
+  }, [fetchUserData]);
 
   const fetchUserData = async () => {
     try {

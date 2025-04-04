@@ -43,7 +43,7 @@ const Navbar = () => {
     };
 
     fetchUserRole();
-  }, [user]);
+  }, [user,supabase]);
 
   const handleLogout = async () => {
     await logout();
