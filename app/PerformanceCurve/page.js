@@ -13,7 +13,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 
 ChartJS.register(
   CategoryScale,
@@ -276,39 +276,39 @@ export default function PerformancePage() {
 
       {/* Performance Table */}
       <PerformanceTable />
-
-      {/* Performance Curve Graphs */}
-      <div className="mt-8 space-y-12">
-        {/* 90% Flow Rate Graph */}
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Performance Curve - 90% Flow Rate ({(parseFloat(params.waterFlowRate) * 0.9).toFixed(1)} m³/hr)
-          </h3>
-          <div className="w-full h-[400px]">
-            <Line data={createChartData(90)} options={chartOptions} />
-          </div>
-        </div>
-
-        {/* 100% Flow Rate Graph */}
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Performance Curve - 100% Flow Rate ({parseFloat(params.waterFlowRate)} m³/hr)
-          </h3>
-          <div className="w-full h-[400px]">
-            <Line data={createChartData(100)} options={chartOptions} />
-          </div>
-        </div>
-
-        {/* 110% Flow Rate Graph */}
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Performance Curve - 110% Flow Rate ({(parseFloat(params.waterFlowRate) * 1.1).toFixed(1)} m³/hr)
-          </h3>
-          <div className="w-full h-[400px]">
-            <Line data={createChartData(110)} options={chartOptions} />
-          </div>
-        </div>
+      <Suspense fallback={<div>Loading...</div>}>
+  <div className="mt-8 space-y-12">
+    {/* 90% Flow Rate Graph */}
+    <div>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">
+        Performance Curve - 90% Flow Rate ({(parseFloat(params.waterFlowRate) * 0.9).toFixed(1)} m³/hr)
+      </h3>
+      <div className="w-full h-[400px]">
+        <Line data={createChartData(90)} options={chartOptions} />
       </div>
+    </div>
+
+    {/* 100% Flow Rate Graph */}
+    <div>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">
+        Performance Curve - 100% Flow Rate ({parseFloat(params.waterFlowRate)} m³/hr)
+      </h3>
+      <div className="w-full h-[400px]">
+        <Line data={createChartData(100)} options={chartOptions} />
+      </div>
+    </div>
+
+    {/* 110% Flow Rate Graph */}
+    <div>
+      <h3 className="text-lg font-bold text-gray-900 mb-4">
+        Performance Curve - 110% Flow Rate ({(parseFloat(params.waterFlowRate) * 1.1).toFixed(1)} m³/hr)
+      </h3>
+      <div className="w-full h-[400px]">
+        <Line data={createChartData(110)} options={chartOptions} />
+      </div>
+    </div>
+  </div>
+</Suspense>
     </div>
   );
 }
