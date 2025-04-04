@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import Navbar from "@/components/Navbar"; // Import the Navbar component
+import Navbar from "@/components/Navbar";
 
 export default function UserDetails() {
   const router = useRouter();
@@ -25,11 +25,8 @@ export default function UserDetails() {
   const [pendingChanges, setPendingChanges] = useState({});
   const [currentPassword, setCurrentPassword] = useState("");
 
-  useEffect(() => {
-    fetchUserData();
-  }, [fetchUserData]);
-
-  const fetchUserData = async () => {
+  // Wrap fetchUserData in useCallback to prevent it from changing on every render
+  const fetchUserData = useCallback(async () => {
     try {
       setLoading(true);
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
@@ -73,7 +70,11 @@ export default function UserDetails() {
       setError("An unexpected error occurred");
       setLoading(false);
     }
-  };
+  }, [router]); // Add router as a dependency because it's used inside the function
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]); // Now fetchUserData won't change on every render
 
   const handleSaveClick = (e) => {
     e.preventDefault();
@@ -120,7 +121,6 @@ export default function UserDetails() {
     setShowConfirmation(true);
   };
   
-
   const handleConfirmSave = async () => {
     try {
       setSaving(true);
@@ -173,9 +173,7 @@ export default function UserDetails() {
       setConfirmPassword("");
       setPendingChanges({});
       setSuccess("Your changes have been saved successfully");
-      setPendingChanges({});
-setShowConfirmation(false);
-
+      setShowConfirmation(false);
 
       await fetchUserData();
     } catch (err) {
