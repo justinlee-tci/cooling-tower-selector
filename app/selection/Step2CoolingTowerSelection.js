@@ -60,17 +60,18 @@ export default function Step2CoolingTowerSelection() {
   // Calculate actual capacity and safety factor
   const filteredModels = coolingTowerModels
   .map((model) => {
-    const baseCapacity = performanceData[model.model_name] || 0; // Get capacity from performance table
+    const baseCapacity = parseFloat(model.nominal_flowrate) || 0; // Use nominal_flowrate instead of performance data
     const actualCapacity = baseCapacity * selectedCells; // Adjust based on cell count
 
-    // ✅ Correctly fetch the user's design flow rate input from Step1ProjectDetails
     const designFlowRate = parseFloat(selectionData.waterFlowRate) || 1; // Prevent division by zero
+    const safetyFactor = (actualCapacity / designFlowRate) * 100;
 
-    const safetyFactor = (actualCapacity / designFlowRate) * 100; // Compare with user's input flow rate
-
-    return { ...model, actualCapacity, safetyFactor };
-  })
-  // .filter((model) => model.safetyFactor >= 100); // Only keep models with safety factor ≥ 100%
+    return { 
+      ...model, 
+      actualCapacity: Number(actualCapacity), 
+      safetyFactor: Number(safetyFactor) 
+    };
+  });
 
   // Update the slider onChange handler to include updating selection data
   const handleCellsChange = (e) => {
