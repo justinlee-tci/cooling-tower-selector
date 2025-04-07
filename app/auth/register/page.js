@@ -132,6 +132,15 @@ export default function Register() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-200">
       <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
+        {/* Add Logo Image with bottom margin */}
+        <div className="flex justify-center mb-12">
+          <img 
+            src="/company-logo.jpg" 
+            alt="Company Logo" 
+            className="h-24 w-auto object-contain"
+          />
+        </div>
+
         <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Register</h2>
         {error && <p className="text-red-600 text-lg mb-4">{error}</p>}
         <form onSubmit={handleRegister} className="space-y-6">

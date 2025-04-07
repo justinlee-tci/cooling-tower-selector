@@ -131,11 +131,19 @@ export default function Login() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-200">
       <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
+        {/* Add Logo Image with increased bottom margin */}
+        <div className="flex justify-center mb-12">
+          <img 
+            src="/company-logo.jpg" 
+            alt="Company Logo" 
+            className="h-24 w-auto object-contain"
+          />
+        </div>
+
         <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Login</h2>
 
         {message && <p className="text-green-600 text-lg mb-4">{message}</p>}
         {error && <p className="text-red-600 text-lg mb-4">{error}</p>}
-        {previousLogin && <p className="text-lg mb-4">{previousLogin}</p>}
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
