@@ -182,6 +182,12 @@ export default function Login() {
             Register
           </a>
         </p>
+        <p className="text-sm mt-2 text-center text-gray-600">
+          Forgot your password? Please reach out to{" "}
+          <a href="mailto:admin@example.com" className="text-blue-600 hover:underline">
+            admin@thermal-cell.com
+          </a>
+        </p>
       </div>
     </div>
   );
