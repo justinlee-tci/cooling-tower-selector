@@ -14,15 +14,24 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    // Check if there's a session after user clicks recovery email link
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError("Password reset link is invalid or has expired. Please request a new one.");
+    const extractTokenAndLogin = async () => {
+      const hash = window.location.hash;
+      const params = new URLSearchParams(hash.substring(1)); // remove leading "#"
+      const access_token = params.get("access_token");
+      const type = params.get("type");
+
+      if (access_token && type === "recovery") {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(hash);
+        if (error) {
+          console.error("Token exchange failed:", error);
+          setError("Invalid or expired reset link. Please request a new one.");
+        }
+      } else {
+        setError("Invalid or expired reset link. Please request a new one.");
       }
     };
 
-    checkSession();
+    extractTokenAndLogin();
   }, []);
 
   const handleResetPassword = async (e) => {
