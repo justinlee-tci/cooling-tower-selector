@@ -16,6 +16,13 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const tryRecoverSession = async () => {
       const hash = window.location.hash;
+      
+      // Check for error in hash
+      if (hash.includes('error=')) {
+        router.push('/auth/login');
+        return;
+      }
+
       if (!hash.includes("access_token") || !hash.includes("type=recovery")) {
         return;
       }
@@ -24,7 +31,7 @@ export default function ResetPasswordPage() {
     };
 
     tryRecoverSession();
-  }, []);
+  }, [router]);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
