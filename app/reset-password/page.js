@@ -2,17 +2,36 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "react-hot-toast";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [token, setToken] = useState("");
+
+  useEffect(() => {
+    // Get token from URL hash
+    const hashToken = window.location.hash.replace('#token=', '');
+    
+    // Get token from query params (fallback)
+    const queryToken = searchParams.get('token');
+    
+    // Use whichever token is available
+    const resetToken = hashToken || queryToken;
+    
+    if (resetToken) {
+      setToken(resetToken);
+    } else {
+      setError("Invalid password reset link. Please request a new one.");
+    }
+  }, [searchParams]);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -29,27 +48,21 @@ export default function ResetPasswordPage() {
       return;
     }
 
+    if (!token) {
+      setError("Invalid or missing reset token");
+      return;
+    }
+
     try {
       setLoading(true);
       
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No user found");
-
-      // Update password via Supabase Auth
-      const { error: authError } = await supabase.auth.updateUser({
-        password: password
+      // Update password using the token from the URL
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(null, {
+        password,
+        token,
       });
 
-      if (authError) throw authError;
-
-      // Update password in users table
-      const { error: dbError } = await supabase
-        .from('users')
-        .update({ password: password })
-        .eq('email', user.email);
-
-      if (dbError) throw dbError;
+      if (resetError) throw resetError;
 
       toast.success("Password updated successfully");
       router.push("/auth/login");
