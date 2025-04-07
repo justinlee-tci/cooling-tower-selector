@@ -301,7 +301,11 @@ export default function UserDetails() {
               <select
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+                className={`w-full p-4 text-lg border border-gray-500 rounded-lg ${
+                  userRole !== "superadmin" 
+                    ? "bg-gray-100" 
+                    : "bg-white focus:ring-4 focus:ring-blue-500"
+                } text-gray-900`}
                 required
                 disabled={userRole !== "superadmin"}
               >
