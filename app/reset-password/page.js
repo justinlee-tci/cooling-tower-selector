@@ -20,11 +20,7 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      const { error } = await supabase.auth.exchangeCodeForSession(hash);
-      if (error) {
-        console.error("Session exchange error:", error.message);
-        setError("Invalid or expired reset link. Please request a new one.");
-      }
+      await supabase.auth.exchangeCodeForSession(hash);
     };
 
     tryRecoverSession();
@@ -46,12 +42,33 @@ export default function ResetPasswordPage() {
 
     try {
       setLoading(true);
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("No authenticated user found");
+      }
+
+      // Update auth password
       const { error: updateError } = await supabase.auth.updateUser({
         password: password,
       });
 
       if (updateError) {
         throw updateError;
+      }
+
+      // Update users table
+      const { error: dbError } = await supabase
+        .from('users')
+        .update({ 
+          password: password,
+          updated_at: new Date().toISOString()
+        })
+        .eq('email', user.email);
+
+      if (dbError) {
+        throw dbError;
       }
 
       toast.success("Password updated successfully");
