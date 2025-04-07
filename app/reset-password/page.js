@@ -63,7 +63,6 @@ export default function ResetPasswordPage() {
         .from('users')
         .update({ 
           password: password,
-          updated_at: new Date().toISOString()
         })
         .eq('email', user.email);
 
