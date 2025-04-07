@@ -64,12 +64,24 @@ export default function ResetPasswordPage() {
     try {
       setLoading(true);
 
-      const { error: updateError } = await supabase.auth.updateUser({
+      // First update the auth password
+      const { data: userData, error: updateError } = await supabase.auth.updateUser({
         password: password
       });
 
       if (updateError) {
         throw updateError;
+      }
+
+      // Then update the password in your users table
+      // Note: hash the password before storing it in your database
+      const { error: dbError } = await supabase
+        .from('users')
+        .update({ password: password }) // Consider hashing this password
+        .eq('id', userData.user.id);
+
+      if (dbError) {
+        throw dbError;
       }
 
       toast.success("Password updated successfully");
