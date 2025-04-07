@@ -13,20 +13,19 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
-  // useEffect(() => {
-  //   const tryRecoverSession = async () => {
-  //     const hash = window.location.hash;
-  //     if (!hash.includes("access_token") || !hash.includes("type=recovery")) {
-  //       setError("Invalid or expired reset link. Please request a new one.");
-  //       return;
-  //     }
+  useEffect(() => {
+    const tryRecoverSession = async () => {
+      const hash = window.location.hash;
+      if (!hash.includes("access_token") || !hash.includes("type=recovery")) {
+        return;
+      }
 
-  //     const { error } = await supabase.auth.exchangeCodeForSession(hash);
-  //     if (error) {
-  //       console.error("Session exchange error:", error.message);
-  //       setError("Invalid or expired reset link. Please request a new one.");
-  //     }
-  //   };
+      const { error } = await supabase.auth.exchangeCodeForSession(hash);
+      if (error) {
+        console.error("Session exchange error:", error.message);
+        setError("Invalid or expired reset link. Please request a new one.");
+      }
+    };
 
     tryRecoverSession();
   }, []);
