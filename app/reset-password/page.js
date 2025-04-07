@@ -1,14 +1,14 @@
 // app/reset-password/page.js
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "react-hot-toast";
 
-export default function ResetPasswordPage() {
+// Create a separate component that uses useSearchParams
+function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -17,11 +17,12 @@ export default function ResetPasswordPage() {
   const [token, setToken] = useState("");
 
   useEffect(() => {
-    // Get token from URL hash
+    // Get token from URL hash (this works without useSearchParams)
     const hashToken = window.location.hash.replace('#token=', '');
     
-    // Get token from query params (fallback)
-    const queryToken = searchParams.get('token');
+    // Also check for token in the query string
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryToken = urlParams.get('token');
     
     // Use whichever token is available
     const resetToken = hashToken || queryToken;
@@ -31,7 +32,7 @@ export default function ResetPasswordPage() {
     } else {
       setError("Invalid password reset link. Please request a new one.");
     }
-  }, [searchParams]);
+  }, []);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -57,9 +58,10 @@ export default function ResetPasswordPage() {
       setLoading(true);
       
       // Update password using the token from the URL
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(null, {
-        password,
-        token,
+      const { error: resetError } = await supabase.auth.updateUser({
+        password: password
+      }, {
+        emailRedirectTo: window.location.origin
       });
 
       if (resetError) throw resetError;
@@ -127,5 +129,21 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main component with suspense boundary
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col min-h-screen bg-gray-200 items-center justify-center">
+        <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px] text-center">
+          <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">Loading...</h2>
+          <p className="text-center text-gray-600">Please wait while we load the password reset form</p>
+        </div>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
