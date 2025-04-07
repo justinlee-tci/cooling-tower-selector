@@ -97,7 +97,17 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-200">
       <div className="flex-grow flex items-center justify-center p-6">
+        
         <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
+        {/* Add Logo Image with increased bottom margin */}
+        <div className="flex justify-center mb-12">
+          <img 
+            src="/company-logo.jpg" 
+            alt="Company Logo" 
+            className="h-24 w-auto object-contain"
+          />
+        </div>
+
           <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">Reset Your Password</h2>
           <p className="text-center text-gray-600 mb-8">Enter your new password below</p>
 
