@@ -73,12 +73,11 @@ export default function ResetPasswordPage() {
         throw updateError;
       }
 
-      // Then update the password in your users table
-      // Note: hash the password before storing it in your database
+      // Then update the password in your users table using email as the primary key
       const { error: dbError } = await supabase
         .from('users')
-        .update({ password: password }) // Consider hashing this password
-        .eq('id', userData.user.id);
+        .update({ password: password })
+        .eq('email', userData.user.email); // Changed from id to email
 
       if (dbError) {
         throw dbError;
