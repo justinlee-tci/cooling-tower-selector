@@ -15,31 +15,37 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const tryRecoverSession = async () => {
-      const hash = window.location.hash;
-      
-      // Check for error in hash
-      if (hash.includes('error=')) {
-        const errorParams = new URLSearchParams(window.location.hash.slice(1));
-        const error = errorParams.get('error');
+      try {
+        // Get the URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
         
-        // Handle expired reset link
-        if (error === 'otp_expired') {
-          setError('Your password reset link has expired. Please request a new one.');
-        } else {
-          setError('An unknown error occurred. Please try again.');
+        if (!code) {
+          console.log('No code found in URL');
+          return;
         }
-        return;
-      }
 
-      if (!hash.includes("access_token") || !hash.includes("type=recovery")) {
-        return;
-      }
+        // Exchange the code for a session
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        
+        if (error) {
+          console.error('Session exchange error:', error);
+          if (error.message.includes('expired')) {
+            setError('Your password reset link has expired. Please request a new one.');
+          } else {
+            setError('An unknown error occurred. Please try again.');
+          }
+          return;
+        }
 
-      await supabase.auth.exchangeCodeForSession(hash);
+      } catch (err) {
+        console.error('Recovery error:', err);
+        setError('Failed to process reset link. Please request a new one.');
+      }
     };
 
     tryRecoverSession();
-  }, [router]);
+  }, []);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -58,18 +64,6 @@ export default function ResetPasswordPage() {
     try {
       setLoading(true);
 
-      const hash = window.location.hash;
-      if (!hash) {
-        throw new Error("No reset token found");
-      }
-
-      // Exchange the recovery token for a session
-      const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(hash);
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      // Update the password using the session
       const { error: updateError } = await supabase.auth.updateUser({
         password: password
       });
