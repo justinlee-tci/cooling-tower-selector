@@ -1,4 +1,3 @@
-// app/reset-password/page.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -13,39 +12,23 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [token, setToken] = useState("");
 
   useEffect(() => {
-    // Function to extract token from URL
-    const getTokenFromUrl = () => {
-      // First check for token in query parameters
-      const params = new URLSearchParams(window.location.search);
-      const queryToken = params.get('token');
-      
-      // Then check for token in URL hash (Supabase sometimes uses this format)
-      let hashToken = '';
-      if (window.location.hash) {
-        hashToken = window.location.hash.replace('#token=', '');
+    // Check if there's a session after user clicks recovery email link
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError("Password reset link is invalid or has expired. Please request a new one.");
       }
-      
-      return queryToken || hashToken || '';
     };
-    
-    const resetToken = getTokenFromUrl();
-    if (resetToken) {
-      console.log("Found token in URL");
-      setToken(resetToken);
-    } else {
-      console.log("No token found in URL");
-      setError("Invalid password reset link. Please request a new one.");
-    }
+
+    checkSession();
   }, []);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError(null);
 
-    // Validate password
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
       return;
@@ -56,28 +39,17 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (!token) {
-      setError("Invalid or missing reset token");
-      return;
-    }
-
     try {
       setLoading(true);
-      
-      // Update user's password using the recovery token
-      const { data, error: updateError } = await supabase.auth.updateUser({
+
+      const { error: updateError } = await supabase.auth.updateUser({
         password: password
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
       });
 
       if (updateError) {
         throw updateError;
       }
 
-      console.log("Password updated successfully");
       toast.success("Password updated successfully");
       router.push("/auth/login");
     } catch (err) {
@@ -95,9 +67,9 @@ export default function ResetPasswordPage() {
         <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
           <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">Reset Your Password</h2>
           <p className="text-center text-gray-600 mb-8">Enter your new password below</p>
-          
+
           {error && <p className="text-red-600 text-lg mb-4">{error}</p>}
-          
+
           <form onSubmit={handleResetPassword} className="space-y-6">
             <div>
               <label className="block text-gray-900 text-lg mb-2">New Password</label>
@@ -118,7 +90,7 @@ export default function ResetPasswordPage() {
                 </button>
               </div>
             </div>
-            
+
             <div>
               <label className="block text-gray-900 text-lg mb-2">Confirm Password</label>
               <input
