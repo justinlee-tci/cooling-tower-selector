@@ -18,10 +18,18 @@ export default function ResetPasswordPage() {
       const hash = window.location.hash;
       
       // Check for error in hash
-      // if (hash.includes('error=')) {
-      //   router.push('/auth/login');
-      //   return;
-      // }
+      if (hash.includes('error=')) {
+        const errorParams = new URLSearchParams(window.location.hash.slice(1));
+        const error = errorParams.get('error');
+        
+        // Handle expired reset link
+        if (error === 'otp_expired') {
+          setError('Your password reset link has expired. Please request a new one.');
+        } else {
+          setError('An unknown error occurred. Please try again.');
+        }
+        return;
+      }
 
       if (!hash.includes("access_token") || !hash.includes("type=recovery")) {
         return;
@@ -88,7 +96,22 @@ export default function ResetPasswordPage() {
           <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">Reset Your Password</h2>
           <p className="text-center text-gray-600 mb-8">Enter your new password below</p>
 
-          {error && <p className="text-red-600 text-lg mb-4">{error}</p>}
+          {error && (
+            <div className="text-center mb-4">
+              <p className="text-red-600 text-lg">{error}</p>
+              {error.includes('expired') && (
+                <div className="mt-4">
+                  <p>Your password reset link has expired. Please request a new one.</p>
+                  <button
+                    className="text-blue-600"
+                    onClick={() => router.push('/auth/recover')}
+                  >
+                    Request New Reset Link
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           <form onSubmit={handleResetPassword} className="space-y-6">
             <div>
