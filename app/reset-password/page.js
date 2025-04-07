@@ -1,7 +1,6 @@
-// app/reset-password/page.js
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "react-hot-toast";
@@ -14,11 +13,44 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
 
+  useEffect(() => {
+    const tryRecoverSession = async () => {
+      try {
+        // Get the URL parameters
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        
+        if (!code) {
+          console.log('No code found in URL');
+          return;
+        }
+
+        // Exchange the code for a session
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        
+        if (error) {
+          console.error('Session exchange error:', error);
+          if (error.message.includes('expired')) {
+            setError('Your password reset link has expired. Please request a new one.');
+          } else {
+            setError('An unknown error occurred. Please try again.');
+          }
+          return;
+        }
+
+      } catch (err) {
+        console.error('Recovery error:', err);
+        setError('Failed to process reset link. Please request a new one.');
+      }
+    };
+
+    tryRecoverSession();
+  }, []);
+
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError(null);
 
-    // Validate password
     if (password.length < 6) {
       setError("Password must be at least 6 characters");
       return;
@@ -31,25 +63,25 @@ export default function ResetPasswordPage() {
 
     try {
       setLoading(true);
-      
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No user found");
 
-      // Update password via Supabase Auth
-      const { error: authError } = await supabase.auth.updateUser({
+      // First update the auth password
+      const { data: userData, error: updateError } = await supabase.auth.updateUser({
         password: password
       });
 
-      if (authError) throw authError;
+      if (updateError) {
+        throw updateError;
+      }
 
-      // Update password in users table
+      // Then update the password in your users table using email as the primary key
       const { error: dbError } = await supabase
         .from('users')
         .update({ password: password })
-        .eq('email', user.email);
+        .eq('email', userData.user.email); // Changed from id to email
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        throw dbError;
+      }
 
       toast.success("Password updated successfully");
       router.push("/auth/login");
@@ -65,12 +97,37 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-200">
       <div className="flex-grow flex items-center justify-center p-6">
+        
         <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
+        {/* Add Logo Image with increased bottom margin */}
+        <div className="flex justify-center mb-12">
+          <img 
+            src="/company-logo.jpg" 
+            alt="Company Logo" 
+            className="h-24 w-auto object-contain"
+          />
+        </div>
+
           <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">Reset Your Password</h2>
           <p className="text-center text-gray-600 mb-8">Enter your new password below</p>
-          
-          {error && <p className="text-red-600 text-lg mb-4">{error}</p>}
-          
+
+          {error && (
+            <div className="text-center mb-4">
+              <p className="text-red-600 text-lg">{error}</p>
+              {error.includes('expired') && (
+                <div className="mt-4">
+                  <p>Your password reset link has expired. Please request a new one.</p>
+                  <button
+                    className="text-blue-600"
+                    onClick={() => router.push('/auth/recover')}
+                  >
+                    Request New Reset Link
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <form onSubmit={handleResetPassword} className="space-y-6">
             <div>
               <label className="block text-gray-900 text-lg mb-2">New Password</label>
@@ -91,7 +148,7 @@ export default function ResetPasswordPage() {
                 </button>
               </div>
             </div>
-            
+
             <div>
               <label className="block text-gray-900 text-lg mb-2">Confirm Password</label>
               <input

@@ -131,11 +131,19 @@ export default function Login() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-200">
       <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
+        {/* Add Logo Image with increased bottom margin */}
+        <div className="flex justify-center mb-12">
+          <img 
+            src="/company-logo.jpg" 
+            alt="Company Logo" 
+            className="h-24 w-auto object-contain"
+          />
+        </div>
+
         <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Login</h2>
 
         {message && <p className="text-green-600 text-lg mb-4">{message}</p>}
         {error && <p className="text-red-600 text-lg mb-4">{error}</p>}
-        {previousLogin && <p className="text-lg mb-4">{previousLogin}</p>}
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
@@ -174,6 +182,15 @@ export default function Login() {
             Register
           </a>
         </p>
+        <div className="text-sm mt-2 text-center text-gray-600">
+          <p>Forgot your password?</p>
+          <p className="mt-1">
+            Please reach out to{" "}
+            <a href="mailto:admin@thermal-cell.com" className="text-blue-600 hover:underline">
+              admin@thermal-cell.com
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
