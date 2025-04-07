@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "react-hot-toast";
@@ -14,24 +14,21 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    const extractTokenAndLogin = async () => {
+    const tryRecoverSession = async () => {
       const hash = window.location.hash;
-      const params = new URLSearchParams(hash.substring(1)); // remove leading "#"
-      const access_token = params.get("access_token");
-      const type = params.get("type");
+      if (!hash.includes("access_token") || !hash.includes("type=recovery")) {
+        setError("Invalid or expired reset link. Please request a new one.");
+        return;
+      }
 
-      if (access_token && type === "recovery") {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(hash);
-        if (error) {
-          console.error("Token exchange failed:", error);
-          setError("Invalid or expired reset link. Please request a new one.");
-        }
-      } else {
+      const { error } = await supabase.auth.exchangeCodeForSession(hash);
+      if (error) {
+        console.error("Session exchange error:", error.message);
         setError("Invalid or expired reset link. Please request a new one.");
       }
     };
 
-    extractTokenAndLogin();
+    tryRecoverSession();
   }, []);
 
   const handleResetPassword = async (e) => {
@@ -50,9 +47,8 @@ export default function ResetPasswordPage() {
 
     try {
       setLoading(true);
-
       const { error: updateError } = await supabase.auth.updateUser({
-        password: password
+        password: password,
       });
 
       if (updateError) {
