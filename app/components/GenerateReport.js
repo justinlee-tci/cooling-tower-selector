@@ -55,6 +55,7 @@ export async function generateReport(selectionData, performanceCurveImage) {
     const pdfDoc = await PDFDocument.create();
     const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const helveticaItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
     const timesRoman = await pdfDoc.embedFont(StandardFonts.TimesRoman);
     const timesRomanBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
     const timesItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
@@ -425,7 +426,7 @@ page.drawText("SDN. BHD.", {
     drawText(`${formatValue(selectionData?.safety_factor)}%`, 450, yPosition);
     
     // Add footer to the first page
-    addFooter(page1, 1, 4);
+    addFooter(page1, 1, 5);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Page 2 - Tower Specifications
@@ -596,108 +597,189 @@ page.drawText("SDN. BHD.", {
     });
 
     // Add footer to the second page
-    addFooter(page2, 2, 4);
+    addFooter(page2, 2, 5);
 
-    // Page 3 - Drawings
+    // Page 3 - Tower Model Drawing (Single Cell)
     const page3 = pdfDoc.addPage();
-    // Add letterhead to the third page
     await addLetterhead(page3);
     
     yPosition = height - 150;
     
-    const drawTextPage3 = (text, x, y, size = 10, font = helvetica, color = textColor) => {
-      if (text) {
-        try {
-          page3.drawText(formatValue(text), { x, y, size, font, color });
-        } catch (error) {
-          console.error(`Error drawing text "${text}":`, error);
-          page3.drawText("[Error displaying text]", { x, y, size, font, color });
-        }
-      }
-    };
-
     // 5. Tower Model Drawings
     yPosition = addSectionTitle(page3, '5. TOWER MODEL DRAWINGS', yPosition);
-    
-    // Add placeholder for drawings
-    page3.drawRectangle({
-      x: 50,
-      y: yPosition - 300,
-      width: width - 100,
-      height: 300,
-      borderColor: secondaryColor,
-      borderWidth: 1,
-      color: rgb(0.98, 0.98, 0.98), // Light gray background
-    });
+    yPosition = addSubsectionTitle(page3, '5a. Tower Drawing (Single Cell)', yPosition - 10);
 
-    drawTextPage3('To be updated later', width / 2 - 60, yPosition - 150, 12, helveticaBold, primaryColor);
+    try {
+      // Try loading the tower drawing based on model
+      const modelName = selectionData.cooling_tower_model;
+      let towerDrawing;
+      
+      // Try PNG first
+      try {
+        const drawingResponse = await fetch(`/tower-drawings/${modelName}.png`);
+        const drawingArrayBuffer = await drawingResponse.arrayBuffer();
+        towerDrawing = await pdfDoc.embedPng(new Uint8Array(drawingArrayBuffer));
+      } catch (pngError) {
+        // If PNG fails, try JPG
+        try {
+          const drawingResponse = await fetch(`/tower-drawings/${modelName}.jpg`);
+          const drawingArrayBuffer = await drawingResponse.arrayBuffer();
+          towerDrawing = await pdfDoc.embedJpg(new Uint8Array(drawingArrayBuffer));
+        } catch (jpgError) {
+          throw new Error('Could not load image in either PNG or JPG format');
+        }
+      }
+      
+      // Calculate aspect ratio to maintain image proportions
+      const imgWidth = width - 100;
+      const imgHeight = 400;
+      
+      page3.drawImage(towerDrawing, {
+        x: 50,
+        y: yPosition - imgHeight,
+        width: imgWidth,
+        height: imgHeight,
+      });
+    } catch (error) {
+      console.error('Error loading tower drawing:', error);
+      
+      // Draw placeholder if image loading fails
+      page3.drawRectangle({
+        x: 50,
+        y: yPosition - 400,
+        width: width - 100,
+        height: 400,
+        borderColor: secondaryColor,
+        borderWidth: 1,
+        color: rgb(0.98, 0.98, 0.98),
+      });
+
+      // Add placeholder text
+      page3.drawText(`Tower Drawing for ${selectionData.cooling_tower_model}`, {
+        x: width / 2 - 100,
+        y: yPosition - 200,
+        size: 12,
+        font: helveticaBold,
+        color: primaryColor,
+      });
+      
+      page3.drawText('(Drawing not available)', {
+        x: width / 2 - 60,
+        y: yPosition - 220,
+        size: 10,
+        font: helveticaItalic,
+        color: textColor,
+      });
+    }
 
     // Add footer to the third page
-    addFooter(page3, 3, 4);
+    addFooter(page3, 3, 5);
 
-    // Page 4 - Performance Curve
+    // Page 4 - Foundation Drawing
     const page4 = pdfDoc.addPage();
-    // Add letterhead to the fourth page
     await addLetterhead(page4);
     
     yPosition = height - 150;
     
-    const drawTextPage4 = (text, x, y, size = 10, font = helvetica, color = textColor) => {
-      if (text) {
+    yPosition = addSectionTitle(page4, '5. TOWER MODEL DRAWINGS (continued)', yPosition);
+    yPosition = addSubsectionTitle(page4, '5b. Foundation Drawing', yPosition - 10);
+
+    try {
+      // Try loading the foundation drawing based on model
+      const modelName = selectionData.cooling_tower_model;
+      let foundationDrawing;
+      
+      // Try PNG first
+      try {
+        const foundationResponse = await fetch(`/foundation-drawings/${modelName}.png`);
+        const foundationArrayBuffer = await foundationResponse.arrayBuffer();
+        foundationDrawing = await pdfDoc.embedPng(new Uint8Array(foundationArrayBuffer));
+      } catch (pngError) {
+        // If PNG fails, try JPG
         try {
-          page4.drawText(formatValue(text), { x, y, size, font, color });
-        } catch (error) {
-          console.error(`Error drawing text "${text}":`, error);
-          page4.drawText("[Error displaying text]", { x, y, size, font, color });
+          const foundationResponse = await fetch(`/foundation-drawings/${modelName}.jpg`);
+          const foundationArrayBuffer = await foundationResponse.arrayBuffer();
+          foundationDrawing = await pdfDoc.embedJpg(new Uint8Array(foundationArrayBuffer));
+        } catch (jpgError) {
+          throw new Error('Could not load image in either PNG or JPG format');
         }
       }
-    };
+      
+      // Calculate aspect ratio to maintain image proportions
+      const imgWidth = width - 100;
+      const imgHeight = 400;
+      
+      page4.drawImage(foundationDrawing, {
+        x: 50,
+        y: yPosition - imgHeight,
+        width: imgWidth,
+        height: imgHeight,
+      });
+    } catch (error) {
+      console.error('Error loading foundation drawing:', error);
+      
+      // Draw placeholder if image loading fails
+      page4.drawRectangle({
+        x: 50,
+        y: yPosition - 400,
+        width: width - 100,
+        height: 400,
+        borderColor: secondaryColor,
+        borderWidth: 1,
+        color: rgb(0.98, 0.98, 0.98),
+      });
 
+      // Add placeholder text
+      page4.drawText(`Foundation Drawing for ${selectionData.cooling_tower_model}`, {
+        x: width / 2 - 100,
+        y: yPosition - 200,
+        size: 12,
+        font: helveticaBold,
+        color: primaryColor,
+      });
+      
+      page4.drawText('(Drawing not available)', {
+        x: width / 2 - 60,
+        y: yPosition - 220,
+        size: 10,
+        font: helveticaItalic,
+        color: textColor,
+      });
+    }
+
+    // Add footer to the fourth page
+    addFooter(page4, 4, 5);
+
+    // Page 5 - Performance Curve (previously Page 4)
+    const page5 = pdfDoc.addPage();
+    await addLetterhead(page5);
+    
+    yPosition = height - 150;
+    
     // 6. Performance Curve
-    yPosition = addSectionTitle(page4, '6. PERFORMANCE CURVE', yPosition);
+    yPosition = addSectionTitle(page5, '6. PERFORMANCE CURVE', yPosition);
 
     // Add placeholder for performance curve
-    page4.drawRectangle({
+    page5.drawRectangle({
       x: 50,
       y: yPosition - 300,
       width: width - 100,
       height: 300,
       borderColor: secondaryColor,
       borderWidth: 1,
-      color: rgb(0.98, 0.98, 0.98), // Light gray background
+      color: rgb(0.98, 0.98, 0.98),
     });
 
-    drawTextPage4('Performance curve to be added later', width / 2 - 100, yPosition - 150, 12, helveticaBold, primaryColor);
+    page5.drawText('Performance curve to be added later', {
+      x: width / 2 - 100,
+      y: yPosition - 150,
+      size: 12,
+      font: helveticaBold,
+      color: primaryColor,
+    });
 
-    // Add footer to the fourth page
-    addFooter(page4, 4, 4);
-
-    // Embed performance curve if available - left commented out as requested
-    // if (performanceCurveImage) {
-    //   try {
-    //     // Check if the image data is valid
-    //     if (!(performanceCurveImage instanceof Uint8Array) && 
-    //         !(performanceCurveImage instanceof ArrayBuffer) && 
-    //         typeof performanceCurveImage !== 'string') {
-          
-    //       console.error('Invalid performance curve image format:', typeof performanceCurveImage);
-    //       drawTextPage4('Performance curve image is in an invalid format', 50, height - 100);
-    //     } else {
-    //       const image = await pdfDoc.embedPng(performanceCurveImage);
-    //       page4.drawImage(image, {
-    //         x: 50,
-    //         y: height - 400,
-    //         width: 500,
-    //         height: 300
-    //       });
-    //     }
-    //   } catch (error) {
-    //     console.error('Error embedding performance curve:', error);
-    //     drawTextPage4('Error loading performance curve: ' + error.message, 50, height - 100);
-    //   }
-    // } else {
-    //   drawTextPage4('Performance curve not available', 50, height - 100);
-    // }
+    // Add footer to the fifth page
+    addFooter(page5, 5, 5);
 
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
