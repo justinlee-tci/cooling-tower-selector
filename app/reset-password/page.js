@@ -64,15 +64,22 @@ export default function ResetPasswordPage() {
     try {
       setLoading(true);
       
-      console.log("Attempting to reset password with token");
-      
-      // Use the token to update the password
+      // First verify the recovery token
+      const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+        token,
+        type: 'recovery'
+      });
+
+      if (verifyError) {
+        throw verifyError;
+      }
+
+      // Then update the password
       const { data, error: resetError } = await supabase.auth.updateUser({ 
         password: password 
       });
 
       if (resetError) {
-        console.error("Error updating password:", resetError);
         throw resetError;
       }
 
