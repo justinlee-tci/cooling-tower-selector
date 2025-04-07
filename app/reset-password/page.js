@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -15,19 +13,20 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const tryRecoverSession = async () => {
-      const hash = window.location.hash;
-      
-      // Check for error in hash
-      if (hash.includes('error=')) {
-        router.push('/auth/login');
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get("access_token");
+
+      if (!accessToken) {
+        router.push("/auth/login");
         return;
       }
 
-      if (!hash.includes("access_token") || !hash.includes("type=recovery")) {
+      // Exchange the recovery token for a session
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession(accessToken);
+      if (sessionError) {
+        router.push("/auth/login");
         return;
       }
-
-      await supabase.auth.exchangeCodeForSession(hash);
     };
 
     tryRecoverSession();
@@ -50,20 +49,16 @@ export default function ResetPasswordPage() {
     try {
       setLoading(true);
 
-      const hash = window.location.hash;
-      if (!hash) {
-        throw new Error("No reset token found");
-      }
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get("access_token");
 
-      // Exchange the recovery token for a session
-      const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(hash);
-      if (sessionError) {
-        throw sessionError;
+      if (!accessToken) {
+        throw new Error("No reset token found");
       }
 
       // Update the password using the session
       const { error: updateError } = await supabase.auth.updateUser({
-        password: password
+        password: password,
       });
 
       if (updateError) {
