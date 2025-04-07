@@ -49,32 +49,25 @@ export default function ResetPasswordPage() {
 
     try {
       setLoading(true);
-      
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("No authenticated user found");
+
+      const hash = window.location.hash;
+      if (!hash) {
+        throw new Error("No reset token found");
       }
 
-      // Update auth password
+      // Exchange the recovery token for a session
+      const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(hash);
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      // Update the password using the session
       const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
+        password: password
       });
 
       if (updateError) {
         throw updateError;
-      }
-
-      // Update users table
-      const { error: dbError } = await supabase
-        .from('users')
-        .update({ 
-          password: password,
-        })
-        .eq('email', user.email);
-
-      if (dbError) {
-        throw dbError;
       }
 
       toast.success("Password updated successfully");
