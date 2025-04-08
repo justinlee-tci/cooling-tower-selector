@@ -213,7 +213,7 @@ function PerformanceContent() {
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
           <div className="flex items-center space-x-3">
-            <span className="text-gray-900 font-medium w-32">Project:</span>
+            <span className="text-gray-900 font-medium w-32">Project Name:</span>
             <span className="text-gray-900">{params.projectName}</span>
           </div>
           <div className="flex items-center space-x-3">
