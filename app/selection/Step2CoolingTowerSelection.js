@@ -119,18 +119,49 @@ export default function Step2CoolingTowerSelection() {
     <div className="max-w-8xl mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
       <h2 className="text-xl font-bold mb-4 text-gray-900">Cooling Tower Selection</h2>
 
-      {/* Slider for selecting number of cells */}
-      <div className="mb-4">
-        <label className="block text-gray-700 font-medium">Number of Cells: {selectedCells}</label>
-        <input
-          type="range"
-          min="1"
-          max="20"
-          value={selectedCells}
-          onChange={handleCellsChange}
-          className="w-full cursor-pointer"
-        />
-      </div>
+{/* Slider for selecting number of cells */}
+<div className="mb-4">
+  <div className="flex items-center mb-2">
+    <label className="text-gray-900 font-medium mr-2">Number of Cells:</label>
+    <input
+      type="number"
+      min="1"
+      max="20"
+      value={selectedCells}
+      onChange={(e) => {
+        const value = parseInt(e.target.value);
+        if (!isNaN(value) && value >= 1 && value <= 20) {
+          setSelectedCells(value);
+          // Update selection data when text input changes
+          if (selectionData.selectedModel) {
+            const selectedModel = filteredModels.find(model => model.model_name === selectionData.selectedModel);
+            if (selectedModel) {
+              const baseCapacity = performanceData[selectedModel.model_name] || 0;
+              const actualCapacity = baseCapacity * value;
+              const designFlowRate = parseFloat(selectionData.waterFlowRate) || 1;
+              const safetyFactor = (actualCapacity / designFlowRate) * 100;
+
+              updateSelectionData({
+                numberOfCells: value,
+                actualCapacity: actualCapacity,
+                safetyFactor: safetyFactor
+              });
+            }
+          }
+        }
+      }}
+      className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-gray-900 font-medium"
+    />
+  </div>
+  <input
+    type="range"
+    min="1"
+    max="20"
+    value={selectedCells}
+    onChange={handleCellsChange}
+    className="w-full cursor-pointer"
+  />
+</div>
 
       {loading && <p className="text-gray-700">Loading...</p>}
       {error && <p className="text-red-500">{error}</p>}
