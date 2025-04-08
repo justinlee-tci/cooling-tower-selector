@@ -606,8 +606,8 @@ page.drawText("SDN. BHD.", {
     yPosition = height - 150;
     
     // 5. Tower Model Drawings
-    yPosition = addSectionTitle(page3, '5. TOWER MODEL DRAWINGS', yPosition);
-    yPosition = addSubsectionTitle(page3, '5a. Tower Drawing (Single Cell)', yPosition - 10);
+    yPosition = addSectionTitle(page3, '5. TOWER MODEL DRAWINGS', yPosition+15);
+    yPosition = addSubsectionTitle(page3, '5a. Tower Drawing (Single Cell)', yPosition);
 
     try {
       // Try loading the tower drawing based on model
@@ -681,8 +681,8 @@ page.drawText("SDN. BHD.", {
     
     yPosition = height - 150;
     
-    yPosition = addSectionTitle(page4, '5. TOWER MODEL DRAWINGS (continued)', yPosition);
-    yPosition = addSubsectionTitle(page4, '5b. Foundation Drawing', yPosition - 10);
+    yPosition = addSectionTitle(page4, '5. TOWER MODEL DRAWINGS (continued)', yPosition+15);
+    yPosition = addSubsectionTitle(page4, '5b. Foundation Drawing', yPosition);
 
     try {
       // Try loading the foundation drawing based on model
@@ -757,7 +757,7 @@ page.drawText("SDN. BHD.", {
     yPosition = height - 150;
     
     // 6. Performance Curve
-    yPosition = addSectionTitle(page5, '6. PERFORMANCE CURVE', yPosition);
+    yPosition = addSectionTitle(page5, '6. PERFORMANCE CURVE', yPosition+15);
 
     // Add placeholder for performance curve
     page5.drawRectangle({
