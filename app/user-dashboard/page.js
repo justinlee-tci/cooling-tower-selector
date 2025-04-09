@@ -105,9 +105,8 @@ export default function Dashboard() {
       minute: "2-digit",
       second: "2-digit",
       hour12: true,
-      timeZoneName: "short", // Add this to include the timezone
     };
-    return new Date(timestamp).toLocaleString("en-US", options);
+    return `${new Date(timestamp).toLocaleString("en-US", options)} UTC`;
   };
 
   if (!user) {
