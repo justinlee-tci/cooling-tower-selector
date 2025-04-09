@@ -98,21 +98,31 @@ export default function Dashboard() {
   const formatLastLoggedIn = (timestamp) => {
     if (!timestamp) return "No previous login found.";
   
-    // Force UTC interpretation if needed
-    const utcDate = new Date(timestamp.endsWith('Z') ? timestamp : timestamp + 'Z');
+    try {
+      // Parse the timestamptz directly - no need to force UTC
+      const date = new Date(timestamp);
+      
+      if (isNaN(date.getTime())) {
+        console.error('Invalid timestamp:', timestamp);
+        return "Invalid date";
+      }
   
-    const options = {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-      timeZoneName: "short", // Local user's timezone
-    };
+      const options = {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+        timeZoneName: "short", // This will show GMT+8 format
+      };
   
-    return utcDate.toLocaleString("en-US", options);
+      return date.toLocaleString("en-US", options);
+    } catch (error) {
+      console.error('Error formatting timestamp:', error);
+      return "Invalid date format";
+    }
   };
   
   if (!user) {
