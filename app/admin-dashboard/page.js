@@ -154,11 +154,10 @@ export default function AdminDashboard() {
 
   const formatLastLoggedIn = (timestamp) => {
     if (!timestamp) return "No previous login found.";
-    
-    // Parse the UTC timestamp
-    const utcDate = new Date(timestamp);
-    
-    // Format with explicit timezone handling
+  
+    // Force UTC interpretation if needed
+    const utcDate = new Date(timestamp.endsWith('Z') ? timestamp : timestamp + 'Z');
+  
     const options = {
       year: "numeric",
       month: "short",
@@ -167,11 +166,12 @@ export default function AdminDashboard() {
       minute: "2-digit",
       second: "2-digit",
       hour12: true,
-      timeZoneName: "short",
+      timeZoneName: "short", // Local user's timezone
     };
-    
+  
     return utcDate.toLocaleString("en-US", options);
   };
+  
 
   if (!user) {
     return null;
