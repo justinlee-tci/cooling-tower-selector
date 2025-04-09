@@ -154,6 +154,11 @@ export default function AdminDashboard() {
 
   const formatLastLoggedIn = (timestamp) => {
     if (!timestamp) return "No previous login found.";
+    
+    // Parse the UTC timestamp
+    const utcDate = new Date(timestamp);
+    
+    // Format with explicit timezone handling
     const options = {
       year: "numeric",
       month: "short",
@@ -162,9 +167,10 @@ export default function AdminDashboard() {
       minute: "2-digit",
       second: "2-digit",
       hour12: true,
-      timeZoneName: "short", // Includes the local timezone abbreviation
+      timeZoneName: "short",
     };
-    return new Date(timestamp).toLocaleString("en-US", options); // Converts UTC to local timezone
+    
+    return utcDate.toLocaleString("en-US", options);
   };
 
   if (!user) {
