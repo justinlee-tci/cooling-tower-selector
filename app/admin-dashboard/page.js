@@ -162,8 +162,9 @@ export default function AdminDashboard() {
       minute: "2-digit",
       second: "2-digit",
       hour12: true,
+      timeZoneName: "short", // Includes the local timezone abbreviation
     };
-    return `${new Date(timestamp).toLocaleString("en-US", options)} UTC`;
+    return new Date(timestamp).toLocaleString("en-US", options); // Converts UTC to local timezone
   };
 
   if (!user) {
