@@ -26,7 +26,7 @@ export default function LiveWallpaper() {
     // Default configuration (hardcoded values)
     const backgroundColor = "#f0f4f8"; // Light blue-gray background
     const particleColor = "66, 133, 244"; // Blue raindrops in RGB format
-    const particleCount = 150;
+    const particleCount = 80;
     const particleSpeed = 2; // Constant speed of falling raindrops
     const windSpeed = 0.01; // Horizontal wind effect
 
