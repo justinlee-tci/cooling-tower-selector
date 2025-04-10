@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import LiveWallpaper from "@/components/LiveWallpaper-2";
 
 export default function Login() {
   const router = useRouter();
@@ -14,39 +15,31 @@ export default function Login() {
   const [previousLogin, setPreviousLogin] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Message useEffect (from original code)
   useEffect(() => {
     if (router.query && router.query.message === "email_confirmation") {
       setMessage("Email confirmation link sent. Please check your inbox to verify your email.");
     }
   }, [router.query]);
 
-  // Modified last login update - only runs after successful login
   useEffect(() => {
     let mounted = true;
 
     const updateLastLoginWithDelay = async () => {
-      // Only proceed if logged in and component is mounted
       if (!isLoggedIn || !mounted) return;
 
       try {
-        // Get current session
         const { data: { session } } = await supabase.auth.getSession();
-        
-        // Only proceed if we have an active session
         if (!session) return;
 
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (user?.email) {
           setTimeout(async () => {
             if (!mounted) return;
 
             const { error: updateError } = await supabase
               .from('users')
-              .update({ 
-                last_logged_in: new Date().toISOString() 
-              })
+              .update({ last_logged_in: new Date().toISOString() })
               .eq('email', user.email);
 
             if (updateError && mounted) {
@@ -55,7 +48,6 @@ export default function Login() {
           }, 3500);
         }
       } catch (error) {
-        // Only log error if component is still mounted
         if (mounted) {
           console.error('Error in login update:', error);
         }
@@ -64,7 +56,6 @@ export default function Login() {
 
     updateLastLoginWithDelay();
 
-    // Cleanup function
     return () => {
       mounted = false;
     };
@@ -74,52 +65,43 @@ export default function Login() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-  
+
     try {
-      // Attempt login
-      const { data, error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-  
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+
       if (loginError) {
         setError(loginError.message);
         setLoading(false);
         return;
       }
-  
-      // Explicitly refresh the session
+
       const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
-      
+
       if (refreshError || !session) {
         setError("Failed to establish a valid session. Please try again.");
         setLoading(false);
         return;
       }
-  
-      // Fetch user role and last login time
+
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("role, last_logged_in")
         .eq("email", email)
         .single();
-  
+
       if (userError || !userData) {
         setError("Failed to fetch user details.");
         setLoading(false);
         return;
       }
-  
-      // Show previous login time but do not update it immediately
-      const lastLogin = userData.last_logged_in;
-      setPreviousLogin(lastLogin ? `Your last login was on: ${new Date(lastLogin).toLocaleString()}` : "This is your first login!");
-  
-      // Set logged in state to trigger delayed update
+
+      setPreviousLogin(userData.last_logged_in 
+        ? `Your last login was on: ${new Date(userData.last_logged_in).toLocaleString()}`
+        : "This is your first login!");
+
       setIsLoggedIn(true);
-  
-      // Redirect user based on role
+
       router.push(userData.role === "superadmin" ? "/admin-dashboard" : "/user-dashboard");
-  
     } catch (err) {
       console.error("Login failed:", err);
       setError("An error occurred. Please try again.");
@@ -127,11 +109,13 @@ export default function Login() {
       setLoading(false);
     }
   };
-  
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-200">
-      <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
-        {/* Add Logo Image with increased bottom margin */}
+    <div className="flex items-center justify-center min-h-screen relative overflow-hidden">
+      {/* ✅ Live Wallpaper */}
+      <LiveWallpaper       />
+
+      <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px] bg-opacity-95 z-10">
         <div className="flex justify-center mb-12">
           <img 
             src="/company-logo.jpg" 
@@ -176,6 +160,7 @@ export default function Login() {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
+
         <p className="text-lg mt-6 text-center text-gray-800">
           Don&apos;t have an account?{" "}
           <a href="/auth/register" className="text-green-600 hover:underline">

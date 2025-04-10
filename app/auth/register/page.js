@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import LiveWallpaper from "@/components/LiveWallpaper-1";
+
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
@@ -130,7 +132,9 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-200">
+    <div className="relative z-10 flex items-center justify-center min-h-screen bg-gray-200">
+      {/* Live Wallpaper renders below because of -z-10 */}
+      <LiveWallpaper  />
       <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
         {/* Add Logo Image with bottom margin */}
         <div className="flex justify-center mb-12">
