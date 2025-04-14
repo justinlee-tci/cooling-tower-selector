@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import LiveWallpaper from "@/components/LiveWallpaper-1";
+import LiveWallpaper from "@/components/LiveWallpaper-2";
 
 
 const countries = [
