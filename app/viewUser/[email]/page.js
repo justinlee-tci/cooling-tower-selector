@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import Navbar from "@/components/Navbar";
 import { toast } from "react-hot-toast";
+import LiveWallpaper from "@/components/LiveWallpaper-2"; // Import the LiveWallpaper component
 
 export default function ViewUserPage() {
   const router = useRouter();
@@ -202,9 +203,10 @@ export default function ViewUserPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-200">
-      <Navbar />
-      <div className="flex-grow flex items-center justify-center p-6">
+    <div className="flex flex-col min-h-screen relative">
+      <LiveWallpaper className="fixed inset-0 -z-10" /> {/* Position LiveWallpaper behind content */}
+      <Navbar className="relative z-10" />
+      <div className="flex-grow flex items-center justify-center p-6 relative z-10">
         <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
           <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">User Details</h2>
           <p className="text-center text-gray-600 mb-2">Edit user information</p>
@@ -300,71 +302,71 @@ export default function ViewUserPage() {
             </div>
           </form>
         </div>
-
-        {/* Profile Changes Confirmation Modal */}
-        {showConfirmation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
-              <h3 className="text-xl font-bold mb-4 text-gray-900">Confirm Changes</h3>
-              <div className="mb-6">
-                <p className="mb-4 text-gray-700">Are you sure you want to save these changes?</p>
-                <ul className="text-sm text-gray-700 mb-4 pl-5 list-disc">
-                  {Object.entries(pendingChanges).map(([field, value]) => (
-                    <li key={field}>Update {field} to: {value}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={handleCancelSave}
-                  className="px-4 py-2 border text-gray-700 border-gray-300 rounded hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirmSave}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  disabled={saving}
-                >
-                  {saving ? "Saving..." : "Confirm"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Password Reset Confirmation Modal */}
-        {showPasswordResetConfirmation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
-              <h3 className="text-xl font-bold mb-4 text-gray-900">Confirm Password Reset</h3>
-              <div className="mb-6">
-                <p className="mb-4 text-gray-700">
-                  Are you sure you want to send a password reset email to <span className="font-semibold">{userEmail}</span>?
-                </p>
-                <p className="text-sm text-gray-700 mb-4">
-                  The user will receive an email with instructions to create a new password.
-                </p>
-              </div>
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={() => setShowPasswordResetConfirmation(false)}
-                  className="px-4 py-2 border text-gray-700 border-gray-300 rounded hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSendPasswordReset}
-                  className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600"
-                  disabled={sendingReset}
-                >
-                  {sendingReset ? "Sending..." : "Send Reset Email"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+      
+      {/* Profile Changes Confirmation Modal */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-gray-900">Confirm Changes</h3>
+            <div className="mb-6">
+              <p className="mb-4 text-gray-700">Are you sure you want to save these changes?</p>
+              <ul className="text-sm text-gray-700 mb-4 pl-5 list-disc">
+                {Object.entries(pendingChanges).map(([field, value]) => (
+                  <li key={field}>Update {field} to: {value}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={handleCancelSave}
+                className="px-4 py-2 border text-gray-700 border-gray-300 rounded hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmSave}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                disabled={saving}
+              >
+                {saving ? "Saving..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Confirmation Modal */}
+      {showPasswordResetConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-gray-900">Confirm Password Reset</h3>
+            <div className="mb-6">
+              <p className="mb-4 text-gray-700">
+                Are you sure you want to send a password reset email to <span className="font-semibold">{userEmail}</span>?
+              </p>
+              <p className="text-sm text-gray-700 mb-4">
+                The user will receive an email with instructions to create a new password.
+              </p>
+            </div>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowPasswordResetConfirmation(false)}
+                className="px-4 py-2 border text-gray-700 border-gray-300 rounded hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendPasswordReset}
+                className="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600"
+                disabled={sendingReset}
+              >
+                {sendingReset ? "Sending..." : "Send Reset Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

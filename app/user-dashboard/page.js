@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/authContext";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import Navbar from "@/components/Navbar";
+import LiveWallpaper from "@/components/LiveWallpaper-2"; // Import the LiveWallpaper component
 import { toast } from "react-hot-toast";
 
 export default function Dashboard() {
@@ -130,10 +131,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-200">
+    <div className="flex flex-col min-h-screen">
+      {/* Add the LiveWallpaper component here */}
+      <LiveWallpaper />
+      
       <Navbar />
       <div className="flex-grow p-6">
-        <div className="bg-white p-8 rounded-2xl shadow-lg">
+        <div className="bg-white bg-opacity-90 p-8 rounded-2xl shadow-lg">
           <h1 className="text-3xl font-bold text-center text-gray-900">Welcome to the User Dashboard!</h1>
           <p className="mt-4 text-center text-lg text-gray-800">Hello, {user?.email}</p>
           {lastLoggedIn && (

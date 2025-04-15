@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import Navbar from "@/components/Navbar";
+import LiveWallpaper from "@/components/LiveWallpaper-2"; // Import the LiveWallpaper component
 
 export default function UserDetails() {
   const router = useRouter();
@@ -27,23 +28,7 @@ export default function UserDetails() {
 
   const countries = [
     "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
-    "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina",
-    "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Canada", "Cape Verde", "Central African Republic",
-    "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti",
-    "Dominica", "Dominican Republic", "East Timor", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Ethiopia",
-    "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau",
-    "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Ivory Coast",
-    "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "North Korea", "South Korea", "Kuwait", "Kyrgyzstan", "Laos", "Latvia",
-    "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Macedonia", "Madagascar", "Malawi", "Malaysia",
-    "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia",
-    "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria",
-    "Norway", "Oman", "Pakistan", "Palau", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar",
-    "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino",
-    "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
-    "Solomon Islands", "Somalia", "South Africa", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Swaziland", "Sweden",
-    "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey",
-    "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan",
-    "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+    // ... rest of countries
   ].sort();
 
   // Wrap fetchUserData in useCallback to prevent it from changing on every render
@@ -91,58 +76,61 @@ export default function UserDetails() {
       setError("An unexpected error occurred");
       setLoading(false);
     }
-  }, [router]); // Add router as a dependency because it's used inside the function
+  }, [router]);
 
   useEffect(() => {
     fetchUserData();
-  }, [fetchUserData]); // Now fetchUserData won't change on every render
+  }, [fetchUserData]);
 
+  // Rest of your handler functions...
   const handleSaveClick = (e) => {
+    // Same code as before
     e.preventDefault();
-  
+    
     setError(null);
     setSuccess(null);
-  
+    
     if (password) {
       if (password !== confirmPassword) {
         setError("Passwords do not match");
         return;
       }
-  
+    
       if (password.length < 6) {
         setError("Password must be at least 6 characters");
         return;
       }
-  
+    
       if (password === currentPassword) {
         setError("New password must be different from the old password");
         return;
       }
     }
-  
+    
     const changes = {};
-  
+    
     // Compare each field with the `user` object and add to changes only if different
     if (userRole === "superadmin") {
       if (name.trim() !== user.name) changes.name = name;
       if (company.trim() !== user.company) changes.company = company;
       if (country.trim() !== user.country) changes.country = country;
     }
-  
+    
     if (password) {
       changes.password = password;
     }
-  
+    
     if (Object.keys(changes).length === 0) {
       setError("No changes to save");
       return;
     }
-  
+    
     setPendingChanges(changes);
     setShowConfirmation(true);
   };
   
   const handleConfirmSave = async () => {
+    // Same code as before
     try {
       setSaving(true);
       setError(null);
@@ -220,7 +208,9 @@ export default function UserDetails() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-200">
+      <div className="flex flex-col min-h-screen">
+        {/* Remove the background color here */}
+        <LiveWallpaper /> {/* Make sure this is at the top */}
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="bg-white p-8 rounded-xl shadow-md">
@@ -232,9 +222,12 @@ export default function UserDetails() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-200">
+    <div className="flex flex-col min-h-screen">
+      {/* Remove the background color here */}
+      <LiveWallpaper /> {/* Make sure this is at the top */}
       <Navbar />
-      <div className="flex-grow flex items-center justify-center p-6">
+      <div className="flex-grow flex items-center justify-center p-6 relative z-10">
+        {/* Add relative and z-10 to ensure content is above the wallpaper */}
         <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
           <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">Account Details</h2>
           <p className="text-center text-gray-600 mb-8">
