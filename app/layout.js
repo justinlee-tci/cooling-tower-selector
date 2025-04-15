@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "NSK Cooling Tower Selector", // Change this to your preferred website name
-  description: "Cooling Tower Selection Software for Thermal-Cell NSK Series Cooling Tower", // Update this description
+  title: "Thermal-Cell Cooling Tower Selector", // Change this to your preferred website name
+  description: "Cooling Tower Selection Software for Thermal-Cell Cooling Tower", // Update this description
   icons: {
     icon: '/company-icon.ico', // Simplify to just use a single .ico file
   },
