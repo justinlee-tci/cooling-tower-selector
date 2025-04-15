@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/authContext";
 import Navbar from "@/components/Navbar";
 import { generateReport } from '@/components/GenerateReport';
+import LiveWallpaper from "@/components/LiveWallpaper-2";
 
 export default function ViewSelection() {
   const { user } = useAuth();
@@ -185,8 +186,6 @@ export default function ViewSelection() {
     );
   }
 
-  // Rest of the component remains the same as in the previous implementation
-  // (The entire render method from the previous version)
   const leftColumnFields = [
     { label: "Tower Model", key: "towerModel", value: selectionData.cooling_tower_model },
     { label: "Number of Cells", key: "numberOfCells", value: selectionData.number_of_cells?.toString() || "1" },
@@ -201,89 +200,70 @@ export default function ViewSelection() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-200">
-      <Navbar />
-      <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-md rounded-md flex-grow">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">View Selection Details</h2>
-        
-        {/* Project Details Header Row */}
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Project Details</h3>
-          <div className="flex items-center space-x-3">
-            <label className={labelClass}>Selection By:</label>
-            <input
-              type="text"
-              className="border p-1.5 rounded w-64 bg-gray-100 cursor-not-allowed text-gray-900"
-              value={selectionData.selection_by || ""}
+    <div className="flex flex-col min-h-screen relative">
+      <LiveWallpaper className="fixed inset-0 -z-10" />
+      <Navbar className="relative z-10" />
+      <div className="flex-grow p-6 relative z-10">
+        <div className="max-w-4xl mx-auto mt-4 p-6 bg-white shadow-md rounded-md">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">View Selection Details</h2>
+          
+          {/* Project Details Header Row */}
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Project Details</h3>
+            <div className="flex items-center space-x-3">
+              <label className={labelClass}>Selection By:</label>
+              <input
+                type="text"
+                className="border p-1.5 rounded w-64 bg-gray-100 cursor-not-allowed text-gray-900"
+                value={selectionData.selection_by || ""}
+                disabled
+              />
+            </div>
+          </div>
+
+          {/* Project Details Grid */}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            {[
+              { label: "Project Name", key: "projectName", value: selectionData.project_name },
+              { label: "Client Name", key: "clientName", value: selectionData.client_name },
+              { label: "Location", key: "location", value: selectionData.location },
+              { label: "Date", key: "date", value: formatDate(selectionData.date_created) },
+            ].map(({ label, key, value }) => (
+              <div key={key} className="flex items-center space-x-3">
+                <label className={labelClass}>{label}:</label>
+                <div className={inputContainerClass}>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={value || ""}
+                    disabled
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Description */}
+          <div className="mt-6 flex items-start space-x-3">
+            <label className={labelClass}>Description:</label>
+            <textarea
+              className="border p-2 rounded flex-1 bg-gray-100 min-h-[6rem] resize-y cursor-not-allowed text-gray-900"
+              value={selectionData.description || ""}
               disabled
             />
           </div>
-        </div>
 
-        {/* Project Details Grid */}
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          {[
-            { label: "Project Name", key: "projectName", value: selectionData.project_name },
-            { label: "Client Name", key: "clientName", value: selectionData.client_name },
-            { label: "Location", key: "location", value: selectionData.location },
-            { label: "Date", key: "date", value: formatDate(selectionData.date_created) },
-          ].map(({ label, key, value }) => (
-            <div key={key} className="flex items-center space-x-3">
-              <label className={labelClass}>{label}:</label>
-              <div className={inputContainerClass}>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={value || ""}
-                  disabled
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Description */}
-        <div className="mt-6 flex items-start space-x-3">
-          <label className={labelClass}>Description:</label>
-          <textarea
-            className="border p-2 rounded flex-1 bg-gray-100 min-h-[6rem] resize-y cursor-not-allowed text-gray-900"
-            value={selectionData.description || ""}
-            disabled
-          />
-        </div>
-
-        {/* Input Parameters */}
-        <h3 className="text-lg font-bold mt-6 mb-4 text-gray-900">Input Parameters</h3>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          {[
-            { label: "Water Flow Rate", key: "waterFlowRate", value: selectionData.water_flow_rate, unit: "m³/hr" },
-            { label: "Atmospheric Pressure", key: "atmosphericPressure", value: selectionData.atmospheric_pressure, unit: "kPa" },
-            { label: "Hot Water Temp", key: "hotWaterTemp", value: selectionData.hot_water_temp, unit: "°C" },
-            { label: "Cold Water Temp", key: "coldWaterTemp", value: selectionData.cold_water_temp, unit: "°C" },
-            { label: "Wet Bulb Temp", key: "wetBulbTemp", value: selectionData.wet_bulb_temp, unit: "°C" },
-            { label: "Dry Bulb Temp", key: "dryBulbTemp", value: selectionData.dry_bulb_temp, unit: "°C" },
-          ].map(({ label, key, value, unit }) => (
-            <div key={key} className="flex items-center space-x-3">
-              <label className={labelClass}>{label}:</label>
-              <div className={inputContainerClass}>
-                <input
-                  type="text"
-                  className={inputClass}
-                  value={value || ""}
-                  disabled
-                />
-                <span className={unitClass}>{unit}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Cooling Tower Selection */}
-        <h3 className="text-lg font-bold mt-6 mb-4 text-gray-900">Cooling Tower Selection</h3>
-        <div className="grid grid-cols-2 gap-x-8">
-          {/* Left Column */}
-          <div className="space-y-4">
-            {leftColumnFields.map(({ label, key, value, unit }) => (
+          {/* Input Parameters */}
+          <h3 className="text-lg font-bold mt-6 mb-4 text-gray-900">Input Parameters</h3>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            {[
+              { label: "Water Flow Rate", key: "waterFlowRate", value: selectionData.water_flow_rate, unit: "m³/hr" },
+              { label: "Atmospheric Pressure", key: "atmosphericPressure", value: selectionData.atmospheric_pressure, unit: "kPa" },
+              { label: "Hot Water Temp", key: "hotWaterTemp", value: selectionData.hot_water_temp, unit: "°C" },
+              { label: "Cold Water Temp", key: "coldWaterTemp", value: selectionData.cold_water_temp, unit: "°C" },
+              { label: "Wet Bulb Temp", key: "wetBulbTemp", value: selectionData.wet_bulb_temp, unit: "°C" },
+              { label: "Dry Bulb Temp", key: "dryBulbTemp", value: selectionData.dry_bulb_temp, unit: "°C" },
+            ].map(({ label, key, value, unit }) => (
               <div key={key} className="flex items-center space-x-3">
                 <label className={labelClass}>{label}:</label>
                 <div className={inputContainerClass}>
@@ -293,60 +273,82 @@ export default function ViewSelection() {
                     value={value || ""}
                     disabled
                   />
-                  {unit && <span className={unitClass}>{unit}</span>}
+                  <span className={unitClass}>{unit}</span>
                 </div>
               </div>
             ))}
           </div>
-          {/* Right Column */}
-          <div className="space-y-4">
-            {rightColumnFields.map(({ label, key, value, unit }) => (
-              <div key={key} className="flex items-center space-x-3">
-                <label className={labelClass}>{label}:</label>
-                <div className={inputContainerClass}>
-                  <input
-                    type="text"
-                    className={inputClass}
-                    value={value || ""}
-                    disabled
-                  />
-                  {unit && <span className={unitClass}>{unit}</span>}
-                </div>
-              </div>
-            ))}
-            
-            {/* Performance Curve Button */}
-            <div className="flex items-center space-x-3">
-              <div className="w-44"></div> {/* Spacer to align with other inputs */}
-              <button
-                onClick={handlePerformanceCurve}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium transition-colors"
-              >
-                Generate Performance Curve
-              </button>
-            </div>
 
-            {/* Generate Report Button */}
-            <div className="flex items-center space-x-3">
-              <div className="w-44"></div> {/* Spacer to align with other inputs */}
-              <button
-                onClick={handleGenerateReport}
-                className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-medium transition-colors"
-              >
-                Generate Report
-              </button>
+          {/* Cooling Tower Selection */}
+          <h3 className="text-lg font-bold mt-6 mb-4 text-gray-900">Cooling Tower Selection</h3>
+          <div className="grid grid-cols-2 gap-x-8">
+            {/* Left Column */}
+            <div className="space-y-4">
+              {leftColumnFields.map(({ label, key, value, unit }) => (
+                <div key={key} className="flex items-center space-x-3">
+                  <label className={labelClass}>{label}:</label>
+                  <div className={inputContainerClass}>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={value || ""}
+                      disabled
+                    />
+                    {unit && <span className={unitClass}>{unit}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Right Column */}
+            <div className="space-y-4">
+              {rightColumnFields.map(({ label, key, value, unit }) => (
+                <div key={key} className="flex items-center space-x-3">
+                  <label className={labelClass}>{label}:</label>
+                  <div className={inputContainerClass}>
+                    <input
+                      type="text"
+                      className={inputClass}
+                      value={value || ""}
+                      disabled
+                    />
+                    {unit && <span className={unitClass}>{unit}</span>}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Performance Curve Button */}
+              <div className="flex items-center space-x-3">
+                <div className="w-44"></div> {/* Spacer to align with other inputs */}
+                <button
+                  onClick={handlePerformanceCurve}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium transition-colors"
+                >
+                  Generate Performance Curve
+                </button>
+              </div>
+
+              {/* Generate Report Button */}
+              <div className="flex items-center space-x-3">
+                <div className="w-44"></div> {/* Spacer to align with other inputs */}
+                <button
+                  onClick={handleGenerateReport}
+                  className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-medium transition-colors"
+                >
+                  Generate Report
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Back Button */}
-        <div className="mt-8 flex justify-start">
-          <button 
-            onClick={handleBack}
-            className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium"
-          >
-            Back to Dashboard
-          </button>
+          {/* Back Button */}
+          <div className="mt-8 flex justify-start">
+            <button 
+              onClick={handleBack}
+              className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     </div>

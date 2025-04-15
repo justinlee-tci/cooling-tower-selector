@@ -70,7 +70,7 @@ export default function Login() {
       const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
 
       if (loginError) {
-        setError(loginError.message);
+        setError("Invalid email/password, please try again.");
         setLoading(false);
         return;
       }
@@ -78,7 +78,7 @@ export default function Login() {
       const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
 
       if (refreshError || !session) {
-        setError("Failed to establish a valid session. Please try again.");
+        setError("Invalid email/password, please try again.");
         setLoading(false);
         return;
       }
@@ -90,7 +90,7 @@ export default function Login() {
         .single();
 
       if (userError || !userData) {
-        setError("Failed to fetch user details.");
+        setError("Invalid email/password, please try again.");
         setLoading(false);
         return;
       }
@@ -104,7 +104,7 @@ export default function Login() {
       router.push(userData.role === "superadmin" ? "/admin-dashboard" : "/user-dashboard");
     } catch (err) {
       console.error("Login failed:", err);
-      setError("An error occurred. Please try again.");
+      setError("Invalid email/password, please try again.");
     } finally {
       setLoading(false);
     }
