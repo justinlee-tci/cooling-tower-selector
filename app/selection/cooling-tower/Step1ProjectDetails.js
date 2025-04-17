@@ -239,7 +239,8 @@ export default function Step1ProjectDetails() {
 
   return (
     <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-md rounded-md">z
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Project Details</h2>
+    <h1 className="text-2xl font-bold text-gray-900 mb-4 text-center">Cooling Tower Selection</h1>
+    <h2 className="text-xl font-bold text-gray-900 mb-6">Project Details</h2>
 
       {/* Project Details Header Row */}
       <div className="flex justify-between items-center mb-4">
