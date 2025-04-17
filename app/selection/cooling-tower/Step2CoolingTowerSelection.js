@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSelection } from "./SelectionContext";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function Step2CoolingTowerSelection() {
   const { selectionData, updateSelectionData, nextStep, prevStep } = useSelection();
