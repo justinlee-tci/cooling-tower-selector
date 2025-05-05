@@ -10,7 +10,7 @@ export default function Step2CoolingTowerSelection() {
   const [selectedCells, setSelectedCells] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState("cards"); // 'cards' or 'table'
+  const [viewMode, setViewMode] = useState("table"); // 'cards' or 'table'
   const [expandedModel, setExpandedModel] = useState(null);
 
   // Fetch cooling tower models and performance data
@@ -214,9 +214,27 @@ export default function Step2CoolingTowerSelection() {
               value={selectedCells}
               onChange={(e) => {
                 const value = parseInt(e.target.value);
-                if (!isNaN(value) && value >= 1 && value <= 20) {
+                // Allow empty input for typing purposes
+                if (e.target.value === '') {
+                  setSelectedCells(1);
+                }
+                // Only update if it's a number between 1 and 20
+                else if (!isNaN(value) && value >= 1 && value <= 20) {
                   setSelectedCells(value);
-                  handleCellsChange(e);
+                }
+                // If value is outside range, set to nearest valid value
+                else if (!isNaN(value)) {
+                  const clampedValue = Math.min(Math.max(value, 1), 20);
+                  setSelectedCells(clampedValue);
+                }
+              }}
+              onBlur={(e) => {
+                // When input loses focus, ensure value is within range
+                const value = parseInt(e.target.value);
+                if (isNaN(value) || value < 1) {
+                  setSelectedCells(1);
+                } else if (value > 20) {
+                  setSelectedCells(20);
                 }
               }}
               className="w-16 px-2 py-1 border-t border-b border-gray-300 text-center text-gray-900 font-medium"
@@ -286,8 +304,8 @@ export default function Step2CoolingTowerSelection() {
 
       {/* Table View (Desktop) */}
       {!loading && !error && filteredModels.length > 0 && viewMode === "table" && (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-300">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 shadow">
+          <table className="min-w-full bg-white">
             <thead>
               <tr className="bg-gray-200">
                 <th className="border p-2 text-center text-gray-900">Select</th>
@@ -306,7 +324,11 @@ export default function Step2CoolingTowerSelection() {
               {filteredModels.map((model) => (
                 <tr
                   key={model.model_name}
-                  className={`border ${selectionData.selectedModel === model.model_name ? "bg-blue-100" : "bg-white"}`}
+                  onClick={() => handleModelSelection(model)}
+                  className={`border cursor-pointer transition-colors
+                    ${selectionData.selectedModel === model.model_name 
+                      ? "bg-blue-100" 
+                      : "bg-white hover:bg-gray-50"}`}
                 >
                   <td className="border p-2 text-center text-gray-900 whitespace-nowrap">
                     <input
@@ -315,6 +337,7 @@ export default function Step2CoolingTowerSelection() {
                       checked={selectionData.selectedModel === model.model_name}
                       onChange={() => handleModelSelection(model)}
                       className="w-4 h-4"
+                      onClick={(e) => e.stopPropagation()} // Prevent row click when clicking radio
                     />
                   </td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.model_name}</td>
@@ -322,8 +345,8 @@ export default function Step2CoolingTowerSelection() {
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.nominal_flowrate.toFixed(2)}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.motor_output}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.fan_diameter}</td>
-                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.dry_weight}</td>
-                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.operating_weight}</td>
+                  <td className="border p-2 text-gray-900 whitespace-nowrap">{model.dry_weight}</td>
+                  <td className="border p-2 text-gray-900 whitespace-nowrap">{model.operating_weight}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualCapacity.toFixed(2)}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.safetyFactor.toFixed(2)}%</td>
                 </tr>
