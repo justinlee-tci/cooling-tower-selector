@@ -10,6 +10,8 @@ export default function Step2CoolingTowerSelection() {
   const [selectedCells, setSelectedCells] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState("cards"); // 'cards' or 'table'
+  const [expandedModel, setExpandedModel] = useState(null);
 
   // Fetch cooling tower models and performance data
   useEffect(() => {
@@ -102,8 +104,19 @@ export default function Step2CoolingTowerSelection() {
       selectedModel: model.model_name,
       actualCapacity: model.actualCapacity,
       safetyFactor: model.safetyFactor,
-      numberOfCells: selectedCells // Add this line to save number of cells
+      numberOfCells: selectedCells
     });
+    // Close expanded model view when selecting
+    setExpandedModel(null);
+  };
+
+  // Handle card click to expand/collapse details
+  const toggleModelDetails = (modelName) => {
+    if (expandedModel === modelName) {
+      setExpandedModel(null);
+    } else {
+      setExpandedModel(modelName);
+    }
   };
 
   // Update the Next button handler
@@ -115,53 +128,147 @@ export default function Step2CoolingTowerSelection() {
     nextStep();
   };
 
+  // Render a model card for mobile view
+  const renderModelCard = (model) => {
+    const isSelected = selectionData.selectedModel === model.model_name;
+    
+    return (
+      <div 
+        key={model.model_name}
+        onClick={() => handleModelSelection(model)}
+        className={`border rounded-md mb-4 p-4 cursor-pointer ${
+          isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300 hover:bg-blue-50"
+        }`}
+      >
+        <div className="flex justify-between items-start mb-4">
+          <div className="font-semibold text-gray-900 text-xl">{model.model_name}</div>
+          <input
+            type="radio"
+            name="coolingTowerSelection"
+            checked={isSelected}
+            onChange={() => handleModelSelection(model)}
+            className="w-5 h-5 accent-blue-500"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-y-3 text-sm">
+          <div className="text-gray-800 font-medium">Nominal Capacity:</div>
+          <div className="text-right text-gray-900 font-medium">{model.nominal_capacity} RT</div>
+          
+          <div className="text-gray-800 font-medium">Nominal Flowrate:</div>
+          <div className="text-right text-gray-900 font-medium">{model.nominal_flowrate.toFixed(2)} m³/hr</div>
+          
+          <div className="text-gray-800 font-medium">Motor Output:</div>
+          <div className="text-right text-gray-900 font-medium">{model.motor_output} kW</div>
+          
+          <div className="text-gray-800 font-medium">Fan Diameter:</div>
+          <div className="text-right text-gray-900 font-medium">{model.fan_diameter} mm</div>
+          
+          <div className="text-gray-800 font-medium">Dry Weight:</div>
+          <div className="text-right text-gray-900 font-medium">{model.dry_weight} kg</div>
+          
+          <div className="text-gray-800 font-medium">Operating Weight:</div>
+          <div className="text-right text-gray-900 font-medium">{model.operating_weight} kg</div>
+          
+          <div className="text-gray-800 font-medium">Actual Capacity:</div>
+          <div className="text-right text-gray-900 font-medium">{model.actualCapacity.toFixed(2)} m³/hr</div>
+          
+          <div className="text-gray-800 font-medium">Safety Factor:</div>
+          <div className={`text-right font-medium ${model.safetyFactor >= 100 ? "text-green-600" : "text-red-600"}`}>
+            {model.safetyFactor.toFixed(2)}%
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Add this near the top of your component with other useEffects
+  useEffect(() => {
+    handleCellsChange({ target: { value: selectedCells } });
+  }, [selectedCells]);
+
   return (
-    <div className="max-w-8xl mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
+    <div className="w-full mx-auto mt-4 p-4 bg-white shadow-md rounded-md">
       <h2 className="text-xl font-bold mb-4 text-gray-900">Cooling Tower Selection</h2>
 
-{/* Slider for selecting number of cells */}
-<div className="mb-4">
-  <div className="flex items-center mb-2">
-    <label className="text-gray-900 font-medium mr-2">Number of Cells:</label>
-    <input
-      type="number"
-      min="1"
-      max="20"
-      value={selectedCells}
-      onChange={(e) => {
-        const value = parseInt(e.target.value);
-        if (!isNaN(value) && value >= 1 && value <= 20) {
-          setSelectedCells(value);
-          // Update selection data when text input changes
-          if (selectionData.selectedModel) {
-            const selectedModel = filteredModels.find(model => model.model_name === selectionData.selectedModel);
-            if (selectedModel) {
-              const baseCapacity = performanceData[selectedModel.model_name] || 0;
-              const actualCapacity = baseCapacity * value;
-              const designFlowRate = parseFloat(selectionData.waterFlowRate) || 1;
-              const safetyFactor = (actualCapacity / designFlowRate) * 100;
+      {/* Cells Selection */}
+      <div className="mb-6 bg-gray-50 p-3 rounded-md">
+        <div className="flex flex-col mb-2">
+          <label className="text-gray-700 font-medium mb-1">Number of Cells:</label>
+          <div className="flex items-center">
+            <button 
+              onClick={() => {
+                if (selectedCells > 1) {
+                  const newValue = selectedCells - 1;
+                  setSelectedCells(newValue);
+                }
+              }}
+              className="px-3 py-1 bg-gray-200 rounded-l-md text-gray-700 font-bold"
+            >
+              -
+            </button>
+            <input
+              type="number"
+              min="1"
+              max="20"
+              value={selectedCells}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                if (!isNaN(value) && value >= 1 && value <= 20) {
+                  setSelectedCells(value);
+                  handleCellsChange(e);
+                }
+              }}
+              className="w-16 px-2 py-1 border-t border-b border-gray-300 text-center text-gray-900 font-medium"
+            />
+            <button 
+              onClick={() => {
+                if (selectedCells < 20) {
+                  const newValue = selectedCells + 1;
+                  setSelectedCells(newValue);
+                }
+              }}
+              className="px-3 py-1 bg-gray-200 rounded-r-md text-gray-700 font-bold"
+            >
+              +
+            </button>
+          </div>
+        </div>
+        <input
+          type="range"
+          min="1"
+          max="20"
+          value={selectedCells}
+          onChange={handleCellsChange}
+          className="w-full cursor-pointer"
+        />
+      </div>
 
-              updateSelectionData({
-                numberOfCells: value,
-                actualCapacity: actualCapacity,
-                safetyFactor: safetyFactor
-              });
-            }
-          }
-        }
-      }}
-      className="w-16 px-2 py-1 border border-gray-300 rounded text-center text-gray-900 font-medium"
-    />
-  </div>
-  <input
-    type="range"
-    min="1"
-    max="20"
-    value={selectedCells}
-    onChange={handleCellsChange}
-    className="w-full cursor-pointer"
-  />
-</div>
+      {/* View Toggle */}
+      <div className="mb-4 flex justify-end">
+        <div className="inline-flex rounded-md shadow-sm">
+          <button
+            onClick={() => setViewMode("cards")}
+            className={`px-3 py-1 text-sm rounded-l-md ${
+              viewMode === "cards"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Cards
+          </button>
+          <button
+            onClick={() => setViewMode("table")}
+            className={`px-3 py-1 text-sm rounded-r-md ${
+              viewMode === "table"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Table
+          </button>
+        </div>
+      </div>
 
       {loading && <p className="text-gray-700">Loading...</p>}
       {error && <p className="text-red-500">{error}</p>}
@@ -170,7 +277,15 @@ export default function Step2CoolingTowerSelection() {
         <p className="text-gray-700">No cooling tower models meet the selection criteria.</p>
       )}
 
-      {!loading && !error && filteredModels.length > 0 && (
+      {/* Card View (Mobile-Friendly) */}
+      {!loading && !error && filteredModels.length > 0 && viewMode === "cards" && (
+        <div className="space-y-2">
+          {filteredModels.map(renderModelCard)}
+        </div>
+      )}
+
+      {/* Table View (Desktop) */}
+      {!loading && !error && filteredModels.length > 0 && viewMode === "table" && (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border border-gray-300">
             <thead>
@@ -191,7 +306,7 @@ export default function Step2CoolingTowerSelection() {
               {filteredModels.map((model) => (
                 <tr
                   key={model.model_name}
-                  className={`border ${selectionData.selectedModel === model.model_name ? "bg-blue-200" : "bg-white"}`}
+                  className={`border ${selectionData.selectedModel === model.model_name ? "bg-blue-100" : "bg-white"}`}
                 >
                   <td className="border p-2 text-center text-gray-900 whitespace-nowrap">
                     <input
@@ -199,6 +314,7 @@ export default function Step2CoolingTowerSelection() {
                       name="coolingTowerSelection"
                       checked={selectionData.selectedModel === model.model_name}
                       onChange={() => handleModelSelection(model)}
+                      className="w-4 h-4"
                     />
                   </td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.model_name}</td>
@@ -218,15 +334,18 @@ export default function Step2CoolingTowerSelection() {
       )}
 
       {/* Buttons */}
-      <div className="mt-4 flex justify-between">
-        <button onClick={prevStep} className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600">
+      <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-between">
+        <button 
+          onClick={prevStep} 
+          className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 w-full sm:w-auto"
+        >
           Back
         </button>
 
         <button
           onClick={handleNextStep}
           disabled={!selectionData.selectedModel}
-          className={`px-4 py-2 rounded ${
+          className={`px-4 py-2 rounded w-full sm:w-auto ${
             selectionData.selectedModel ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-300 text-gray-600 cursor-not-allowed"
           }`}
         >
