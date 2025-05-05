@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import LiveWallpaper from "@/components/LiveWallpaper-2";
 
-
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
   "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina",
@@ -134,81 +133,81 @@ export default function Register() {
   return (
     <div className="relative z-10 flex items-center justify-center min-h-screen bg-gray-200">
       {/* Live Wallpaper renders below because of -z-10 */}
-      <LiveWallpaper  />
-      <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
+      <LiveWallpaper />
+      <div className="bg-white p-4 sm:p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
         {/* Add Logo Image with bottom margin */}
-        <div className="flex justify-center mb-12">
+        <div className="flex justify-center mb-6">
           <img 
             src="/company-logo.jpg" 
             alt="Company Logo" 
-            className="h-24 w-auto object-contain"
+            className="h-16 sm:h-20 w-auto object-contain"
           />
         </div>
 
-        <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Register</h2>
-        {error && <p className="text-red-600 text-lg mb-4">{error}</p>}
-        <form onSubmit={handleRegister} className="space-y-6">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center text-gray-900">Register</h2>
+        {error && <p className="text-red-600 text-sm sm:text-base mb-3">{error}</p>}
+        <form onSubmit={handleRegister} className="space-y-4">
           <div>
-            <label className="block text-gray-900 text-lg mb-2">Full Name</label>
+            <label className="block text-gray-900 text-sm sm:text-base mb-1">Full Name</label>
             <input
               type="text"
               placeholder="John Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              className="w-full p-3 text-sm sm:text-base border border-gray-500 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
             />
           </div>
           <div>
-            <label className="block text-gray-900 text-lg mb-2">Email</label>
+            <label className="block text-gray-900 text-sm sm:text-base mb-1">Email</label>
             <input
               type="email"
               placeholder="example@domain.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              className="w-full p-3 text-sm sm:text-base border border-gray-500 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
             />
           </div>
           <div>
-            <label className="block text-gray-900 text-lg mb-2">Password</label>
+            <label className="block text-gray-900 text-sm sm:text-base mb-1">Password</label>
             <input
               type="password"
               placeholder="At least 6 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              className="w-full p-3 text-sm sm:text-base border border-gray-500 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
             />
           </div>
           <div>
-            <label className="block text-gray-900 text-lg mb-2">Confirm Password</label>
+            <label className="block text-gray-900 text-sm sm:text-base mb-1">Confirm Password</label>
             <input
               type="password"
               placeholder="Re-enter your password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              className="w-full p-3 text-sm sm:text-base border border-gray-500 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
             />
           </div>
           <div>
-            <label className="block text-gray-900 text-lg mb-2">Company</label>
+            <label className="block text-gray-900 text-sm sm:text-base mb-1">Company</label>
             <input
               type="text"
               placeholder="Your Company Name"
               value={company}
               onChange={(e) => setCompany(e.target.value)}
-              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              className="w-full p-3 text-sm sm:text-base border border-gray-500 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
             />
           </div>
           <div>
-            <label className="block text-gray-900 text-lg mb-2">Country</label>
+            <label className="block text-gray-900 text-sm sm:text-base mb-1">Country</label>
             <select
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              className="w-full p-3 text-sm sm:text-base border border-gray-500 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
             >
               <option value="">Select a country</option>
@@ -222,12 +221,12 @@ export default function Register() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-4 text-lg font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+            className="w-full bg-blue-600 text-white py-3 text-sm sm:text-base font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-400 mt-2"
           >
             {loading ? "Processing..." : "Register"}
           </button>
         </form>
-        <p className="text-lg mt-6 text-center text-gray-800">
+        <p className="text-sm sm:text-base mt-4 text-center text-gray-800">
           Already have an account?{" "}
           <a href="/auth/login" className="text-green-600 hover:underline">
             Login
@@ -235,38 +234,39 @@ export default function Register() {
         </p>
       </div>
 
-{/* Email Verification Popup */}
-{showVerificationPopup && (
-  <div 
-    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 popup-overlay"
-    onClick={handleOutsideClick}
-  >
-    <div className="bg-white p-8 rounded-lg shadow-lg max-w-md relative">
-      <button 
-        onClick={handleClosePopup}
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-      <div className="text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-        <h3 className="text-xl font-bold mb-2 text-black">Please Verify Your Email</h3>
-        <p className="text-gray-700 mb-4">
-        We have sent a verification link to <span className="font-medium">{registeredEmail}</span>        </p>
-        <button
-          onClick={handleClosePopup}
-          className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-medium"
+      {/* Email Verification Popup */}
+      {showVerificationPopup && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 popup-overlay p-4"
+          onClick={handleOutsideClick}
         >
-          Proceed to Login
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-xs sm:max-w-sm relative">
+            <button 
+              onClick={handleClosePopup}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <div className="text-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-green-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <h3 className="text-lg font-bold mb-2 text-black">Please Verify Your Email</h3>
+              <p className="text-gray-700 mb-3 text-sm">
+                We have sent a verification link to <span className="font-medium">{registeredEmail}</span>
+              </p>
+              <button
+                onClick={handleClosePopup}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-medium text-sm"
+              >
+                Proceed to Login
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
