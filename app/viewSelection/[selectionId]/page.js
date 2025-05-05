@@ -7,6 +7,13 @@ import Navbar from "@/components/Navbar";
 import { generateReport } from '@/components/GenerateReport';
 import LiveWallpaper from "@/components/LiveWallpaper-2";
 
+// Add consistent class definitions with mobile-first approach
+const labelClass = "w-full md:w-44 font-medium text-gray-900 whitespace-nowrap mb-1 md:mb-0";
+const inputContainerClass = "w-full md:flex-1 flex items-center space-x-2";
+const inputClass = "border p-1.5 rounded w-full bg-gray-100 cursor-not-allowed text-gray-900 text-sm md:text-base";
+const unitClass = "text-gray-900 w-16 text-right text-sm md:text-base";
+const buttonClass = "w-full px-4 py-2 text-white rounded font-medium transition-colors text-sm md:text-base";
+
 export default function ViewSelection() {
   const { user } = useAuth();
   const router = useRouter();
@@ -15,14 +22,9 @@ export default function ViewSelection() {
   const [modelDetails, setModelDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // Reuse constants from Step3Confirmation
-  const labelClass = "w-44 font-medium text-gray-900 whitespace-nowrap";
-  const inputContainerClass = "flex-1 flex items-center space-x-2";
-  const inputClass = "border p-1.5 rounded w-full bg-gray-100 cursor-not-allowed text-gray-900";
-  const unitClass = "text-gray-900 w-16 text-right";
-
-  // Replace the existing formatDate function
+  // Format date consistently
   const formatDate = (dateString) => {
     if (!dateString) return '';
     // Parse the UTC date string directly without timezone conversion
@@ -61,24 +63,24 @@ export default function ViewSelection() {
     checkAdminStatus();
   }, [user, router]);
 
-    const handleGenerateReport = async () => {
-      try {
-        const pdfBytes = await generateReport(selectionData, modelDetails);
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        // Use the selection ID from the database record
-        link.download = `${selectionData.id}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error('Error generating report:', error);
-        toast.error('Failed to generate report');
-      }
-    };
+  const handleGenerateReport = async () => {
+    try {
+      const pdfBytes = await generateReport(selectionData, modelDetails);
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      // Use the selection ID from the database record
+      link.download = `${selectionData.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating report:', error);
+      setErrorMessage('Failed to generate report');
+    }
+  };
 
   useEffect(() => {
     const fetchSelectionDetails = async () => {
@@ -186,50 +188,72 @@ export default function ViewSelection() {
     );
   }
 
+  // Project details fields
+  const projectDetailsFields = [
+    { label: "Project Name", value: selectionData.project_name },
+    { label: "Client Name", value: selectionData.client_name },
+    { label: "Location", value: selectionData.location },
+    { label: "Date", value: formatDate(selectionData.date_created) },
+  ];
+
+  // Input parameters fields
+  const inputParametersFields = [
+    { label: "Water Flow Rate", value: selectionData.water_flow_rate, unit: "m³/hr" },
+    { label: "Atmospheric Pressure", value: selectionData.atmospheric_pressure, unit: "kPa" },
+    { label: "Hot Water Temp", value: selectionData.hot_water_temp, unit: "°C" },
+    { label: "Cold Water Temp", value: selectionData.cold_water_temp, unit: "°C" },
+    { label: "Wet Bulb Temp", value: selectionData.wet_bulb_temp, unit: "°C" },
+    { label: "Dry Bulb Temp", value: selectionData.dry_bulb_temp, unit: "°C" },
+  ];
+
+  // Split tower selection fields into left and right columns for better layout
   const leftColumnFields = [
-    { label: "Tower Model", key: "towerModel", value: selectionData.cooling_tower_model },
-    { label: "Number of Cells", key: "numberOfCells", value: selectionData.number_of_cells?.toString() || "1" },
-    { label: "Motor Output/Cell", key: "motorOutput", value: modelDetails?.motor_output, unit: "kW" },
-    { label: "Fan Diameter", key: "fanDiameter", value: modelDetails?.fan_diameter, unit: "mm" },
+    { label: "Tower Model", value: selectionData.cooling_tower_model },
+    { label: "Number of Cells", value: selectionData.number_of_cells?.toString() || "1" },
+    { label: "Motor Output/Cell", value: modelDetails?.motor_output, unit: "kW" },
+    { label: "Fan Diameter", value: modelDetails?.fan_diameter, unit: "mm" },
   ];
 
   const rightColumnFields = [
-    { label: "Nominal Capacity/Cell", key: "nominalCapacity", value: modelDetails?.nominal_capacity, unit: "m³/hr" },
-    { label: "Actual Capacity", key: "actualCapacity", value: Number(selectionData.actual_capacity).toFixed(2), unit: "m³/hr" },
-    { label: "Safety Factor", key: "safetyFactor", value: Number(selectionData.safety_factor).toFixed(2), unit: "%" },
+    { label: "Nominal Capacity/Cell", value: modelDetails?.nominal_capacity, unit: "m³/hr" },
+    { label: "Actual Capacity", value: Number(selectionData.actual_capacity).toFixed(2), unit: "m³/hr" },
+    { label: "Safety Factor", value: Number(selectionData.safety_factor).toFixed(2), unit: "%" },
   ];
 
   return (
     <div className="flex flex-col min-h-screen relative">
       <LiveWallpaper className="fixed inset-0 -z-10" />
       <Navbar className="relative z-10" />
-      <div className="flex-grow p-6 relative z-10">
-        <div className="max-w-4xl mx-auto mt-4 p-6 bg-white shadow-md rounded-md">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">View Selection Details</h2>
+      <div className="flex-grow p-3 sm:p-6 relative z-10">
+        <div className="max-w-4xl mx-auto mt-2 sm:mt-4 p-4 sm:p-6 bg-white shadow-md rounded-md">
+          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">View Selection Details</h2>
+          
+          {errorMessage && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {errorMessage}
+            </div>
+          )}
           
           {/* Project Details Header Row */}
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Project Details</h3>
-            <div className="flex items-center space-x-3">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+            <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2 md:mb-0">Project Details</h3>
+            <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3">
               <label className={labelClass}>Selection By:</label>
-              <input
-                type="text"
-                className="border p-1.5 rounded w-64 bg-gray-100 cursor-not-allowed text-gray-900"
-                value={selectionData.selection_by || ""}
-                disabled
-              />
+              <div className={inputContainerClass}>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={selectionData.selection_by || ""}
+                  disabled
+                />
+              </div>
             </div>
           </div>
 
           {/* Project Details Grid */}
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-            {[
-              { label: "Project Name", key: "projectName", value: selectionData.project_name },
-              { label: "Client Name", key: "clientName", value: selectionData.client_name },
-              { label: "Location", key: "location", value: selectionData.location },
-              { label: "Date", key: "date", value: formatDate(selectionData.date_created) },
-            ].map(({ label, key, value }) => (
-              <div key={key} className="flex items-center space-x-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-8 md:gap-y-4">
+            {projectDetailsFields.map(({ label, value }) => (
+              <div key={label} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
                 <label className={labelClass}>{label}:</label>
                 <div className={inputContainerClass}>
                   <input
@@ -244,27 +268,20 @@ export default function ViewSelection() {
           </div>
 
           {/* Description */}
-          <div className="mt-6 flex items-start space-x-3">
+          <div className="mt-4 md:mt-6 flex flex-col md:flex-row md:items-start space-y-1 md:space-y-0 md:space-x-3">
             <label className={labelClass}>Description:</label>
             <textarea
-              className="border p-2 rounded flex-1 bg-gray-100 min-h-[6rem] resize-y cursor-not-allowed text-gray-900"
+              className="border p-2 rounded w-full bg-gray-100 min-h-[4rem] md:min-h-[6rem] resize-y cursor-not-allowed text-gray-900 text-sm md:text-base"
               value={selectionData.description || ""}
               disabled
             />
           </div>
 
           {/* Input Parameters */}
-          <h3 className="text-lg font-bold mt-6 mb-4 text-gray-900">Input Parameters</h3>
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-            {[
-              { label: "Water Flow Rate", key: "waterFlowRate", value: selectionData.water_flow_rate, unit: "m³/hr" },
-              { label: "Atmospheric Pressure", key: "atmosphericPressure", value: selectionData.atmospheric_pressure, unit: "kPa" },
-              { label: "Hot Water Temp", key: "hotWaterTemp", value: selectionData.hot_water_temp, unit: "°C" },
-              { label: "Cold Water Temp", key: "coldWaterTemp", value: selectionData.cold_water_temp, unit: "°C" },
-              { label: "Wet Bulb Temp", key: "wetBulbTemp", value: selectionData.wet_bulb_temp, unit: "°C" },
-              { label: "Dry Bulb Temp", key: "dryBulbTemp", value: selectionData.dry_bulb_temp, unit: "°C" },
-            ].map(({ label, key, value, unit }) => (
-              <div key={key} className="flex items-center space-x-3">
+          <h3 className="text-base md:text-lg font-bold mt-5 md:mt-6 mb-3 md:mb-4 text-gray-900">Input Parameters</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-8 md:gap-y-4">
+            {inputParametersFields.map(({ label, value, unit }) => (
+              <div key={label} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
                 <label className={labelClass}>{label}:</label>
                 <div className={inputContainerClass}>
                   <input
@@ -273,78 +290,70 @@ export default function ViewSelection() {
                     value={value || ""}
                     disabled
                   />
-                  <span className={unitClass}>{unit}</span>
+                  {unit && <span className={unitClass}>{unit}</span>}
                 </div>
               </div>
             ))}
           </div>
 
           {/* Cooling Tower Selection */}
-          <h3 className="text-lg font-bold mt-6 mb-4 text-gray-900">Cooling Tower Selection</h3>
-          <div className="grid grid-cols-2 gap-x-8">
-            {/* Left Column */}
-            <div className="space-y-4">
-              {leftColumnFields.map(({ label, key, value, unit }) => (
-                <div key={key} className="flex items-center space-x-3">
-                  <label className={labelClass}>{label}:</label>
-                  <div className={inputContainerClass}>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={value || ""}
-                      disabled
-                    />
-                    {unit && <span className={unitClass}>{unit}</span>}
-                  </div>
+          <h3 className="text-base md:text-lg font-bold mt-5 md:mt-6 mb-3 md:mb-4 text-gray-900">Cooling Tower Selection</h3>
+          
+          {/* Cooling Tower Details - Mobile First Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-8 md:gap-y-4">
+            {/* Left Column Fields */}
+            {leftColumnFields.map(({ label, value, unit }) => (
+              <div key={label} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
+                <label className={labelClass}>{label}:</label>
+                <div className={inputContainerClass}>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={value || ""}
+                    disabled
+                  />
+                  {unit && <span className={unitClass}>{unit}</span>}
                 </div>
-              ))}
-            </div>
-            {/* Right Column */}
-            <div className="space-y-4">
-              {rightColumnFields.map(({ label, key, value, unit }) => (
-                <div key={key} className="flex items-center space-x-3">
-                  <label className={labelClass}>{label}:</label>
-                  <div className={inputContainerClass}>
-                    <input
-                      type="text"
-                      className={inputClass}
-                      value={value || ""}
-                      disabled
-                    />
-                    {unit && <span className={unitClass}>{unit}</span>}
-                  </div>
-                </div>
-              ))}
-              
-              {/* Performance Curve Button */}
-              <div className="flex items-center space-x-3">
-                <div className="w-44"></div> {/* Spacer to align with other inputs */}
-                <button
-                  onClick={handlePerformanceCurve}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium transition-colors"
-                >
-                  Generate Performance Curve
-                </button>
               </div>
+            ))}
 
-              {/* Generate Report Button */}
-              <div className="flex items-center space-x-3">
-                <div className="w-44"></div> {/* Spacer to align with other inputs */}
-                <button
-                  onClick={handleGenerateReport}
-                  className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 font-medium transition-colors"
-                >
-                  Generate Report
-                </button>
+            {/* Right Column Fields */}
+            {rightColumnFields.map(({ label, value, unit }) => (
+              <div key={label} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
+                <label className={labelClass}>{label}:</label>
+                <div className={inputContainerClass}>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={value || ""}
+                    disabled
+                  />
+                  {unit && <span className={unitClass}>{unit}</span>}
+                </div>
               </div>
-            </div>
+            ))}
           </div>
 
-          {/* Back Button */}
-          <div className="mt-8 flex justify-start">
+          {/* Action Buttons - Stacked on mobile, side by side on larger screens */}
+          <div className="mt-4 md:mt-6">
+            <button
+              onClick={handlePerformanceCurve}
+              className={`${buttonClass} bg-blue-600 hover:bg-blue-700`}
+            >
+              Generate Performance Curve
+            </button>
+          </div>
+
+          <div className="mt-3 md:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={handleGenerateReport}
+              className={`${buttonClass} bg-purple-600 hover:bg-purple-700`}
+            >
+              Generate Report
+            </button>
             <button 
               onClick={handleBack}
-              className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium"
+              className={`${buttonClass} bg-gray-600 hover:bg-gray-700`}
             >
               Back to Dashboard
             </button>
