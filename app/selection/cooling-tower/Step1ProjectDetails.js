@@ -21,6 +21,7 @@ const parameterRanges = {
 const labelClass = "w-full md:w-44 font-medium text-gray-900 whitespace-nowrap mb-1 md:mb-0";
 const inputContainerClass = "w-full md:flex-1 flex items-center space-x-2";
 const inputClass = "border p-1.5 rounded w-full text-gray-900 text-sm md:text-base";
+const parameterInputClass = "border-2 border-gray-900 p-1.5 rounded w-full text-gray-900 text-sm md:text-base focus:border-blue-500 focus:ring-1 focus:ring-blue-500";
 const unitClass = "text-gray-900 w-16 text-right text-sm md:text-base";
 
 // Update required fields to include project details
@@ -322,7 +323,7 @@ export default function Step1ProjectDetails() {
                   type="number"
                   required
                   placeholder={placeholder}
-                  className={`${inputClass} ${validationErrors[key] ? 'border-red-500' : ''}`}
+                  className={`${parameterInputClass} ${validationErrors[key] ? 'border-red-500' : ''}`}
                   value={selectionData[key] || ""}
                   onChange={(e) => handleInputChange(key, e.target.value)}
                   min={parameterRanges[key]?.min}
