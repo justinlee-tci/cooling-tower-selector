@@ -112,62 +112,61 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen relative overflow-hidden">
-      {/* ✅ Live Wallpaper */}
-      <LiveWallpaper       />
+      <LiveWallpaper />
 
-      <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px] bg-opacity-95 z-10">
-        <div className="flex justify-center mb-12">
+      <div className="bg-white p-8 md:p-12 rounded-2xl shadow-lg w-[90%] max-w-[500px] mx-4 bg-opacity-95 z-10">
+        <div className="flex justify-center mb-8 md:mb-12">
           <img 
             src="/company-logo.jpg" 
             alt="Company Logo" 
-            className="h-24 w-auto object-contain"
+            className="h-16 md:h-24 w-auto object-contain"
           />
         </div>
 
-        <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">Login</h2>
+        <h2 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-center text-gray-900">Login</h2>
 
-        {message && <p className="text-green-600 text-lg mb-4">{message}</p>}
-        {error && <p className="text-red-600 text-lg mb-4">{error}</p>}
+        {message && <p className="text-green-600 text-base md:text-lg mb-4">{message}</p>}
+        {error && <p className="text-red-600 text-base md:text-lg mb-4">{error}</p>}
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-4 md:space-y-6">
           <div>
-            <label className="block text-gray-900 text-lg mb-2">Email</label>
+            <label className="block text-gray-900 text-base md:text-lg mb-2">Email</label>
             <input
               type="email"
               placeholder="example@domain.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              className="w-full p-3 md:p-4 text-base md:text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
               required
             />
           </div>
           <div>
-            <label className="block text-gray-900 text-lg mb-2">Password</label>
+            <label className="block text-gray-900 text-base md:text-lg mb-2">Password</label>
             <input
               type="password"
               placeholder="Your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-4 text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
+              className="w-full p-3 md:p-4 text-base md:text-lg border border-gray-500 rounded-lg bg-white focus:ring-4 focus:ring-blue-500 text-gray-900"
               required
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-4 text-lg font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+            className="w-full bg-blue-600 text-white py-3 md:py-4 text-base md:text-lg font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p className="text-lg mt-6 text-center text-gray-800">
+        <p className="text-base md:text-lg mt-6 text-center text-gray-800">
           Don&apos;t have an account?{" "}
           <a href="/auth/register" className="text-green-600 hover:underline">
             Register
           </a>
         </p>
-        <div className="text-sm mt-2 text-center text-gray-600">
+        <div className="text-sm md:text-base mt-2 text-center text-gray-600">
           <p>Forgot your password?</p>
           <p className="mt-1">
             Please reach out to{" "}
