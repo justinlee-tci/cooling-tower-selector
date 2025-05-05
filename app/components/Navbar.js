@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/authContext";
@@ -14,6 +14,8 @@ const Navbar = () => {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -50,7 +52,7 @@ const Navbar = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownOpen) {
+      if (dropdownOpen && dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
       }
     };
@@ -94,8 +96,52 @@ const Navbar = () => {
               className="h-10 w-auto object-contain"
             />
           </Link>
-          {/* Navigation Items */}
-          <div className="flex space-x-4">
+
+          {/* Mobile menu button */}
+          <div className="flex md:hidden">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+              aria-expanded="false"
+            >
+              <span className="sr-only">Open main menu</span>
+              {/* Icon when menu is closed */}
+              <svg
+                className={`${mobileMenuOpen ? 'hidden' : 'block'} h-6 w-6`}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+              {/* Icon when menu is open */}
+              <svg
+                className={`${mobileMenuOpen ? 'block' : 'hidden'} h-6 w-6`}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Desktop Navigation Items */}
+          <div className="hidden md:flex md:items-center md:space-x-4">
             {/* Dashboard button with correct redirection */}
             <Link href={dashboardRoute} className="text-gray-700 hover:bg-gray-100 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
               Dashboard
@@ -106,7 +152,7 @@ const Navbar = () => {
             
             {/* Selection dropdown menu - only show for user role */}
             {role === "user" && (
-              <div className="relative">
+              <div className="relative" ref={dropdownRef}>
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
@@ -128,7 +174,7 @@ const Navbar = () => {
                 {/* Dropdown menu with improved z-index */}
                 {dropdownOpen && (
                   <div 
-                    className="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
+                    className="absolute right-0 z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="py-1" role="menu" aria-orientation="vertical">
@@ -156,6 +202,58 @@ const Navbar = () => {
               Logout
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Mobile menu, show/hide based on menu state */}
+      <div className={`${mobileMenuOpen ? 'block' : 'hidden'} md:hidden`}>
+        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200">
+          <Link href={dashboardRoute} 
+            className="text-gray-700 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Dashboard
+          </Link>
+          <Link href="/account-details" 
+            className="text-gray-700 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Account Details
+          </Link>
+          
+          {/* Selection menu items - only show for user role */}
+          {role === "user" && (
+            <div>
+              <div className="text-gray-700 px-3 py-2 rounded-md text-base font-medium">
+                Selection
+              </div>
+              <div className="pl-6">
+                <Link
+                  href="/selection/cooling-tower"
+                  className="text-gray-700 hover:bg-gray-100 hover:text-gray-900 block px-3 py-2 rounded-md text-sm font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Cooling Tower Selection
+                </Link>
+                <div className="block px-3 py-2 text-sm text-gray-500 cursor-not-allowed">
+                  Stay Tuned for More Selections
+                </div>
+                <div className="block px-3 py-2 text-sm text-gray-500 cursor-not-allowed">
+                  Stay Tuned for More Selections
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <button 
+            onClick={() => {
+              handleLogout();
+              setMobileMenuOpen(false);
+            }} 
+            className="text-red-600 hover:bg-red-50 hover:text-red-700 block w-full text-left px-3 py-2 rounded-md text-base font-medium"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </nav>
