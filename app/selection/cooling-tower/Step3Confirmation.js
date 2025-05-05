@@ -7,11 +7,11 @@ import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast"; // Add this import for notifications
 import { generateReport } from '@/components/GenerateReport';
 
-// Add this CSS class to prevent text wrapping and ensure consistent widths
-const labelClass = "w-44 font-medium text-gray-900 whitespace-nowrap";
-const inputContainerClass = "flex-1 flex items-center space-x-2";
-const inputClass = "border p-1.5 rounded w-full bg-gray-100 cursor-not-allowed text-gray-900";
-const unitClass = "text-gray-900 w-16 text-right";
+// Add consistent class definitions with mobile-first approach
+const labelClass = "w-full md:w-44 font-medium text-gray-900 whitespace-nowrap mb-1 md:mb-0";
+const inputContainerClass = "w-full md:flex-1 flex items-center space-x-2";
+const inputClass = "border p-1.5 rounded w-full bg-gray-100 cursor-not-allowed text-gray-900 text-sm md:text-base";
+const unitClass = "text-gray-900 w-16 text-right text-sm md:text-base";
 
 // Date utility functions for consistent handling
 const formatDateForDisplay = (dateString) => {
@@ -288,6 +288,23 @@ export default function Step3Confirmation() {
     { label: "Safety Factor", key: "safetyFactor", value: Number(selectionData.safetyFactor).toFixed(2), unit: "%" },
   ];
 
+  // Project details fields
+  const projectDetailsFields = [
+    { label: "Project Name", key: "projectName" },
+    { label: "Client Name", key: "clientName" },
+    { label: "Location", key: "location" },
+  ];
+
+  // Input parameters fields
+  const inputParamsFields = [
+    { label: "Water Flow Rate", key: "waterFlowRate", unit: "m³/hr" },
+    { label: "Atmospheric Pressure", key: "atmosphericPressure", unit: "kPa" },
+    { label: "Hot Water Temp", key: "hotWaterTemp", unit: "°C" },
+    { label: "Cold Water Temp", key: "coldWaterTemp", unit: "°C" },
+    { label: "Wet Bulb Temp", key: "wetBulbTemp", unit: "°C" },
+    { label: "Dry Bulb Temp", key: "dryBulbTemp", unit: "°C" },
+  ];
+
   return (
     <>
       {/* Update the confirmation modal styling */}
@@ -297,18 +314,18 @@ export default function Step3Confirmation() {
           <div className="absolute inset-0 bg-gray-900 bg-opacity-30 backdrop-blur-sm" />
           
           {/* Modal content */}
-          <div className="relative bg-white/90 p-6 rounded-lg shadow-xl max-w-md w-full mx-4 backdrop-blur-md border border-gray-200">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Confirm Save</h2>
-            <p className="mb-6 text-gray-800">Are you sure you want to save this selection?</p>
+          <div className="relative bg-white/90 p-4 md:p-6 rounded-lg shadow-xl w-11/12 max-w-md mx-auto backdrop-blur-md border border-gray-200">
+            <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900">Confirm Save</h2>
+            <p className="mb-4 md:mb-6 text-gray-800 text-sm md:text-base">Are you sure you want to save this selection?</p>
             
             {error && (
-              <p className="mb-4 text-red-600 text-sm">{error}</p>
+              <p className="mb-3 md:mb-4 text-red-600 text-xs md:text-sm">{error}</p>
             )}
             
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setShowConfirmation(false)}
-                className="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors"
+                className="px-3 md:px-4 py-1.5 md:py-2 rounded bg-gray-600 text-white hover:bg-gray-700 font-medium transition-colors text-sm md:text-base"
                 disabled={isSubmitting}
               >
                 Cancel
@@ -316,11 +333,11 @@ export default function Step3Confirmation() {
               <button
                 onClick={confirmSave}
                 disabled={isSubmitting}
-                className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:bg-green-400 font-medium transition-colors flex items-center space-x-2"
+                className="px-3 md:px-4 py-1.5 md:py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:bg-green-400 font-medium transition-colors flex items-center space-x-2 text-sm md:text-base"
               >
                 {isSubmitting ? (
                   <>
-                    <span className="inline-block animate-spin mr-2">⏳</span>
+                    <span className="inline-block animate-spin mr-1 md:mr-2">⏳</span>
                     <span>Saving...</span>
                   </>
                 ) : (
@@ -332,32 +349,30 @@ export default function Step3Confirmation() {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
+      <div className="w-full max-w-4xl mx-auto mt-4 md:mt-10 p-4 md:p-6 bg-white shadow-md rounded-md">
         {/* Title */}
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Confirm Selection</h2>
+        <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-4 md:mb-6">Confirm Selection</h2>
 
         {/* Project Details Header Row */}
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-gray-900">Project Details</h3>
-          <div className="flex items-center space-x-3">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+          <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2 md:mb-0">Project Details</h3>
+          <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3">
             <label className={labelClass}>Selection By:</label>
-            <input
-              type="text"
-              className="border p-1.5 rounded w-64 bg-gray-100 cursor-not-allowed text-gray-900"
-              value={selectionData.selectionBy || ""}
-              disabled
-            />
+            <div className={inputContainerClass}>
+              <input
+                type="text"
+                className={inputClass}
+                value={selectionData.selectionBy || ""}
+                disabled
+              />
+            </div>
           </div>
         </div>
 
         {/* Project Details Grid */}
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          {[
-            { label: "Project Name", key: "projectName" },
-            { label: "Client Name", key: "clientName" },
-            { label: "Location", key: "location" },
-          ].map(({ label, key }) => (
-            <div key={key} className="flex items-center space-x-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-8 md:gap-y-4">
+          {projectDetailsFields.map(({ label, key }) => (
+            <div key={key} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
               <label className={labelClass}>{label}:</label>
               <div className={inputContainerClass}>
                 <input
@@ -370,7 +385,7 @@ export default function Step3Confirmation() {
             </div>
           ))}
           {/* Special handling for date to ensure consistent display */}
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
             <label className={labelClass}>Date:</label>
             <div className={inputContainerClass}>
               <input
@@ -384,27 +399,20 @@ export default function Step3Confirmation() {
         </div>
 
         {/* Description - Updated Layout */}
-        <div className="mt-6 flex items-start space-x-3">
+        <div className="mt-4 md:mt-6 flex flex-col md:flex-row md:items-start space-y-1 md:space-y-0 md:space-x-3">
           <label className={labelClass}>Description:</label>
           <textarea
-            className="border p-2 rounded flex-1 bg-gray-100 min-h-[6rem] resize-y cursor-not-allowed text-gray-900"
+            className="border p-2 rounded w-full bg-gray-100 min-h-[4rem] md:min-h-[6rem] resize-y cursor-not-allowed text-gray-900 text-sm md:text-base"
             value={selectionData.description || ""}
             disabled
           />
         </div>
 
         {/* Input Parameters */}
-        <h3 className="text-lg font-bold mt-6 mb-4 text-gray-900">Input Parameters</h3>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          {[
-            { label: "Water Flow Rate", key: "waterFlowRate", unit: "m³/hr" },
-            { label: "Atmospheric Pressure", key: "atmosphericPressure", unit: "kPa" },
-            { label: "Hot Water Temp", key: "hotWaterTemp", unit: "°C" },
-            { label: "Cold Water Temp", key: "coldWaterTemp", unit: "°C" },
-            { label: "Wet Bulb Temp", key: "wetBulbTemp", unit: "°C" },
-            { label: "Dry Bulb Temp", key: "dryBulbTemp", unit: "°C" },
-          ].map(({ label, key, unit }) => (
-            <div key={key} className="flex items-center space-x-3">
+        <h3 className="text-base md:text-lg font-bold mt-5 md:mt-6 mb-3 md:mb-4 text-gray-900">Input Parameters</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-8 md:gap-y-4">
+          {inputParamsFields.map(({ label, key, unit }) => (
+            <div key={key} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
               <label className={labelClass}>{label}:</label>
               <div className={inputContainerClass}>
                 <input
@@ -420,69 +428,64 @@ export default function Step3Confirmation() {
         </div>
 
         {/* Cooling Tower Selection - Updated Header */}
-        <h3 className="text-lg font-bold mt-6 mb-4 text-gray-900">Cooling Tower Selection</h3>
+        <h3 className="text-base md:text-lg font-bold mt-5 md:mt-6 mb-3 md:mb-4 text-gray-900">Cooling Tower Selection</h3>
 
-        {/* Cooling Tower Details Grid */}
-        <div className="grid grid-cols-2 gap-x-8">
-          {/* Left Column */}
-          <div className="space-y-4">
-            {leftColumnFields.map(({ label, key, value, unit }) => (
-              <div key={key} className="flex items-center space-x-3">
-                <label className={labelClass}>{label}:</label>
-                <div className={inputContainerClass}>
-                  <input
-                    type="text"
-                    className={inputClass}
-                    value={value || ""}
-                    disabled
-                  />
-                  {unit && <span className={unitClass}>{unit}</span>}
-                </div>
+        {/* Cooling Tower Details - Mobile First Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-8 md:gap-y-4">
+          {/* Left Column Fields */}
+          {leftColumnFields.map(({ label, key, value, unit }) => (
+            <div key={key} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
+              <label className={labelClass}>{label}:</label>
+              <div className={inputContainerClass}>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={value || ""}
+                  disabled
+                />
+                {unit && <span className={unitClass}>{unit}</span>}
               </div>
-            ))}
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-4">
-            {rightColumnFields.map(({ label, key, value, unit }) => (
-              <div key={key} className="flex items-center space-x-3">
-                <label className={labelClass}>{label}:</label>
-                <div className={inputContainerClass}>
-                  <input
-                    type="text"
-                    className={inputClass}
-                    value={value || ""}
-                    disabled
-                  />
-                  {unit && <span className={unitClass}>{unit}</span>}
-                </div>
-              </div>
-            ))}
-            
-            {/* Performance Curve Button */}
-            <div className="flex items-center space-x-3">
-              <div className="w-44"></div>
-              <button
-                onClick={handlePerformanceCurve}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium transition-colors"
-              >
-                Generate Performance Curve
-              </button>
             </div>
-          </div>
+          ))}
+
+          {/* Right Column Fields */}
+          {rightColumnFields.map(({ label, key, value, unit }) => (
+            <div key={key} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
+              <label className={labelClass}>{label}:</label>
+              <div className={inputContainerClass}>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={value || ""}
+                  disabled
+                />
+                {unit && <span className={unitClass}>{unit}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+          
+        {/* Performance Curve Button - Mobile Friendly */}
+        <div className="mt-4 md:mt-6">
+          <button
+            onClick={handlePerformanceCurve}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium transition-colors text-sm md:text-base"
+          >
+            Generate Performance Curve
+          </button>
         </div>
 
-        {/* Buttons */}
-        <div className="mt-8 flex justify-between">
+        {/* Buttons - Mobile Friendly */}
+        <div className="mt-6 md:mt-8 flex flex-col md:flex-row justify-between space-y-3 md:space-y-0">
           <button 
             onClick={prevStep} 
-            className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium"
+            className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium text-sm md:text-base w-full md:w-auto"
           >
             Back
           </button>
           <button 
             onClick={handleFinish} 
-            className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium"
+            className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium text-sm md:text-base w-full md:w-auto"
           >
             Finish
           </button>

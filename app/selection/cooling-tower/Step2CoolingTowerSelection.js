@@ -10,8 +10,21 @@ export default function Step2CoolingTowerSelection() {
   const [selectedCells, setSelectedCells] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState("table"); // 'cards' or 'table'
+  const [viewMode, setViewMode] = useState(() => {
+    // Default to table for desktop, cards for mobile
+    return window.innerWidth >= 768 ? "table" : "cards";
+  });
   const [expandedModel, setExpandedModel] = useState(null);
+
+  // Add window resize listener to update view mode
+  useEffect(() => {
+    const handleResize = () => {
+      setViewMode(window.innerWidth >= 768 ? "table" : "cards");
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fetch cooling tower models and performance data
   useEffect(() => {
@@ -262,8 +275,8 @@ export default function Step2CoolingTowerSelection() {
         />
       </div>
 
-      {/* View Toggle */}
-      <div className="mb-4 flex justify-end">
+      {/* View Toggle - Moved to left side */}
+      <div className="mb-4 flex justify-start">
         <div className="inline-flex rounded-md shadow-sm">
           <button
             onClick={() => setViewMode("cards")}
