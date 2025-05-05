@@ -17,11 +17,11 @@ const parameterRanges = {
   dryBulbTemp: { min: 15, max: 45 }, // °C
 };
 
-// Add these consistent styling classes to match Step3
-const labelClass = "w-44 font-medium text-gray-900 whitespace-nowrap";
-const inputContainerClass = "flex-1 flex items-center space-x-2";
-const inputClass = "border p-1.5 rounded w-full text-gray-900";
-const unitClass = "text-gray-900 w-16 text-right";
+// Update the styling constants
+const labelClass = "w-full md:w-44 font-medium text-gray-900 whitespace-nowrap mb-1 md:mb-0";
+const inputContainerClass = "w-full md:flex-1 flex items-center space-x-2";
+const inputClass = "border p-1.5 rounded w-full text-gray-900 text-sm md:text-base";
+const unitClass = "text-gray-900 w-16 text-right text-sm md:text-base";
 
 // Update required fields to include project details
 const requiredFields = [
@@ -238,14 +238,14 @@ export default function Step1ProjectDetails() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-md rounded-md">z
-    <h1 className="text-2xl font-bold text-gray-900 mb-4 text-center">Cooling Tower Selection</h1>
-    <h2 className="text-xl font-bold text-gray-900 mb-6">Project Details</h2>
+    <div className="w-full max-w-4xl mx-auto p-4 md:p-6 bg-white shadow-md rounded-md">
+      <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 text-center">Cooling Tower Selection</h1>
+      <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-6 pb-2 border-b-2 border-gray-900">Project Details</h2>
 
-      {/* Project Details Header Row */}
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold text-gray-900">Project Information</h3>
-        <div className="flex items-center space-x-3">
+      {/* Project Details Header Row - Modified for mobile */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
+        <h3 className="text-lg font-bold text-gray-900 mb-2 md:mb-0">Project Information</h3>
+        <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-3">
           <label className={labelClass}>Selection By:</label>
           <div className={`${inputContainerClass} relative`}>
             <input
@@ -269,10 +269,10 @@ export default function Step1ProjectDetails() {
         </div>
       </div>
 
-      {/* Project Details Grid */}
-      <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+      {/* Project Details Grid - Modified for mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-8 md:gap-y-4">
         {projectDetails.map(({ label, key, type, placeholder }) => (
-          <div key={key} className="flex items-center space-x-3 relative">
+          <div key={key} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3 relative">
             <label className={labelClass}>{label}:</label>
             <div className={`${inputContainerClass} relative`}>
               <input
@@ -297,12 +297,12 @@ export default function Step1ProjectDetails() {
         ))}
       </div>
 
-      {/* Description */}
-      <div className="mt-6 flex items-start space-x-3">
+      {/* Description - Modified for mobile */}
+      <div className="mt-6 flex flex-col md:flex-row md:items-start space-y-1 md:space-y-0 md:space-x-3">
         <label className={labelClass}>Description:</label>
         <div className={inputContainerClass}>
           <textarea
-            className="border p-2 rounded w-full text-gray-900 min-h-[6rem] resize-y"
+            className="border p-2 rounded w-full text-gray-900 min-h-[6rem] resize-y text-sm md:text-base"
             placeholder="Enter project description (optional)"
             value={selectionData.description || ""}
             onChange={(e) => updateSelectionData({ description: e.target.value })}
@@ -310,12 +310,12 @@ export default function Step1ProjectDetails() {
         </div>
       </div>
 
-      {/* Input Parameters */}
+      {/* Input Parameters - Modified for mobile */}
       <h3 className="text-lg font-bold mt-6 mb-4 text-gray-900">Input Parameters</h3>
-      <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-8 md:gap-y-4">
         {inputParameters.map(({ label, key, unit, placeholder }) => (
           <div key={key} className="flex flex-col space-y-1">
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
               <label className={labelClass}>{label}:</label>
               <div className={inputContainerClass}>
                 <input
@@ -332,18 +332,18 @@ export default function Step1ProjectDetails() {
               </div>
             </div>
             {validationErrors[key] && (
-              <p className="text-red-500 text-sm ml-48">{validationErrors[key]}</p>
+              <p className="text-red-500 text-sm ml-0 md:ml-48">{validationErrors[key]}</p>
             )}
           </div>
         ))}
       </div>
 
-      {/* Next Button */}
+      {/* Next Button - Modified for mobile */}
       <div className="mt-8 flex justify-end">
         <button
           onClick={handleNextStep}
           disabled={!isFormComplete}
-          className={`px-6 py-2 rounded font-medium transition-colors ${
+          className={`w-full md:w-auto px-6 py-2 rounded font-medium transition-colors ${
             isFormComplete
               ? "bg-blue-600 text-white hover:bg-blue-700"
               : "bg-gray-300 text-gray-600 cursor-not-allowed"
