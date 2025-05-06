@@ -165,10 +165,10 @@ export default function Step2CoolingTowerSelection() {
         </div>
 
         <div className="grid grid-cols-2 gap-y-3 text-sm">
-          <div className="text-gray-800 font-medium">Nominal Capacity:</div>
+          <div className="text-gray-800 font-medium">Nominal Capacity/cell:</div>
           <div className="text-right text-gray-900 font-medium">{model.nominal_capacity} RT</div>
           
-          <div className="text-gray-800 font-medium">Nominal Flowrate:</div>
+          <div className="text-gray-800 font-medium">Nominal Flow Rate/cell:</div>
           <div className="text-right text-gray-900 font-medium">{model.nominal_flowrate.toFixed(2)} m³/hr</div>
           
           <div className="text-gray-800 font-medium">Motor Output:</div>
@@ -322,15 +322,15 @@ export default function Step2CoolingTowerSelection() {
             <thead>
               <tr className="bg-gray-200">
                 <th className="border p-2 text-center text-gray-900">Select</th>
-                <th className="border p-2 text-right text-gray-900 whitespace-nowrap">Model</th>
-                <th className="border p-2 text-right text-gray-900 whitespace-nowrap">Nominal Capacity (RT)</th>
-                <th className="border p-2 text-right text-gray-900 whitespace-nowrap">Nominal Flowrate (m³/hr)</th>
-                <th className="border p-2 text-right text-gray-900 whitespace-nowrap">Motor Output (kW)</th>
-                <th className="border p-2 text-right text-gray-900 whitespace-nowrap">Fan Diameter (mm)</th>
-                <th className="border p-2 text-right text-gray-900 whitespace-nowrap">Dry Weight (kg)</th>
-                <th className="border p-2 text-right text-gray-900 whitespace-nowrap">Operating Weight (kg)</th>
-                <th className="border p-2 text-right text-gray-900 whitespace-nowrap">Actual Capacity (m³/hr)</th>
-                <th className="border p-2 text-right text-gray-900 whitespace-nowrap">Safety Factor (%)</th>
+                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Model</th>
+                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Nominal Capacity/cell (RT)</th>
+                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Nominal Flow Rate/cell (m³/hr)</th>
+                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Motor Output (kW)</th>
+                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Fan Diameter (mm)</th>
+                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Dry Weight (kg)</th>
+                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Operating Weight (kg)</th>
+                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Actual Flow Rate (m³/hr)</th>
+                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Safety Factor (%)</th>
               </tr>
             </thead>
             <tbody>
@@ -353,13 +353,13 @@ export default function Step2CoolingTowerSelection() {
                       onClick={(e) => e.stopPropagation()} // Prevent row click when clicking radio
                     />
                   </td>
-                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.model_name}</td>
+                  <td className="border p-2 text-left text-gray-900 whitespace-nowrap">{model.model_name}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.nominal_capacity}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.nominal_flowrate.toFixed(2)}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.motor_output}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.fan_diameter}</td>
-                  <td className="border p-2 text-gray-900 whitespace-nowrap">{model.dry_weight}</td>
-                  <td className="border p-2 text-gray-900 whitespace-nowrap">{model.operating_weight}</td>
+                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.dry_weight}</td>
+                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.operating_weight}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualCapacity.toFixed(2)}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.safetyFactor.toFixed(2)}%</td>
                 </tr>

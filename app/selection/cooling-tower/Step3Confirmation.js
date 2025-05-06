@@ -192,12 +192,35 @@ export default function Step3Confirmation() {
     }
   };
 
+  // Update the rightColumnFields array
+  const rightColumnFields = [
+    { 
+      label: "Nominal Flow Rate/Cell", 
+      key: "nominalFlowrate", 
+      value: modelDetails?.nominal_flowrate.toFixed(2), 
+      unit: "m³/hr" 
+    },
+    { 
+      label: "Actual Flow Rate", 
+      key: "actualCapacity", 
+      value: Number(selectionData.actualCapacity).toFixed(2), 
+      unit: "m³/hr" 
+    },
+    { 
+      label: "Safety Factor", 
+      key: "safetyFactor", 
+      value: Number(selectionData.safetyFactor).toFixed(2), 
+      unit: "%" 
+    }
+  ];
+
+  // Update the useEffect for fetching model details
   useEffect(() => {
     const fetchModelDetails = async () => {
       if (selectionData.selectedModel) {
         const { data, error } = await supabase
           .from('cooling_tower_models')
-          .select('motor_output, fan_diameter, nominal_capacity')
+          .select('motor_output, fan_diameter, nominal_flowrate')  // Changed from nominal_capacity
           .eq('model_name', selectionData.selectedModel)
           .single();
 
@@ -280,12 +303,6 @@ export default function Step3Confirmation() {
     },
     { label: "Motor Output/Cell", key: "motorOutput", value: modelDetails?.motor_output, unit: "kW" },
     { label: "Fan Diameter", key: "fanDiameter", value: modelDetails?.fan_diameter, unit: "mm" },
-  ];
-
-  const rightColumnFields = [
-    { label: "Nominal Capacity/Cell", key: "nominalCapacity", value: modelDetails?.nominal_capacity, unit: "m³/hr" },
-    { label: "Actual Capacity", key: "actualCapacity", value: Number(selectionData.actualCapacity).toFixed(2), unit: "m³/hr" },
-    { label: "Safety Factor", key: "safetyFactor", value: Number(selectionData.safetyFactor).toFixed(2), unit: "%" },
   ];
 
   // Project details fields
