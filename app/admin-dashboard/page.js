@@ -21,6 +21,7 @@ export default function AdminDashboard() {
   const [selectionToDelete, setSelectionToDelete] = useState(null);
   const [mobileView, setMobileView] = useState(false);
   const [activeTab, setActiveTab] = useState('users'); // For mobile tabs: 'users' or 'selections'
+  const [userName, setUserName] = useState('');  // Added state for user's name
 
   useEffect(() => {
     // Check if screen width is mobile on initial load
@@ -44,19 +45,20 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (user) {
-      const fetchLastLoggedIn = async () => {
+      const fetchUserData = async () => {
         const { data, error } = await supabase
           .from("users")
-          .select("last_logged_in")
+          .select("last_logged_in, name")
           .eq("email", user.email)
           .single();
         if (error) {
-          console.error("Error fetching last logged in time:", error);
+          console.error("Error fetching user data:", error);
         } else {
           setLastLoggedIn(data?.last_logged_in);
+          setUserName(data?.name || ''); // Set the user's name
         }
       };
-      fetchLastLoggedIn();
+      fetchUserData();
     }
   }, [user]);
 
@@ -281,7 +283,9 @@ export default function AdminDashboard() {
       <div className="flex-grow p-4 md:p-6">
         <div className="bg-white bg-opacity-90 p-4 md:p-8 rounded-2xl shadow-lg">
           <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-900">Admin Dashboard</h1>
-          <p className="mt-2 md:mt-4 text-center text-base md:text-lg text-gray-800">Hello, {user?.email}</p>
+          <p className="mt-2 md:mt-4 text-center text-base md:text-lg text-gray-800">
+            Hello, {userName || user?.email}
+          </p>
           {lastLoggedIn && (
             <p className="mt-2 md:mt-4 text-center text-sm md:text-lg text-gray-600">
               Last logged in: {formatLastLoggedIn(lastLoggedIn)}
