@@ -130,7 +130,7 @@ export default function Step3Confirmation() {
         number_of_cells: parseInt(selectionData.numberOfCells), // Remove the || 1 fallback
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
-        actual_capacity: parseFloat(selectionData.actualCapacity),
+        actual_flowrate: parseFloat(selectionData.actual_flowrate),
       };
 
       const { error: insertError } = await supabase
@@ -155,7 +155,7 @@ export default function Step3Confirmation() {
         atmospheric_pressure: parseFloat(selectionData.atmosphericPressure),
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
-        actual_capacity: parseFloat(selectionData.actualCapacity),
+        actual_flowrate: parseFloat(selectionData.actual_flowrate),
         number_of_cells: parseInt(selectionData.numberOfCells)
       };
 
@@ -192,35 +192,12 @@ export default function Step3Confirmation() {
     }
   };
 
-  // Update the rightColumnFields array
-  const rightColumnFields = [
-    { 
-      label: "Nominal Flow Rate/Cell", 
-      key: "nominalFlowrate", 
-      value: modelDetails?.nominal_flowrate.toFixed(2), 
-      unit: "m³/hr" 
-    },
-    { 
-      label: "Actual Flow Rate", 
-      key: "actualCapacity", 
-      value: Number(selectionData.actualCapacity).toFixed(2), 
-      unit: "m³/hr" 
-    },
-    { 
-      label: "Safety Factor", 
-      key: "safetyFactor", 
-      value: Number(selectionData.safetyFactor).toFixed(2), 
-      unit: "%" 
-    }
-  ];
-
-  // Update the useEffect for fetching model details
   useEffect(() => {
     const fetchModelDetails = async () => {
       if (selectionData.selectedModel) {
         const { data, error } = await supabase
           .from('cooling_tower_models')
-          .select('motor_output, fan_diameter, nominal_flowrate')  // Changed from nominal_capacity
+          .select('motor_output, fan_diameter, nominal_flowrate')
           .eq('model_name', selectionData.selectedModel)
           .single();
 
@@ -273,7 +250,7 @@ export default function Step3Confirmation() {
         atmospheric_pressure: parseFloat(selectionData.atmosphericPressure),
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
-        actual_capacity: parseFloat(selectionData.actualCapacity),
+        actual_flowrate: parseFloat(selectionData.actual_flowrate),
         number_of_cells: parseInt(selectionData.numberOfCells)
       };
       
@@ -303,6 +280,28 @@ export default function Step3Confirmation() {
     },
     { label: "Motor Output/Cell", key: "motorOutput", value: modelDetails?.motor_output, unit: "kW" },
     { label: "Fan Diameter", key: "fanDiameter", value: modelDetails?.fan_diameter, unit: "mm" },
+  ];
+
+  // Update the rightColumnFields array by changing the field labels and data sources
+  const rightColumnFields = [
+    { 
+      label: "Nominal Flow Rate/Cell", 
+      key: "nominalFlowRate", 
+      value: modelDetails?.nominal_flowrate.toFixed(2), // Changed from nominal_flow_rate to nominal_flowrate
+      unit: "m³/hr" 
+    },
+    { 
+      label: "Actual Flow Rate", 
+      key: "actualFlowRate", 
+      value: Number(selectionData.actualFlowRate).toFixed(2), 
+      unit: "m³/hr" 
+    },
+    { 
+      label: "Safety Factor", 
+      key: "safetyFactor", 
+      value: Number(selectionData.safetyFactor).toFixed(2), 
+      unit: "%" 
+    },
   ];
 
   // Project details fields

@@ -117,7 +117,7 @@ export default function ViewSelection() {
             atmospheric_pressure,
             cooling_tower_model,
             safety_factor,
-            actual_capacity,
+            actual_flowrate,
             number_of_cells
           `)
           .eq('id', params.selectionId)
@@ -131,10 +131,10 @@ export default function ViewSelection() {
           throw new Error('Unauthorized access');
         }
 
-        // Rest of your existing code...
+        // First update the model details fetch in the useEffect
         const { data: modelData, error: modelError } = await supabase
           .from('cooling_tower_models')
-          .select('motor_output, fan_diameter, nominal_capacity')
+          .select('motor_output, fan_diameter, nominal_flowrate')
           .eq('model_name', selection.cooling_tower_model)
           .single();
 
@@ -215,9 +215,21 @@ export default function ViewSelection() {
   ];
 
   const rightColumnFields = [
-    { label: "Nominal Capacity/Cell", value: modelDetails?.nominal_capacity, unit: "m³/hr" },
-    { label: "Actual Capacity", value: Number(selectionData.actual_capacity).toFixed(2), unit: "m³/hr" },
-    { label: "Safety Factor", value: Number(selectionData.safety_factor).toFixed(2), unit: "%" },
+    { 
+      label: "Nominal Flow Rate/Cell", 
+      value: modelDetails?.nominal_flowrate.toFixed(2), 
+      unit: "m³/hr" 
+    },
+    { 
+      label: "Actual Flow Rate", 
+      value: Number(selectionData.actual_flowrate).toFixed(2), 
+      unit: "m³/hr" 
+    },
+    { 
+      label: "Safety Factor", 
+      value: Number(selectionData.safety_factor).toFixed(2), 
+      unit: "%" 
+    },
   ];
 
   return (

@@ -2,12 +2,16 @@
 import { useEffect, useState } from "react";
 import { useSelection } from "./SelectionContext";
 import { supabase } from "../../lib/supabaseClient";
+import { calculateCoolingCapacity, calculateFlowRate } from '@/formula/coolingTowerCalculations';
 
 export default function Step2CoolingTowerSelection() {
   const { selectionData, updateSelectionData, nextStep, prevStep } = useSelection();
   const [coolingTowerModels, setCoolingTowerModels] = useState([]);
+  const [filteredModels, setFilteredModels] = useState([]); // State for filtered models
   const [performanceData, setPerformanceData] = useState({});
   const [selectedCells, setSelectedCells] = useState(1);
+  const [minSafetyFactor, setMinSafetyFactor] = useState(100);
+  const [maxSafetyFactor, setMaxSafetyFactor] = useState(150);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState(() => {
@@ -35,7 +39,7 @@ export default function Step2CoolingTowerSelection() {
       // Fetch models
       const { data: models, error: modelError } = await supabase
         .from("cooling_tower_models")
-        .select("model_name, nominal_capacity, nominal_flowrate, motor_output, fan_diameter, dry_weight, operating_weight");
+        .select("model_name, type , nominal_capacity, nominal_flowrate, motor_output, fan_diameter, dry_weight, operating_weight");
 
       if (modelError) {
         setError("Failed to load cooling tower models.");
@@ -64,7 +68,7 @@ export default function Step2CoolingTowerSelection() {
 
       setCoolingTowerModels(models || []);
       setPerformanceData(performanceMap);
-      updateSelectionData({ selectedModel: null, actualCapacity: null, safetyFactor: null }); // Reset selection
+      updateSelectionData({ selectedModel: null, actualFlowRate: null, safetyFactor: null }); // Reset selection
 
       setLoading(false);
     };
@@ -72,50 +76,74 @@ export default function Step2CoolingTowerSelection() {
     fetchData();
   }, []);
 
-  // Calculate actual capacity and safety factor
-  const filteredModels = coolingTowerModels
-  .map((model) => {
-    const baseCapacity = parseFloat(model.nominal_flowrate) || 0; // Use nominal_flowrate instead of performance data
-    const actualCapacity = baseCapacity * selectedCells; // Adjust based on cell count
+  // Calculate model data with actual capacity and safety factor
+  useEffect(() => {
+    if (coolingTowerModels.length > 0 && selectionData) {
+      const calculatedModels = coolingTowerModels.map((model) => {
+        const actualCapacity = calculateCoolingCapacity(
+          Number(selectionData.hotWaterTemp),
+          Number(selectionData.coldWaterTemp),
+          Number(selectionData.wetBulbTemp),
+          Number(selectionData.waterFlowRate),
+          String(model.type).toUpperCase(),
+        );
 
-    const designFlowRate = parseFloat(selectionData.waterFlowRate) || 1; // Prevent division by zero
-    const safetyFactor = (actualCapacity / designFlowRate) * 100;
+        const actualFlowRate = calculateFlowRate(
+          Number(selectionData.hotWaterTemp),
+          Number(selectionData.coldWaterTemp),
+          Number(selectionData.wetBulbTemp),
+          Number(model.nominal_capacity),
+          String(model.type).toUpperCase(),
+        )*selectedCells;
 
-    return { 
-      ...model, 
-      actualCapacity: Number(actualCapacity), 
-      safetyFactor: Number(safetyFactor) 
-    };
-  });
+        const designCapacity = model.nominal_capacity || 1;
+        const designFlowRate = model.nominal_flowrate || 1;
+        // Corrected safety factor calculation: (design flow rate * cells) / actual capacity * 100
+        // const safetyFactor = (designFlowRate * selectedCells) / actualFlowRate * 100;
+        // const safetyFactor = designFlowRate;
+        // const safetyFactor = actualFlowRate;
+        const safetyFactor = actualFlowRate / selectionData.waterFlowRate * 100;
 
-  // Update the slider onChange handler to include updating selection data
+        return { 
+          ...model, 
+          actualFlowRate: Number(actualFlowRate), 
+          safetyFactor: Number(safetyFactor) 
+        };
+      });
+
+      // Filter models by user-defined safety factor range
+      const modelsWithValidSafetyFactor = calculatedModels.filter(model => 
+        model.safetyFactor >= minSafetyFactor && model.safetyFactor <= maxSafetyFactor
+      );
+
+      setFilteredModels(modelsWithValidSafetyFactor);
+
+      // Update selected model data if needed
+      if (selectionData.selectedModel) {
+        const selectedModel = calculatedModels.find(model => model.model_name === selectionData.selectedModel);
+        if (selectedModel) {
+          updateSelectionData({
+            numberOfCells: selectedCells,
+            actualFlowRate: selectedModel.actualFlowRate,
+            safetyFactor: selectedModel.safetyFactor
+          });
+        }
+      }
+    }
+  }, [coolingTowerModels, selectionData.hotWaterTemp, selectionData.coldWaterTemp, 
+      selectionData.wetBulbTemp, selectionData.waterFlowRate, selectedCells, minSafetyFactor, maxSafetyFactor]);
+
+  // Handle cells change
   const handleCellsChange = (e) => {
     const cells = Number(e.target.value);
     setSelectedCells(cells);
-    
-    // Update the selection data immediately when cells change
-    if (selectionData.selectedModel) {
-      const selectedModel = filteredModels.find(model => model.model_name === selectionData.selectedModel);
-      if (selectedModel) {
-        const baseCapacity = performanceData[selectedModel.model_name] || 0;
-        const actualCapacity = baseCapacity * cells;
-        const designFlowRate = parseFloat(selectionData.waterFlowRate) || 1;
-        const safetyFactor = (actualCapacity / designFlowRate) * 100;
-
-        updateSelectionData({
-          numberOfCells: cells,
-          actualCapacity: actualCapacity,
-          safetyFactor: safetyFactor
-        });
-      }
-    }
   };
 
   // Update the model selection handler to include number of cells
   const handleModelSelection = (model) => {
     updateSelectionData({
       selectedModel: model.model_name,
-      actualCapacity: model.actualCapacity,
+      actualFlowRate: model.actualFlowRate,
       safetyFactor: model.safetyFactor,
       numberOfCells: selectedCells
     });
@@ -184,7 +212,7 @@ export default function Step2CoolingTowerSelection() {
           <div className="text-right text-gray-900 font-medium">{model.operating_weight} kg</div>
           
           <div className="text-gray-800 font-medium">Actual Capacity:</div>
-          <div className="text-right text-gray-900 font-medium">{model.actualCapacity.toFixed(2)} m³/hr</div>
+          <div className="text-right text-gray-900 font-medium">{model.actualFlowRate.toFixed(2)} m³/hr</div>
           
           <div className="text-gray-800 font-medium">Safety Factor:</div>
           <div className={`text-right font-medium ${model.safetyFactor >= 100 ? "text-green-600" : "text-red-600"}`}>
@@ -195,19 +223,63 @@ export default function Step2CoolingTowerSelection() {
     );
   };
 
-  // Add this near the top of your component with other useEffects
-  useEffect(() => {
-    handleCellsChange({ target: { value: selectedCells } });
-  }, [selectedCells]);
-
   return (
     <div className="w-full mx-auto mt-4 p-4 bg-white shadow-md rounded-md">
       <h2 className="text-xl font-bold mb-4 text-gray-900">Cooling Tower Selection</h2>
 
+      {/* Safety Factor Range Selection */}
+      <div className="mb-6 bg-gray-50 p-3 rounded-md">
+        <h3 className="text-sm font-semibold mb-2 text-gray-700">Safety Factor Range</h3>
+        <div className="flex flex-wrap gap-3 mb-3">
+          <div className="flex items-center">
+            <label className="text-sm text-gray-700 mr-2">Min:</label>
+            <input
+              type="number"
+              min="0"
+              max={maxSafetyFactor}
+              value={minSafetyFactor}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value) && value >= 0 && value <= maxSafetyFactor) {
+                  setMinSafetyFactor(value);
+                }
+              }}
+              className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-gray-700"
+            />
+            <span className="ml-1 text-gray-700">%</span>
+          </div>
+          <div className="flex items-center">
+            <label className="text-sm text-gray-700 mr-2">Max:</label>
+            <input
+              type="number"
+              min={minSafetyFactor}
+              value={maxSafetyFactor}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value) && value >= minSafetyFactor) {
+                  setMaxSafetyFactor(value);
+                }
+              }}
+              className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-gray-700"
+            />
+            <span className="ml-1 text-gray-700">%</span>
+          </div>
+          <button
+            onClick={() => {
+              setMinSafetyFactor(100);
+              setMaxSafetyFactor(150);
+            }}
+            className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
+          >
+            Reset to Default
+          </button>
+        </div>
+      </div>
+      
       {/* Cells Selection */}
       <div className="mb-6 bg-gray-50 p-3 rounded-md">
         <div className="flex flex-col mb-2">
-          <label className="text-gray-700 font-medium mb-1">Number of Cells:</label>
+          <label className="text-sm font-semibold mb-2 text-gray-700">Number of Cells:</label>
           <div className="flex items-center">
             <button 
               onClick={() => {
@@ -305,7 +377,7 @@ export default function Step2CoolingTowerSelection() {
       {error && <p className="text-red-500">{error}</p>}
 
       {!loading && !error && filteredModels.length === 0 && (
-        <p className="text-gray-700">No cooling tower models meet the selection criteria.</p>
+        <p className="text-gray-700">No cooling tower models meet the selection criteria (safety factor between {minSafetyFactor}% and {maxSafetyFactor}%).</p>
       )}
 
       {/* Card View (Mobile-Friendly) */}
@@ -360,8 +432,12 @@ export default function Step2CoolingTowerSelection() {
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.fan_diameter}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.dry_weight}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.operating_weight}</td>
-                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualCapacity.toFixed(2)}</td>
-                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.safetyFactor.toFixed(2)}%</td>
+                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualFlowRate.toFixed(2)}</td>
+                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">
+                    <span className={model.safetyFactor >= 100 ? "text-green-600" : "text-red-600"}>
+                      {model.safetyFactor.toFixed(2)}%
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>

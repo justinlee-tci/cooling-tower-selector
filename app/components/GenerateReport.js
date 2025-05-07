@@ -414,14 +414,14 @@ page.drawText("SDN. BHD.", {
     drawText(`${formatValue(modelDetails?.motor_output)} kW`, 450, yPosition);
     yPosition -= 45;
 
-    drawText('Nominal Capacity/Cell:', 60, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${modelDetails?.nominal_flowrate} m³/hr`, 190, yPosition);
+    drawText('Nominal Flow Rate/Cell:', 60, yPosition, 10, helveticaBold, primaryColor);
+    drawText(`${modelDetails?.nominal_flowrate.toFixed(2)} m³/hr`, 190, yPosition);
     drawText('Number of Cells:', 320, yPosition, 10, helveticaBold, primaryColor);
     drawText(formatValue(selectionData?.number_of_cells), 450, yPosition);
     yPosition -= 45;
 
-    drawText('Actual Capacity:', 60, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue(selectionData?.actual_capacity)} ${formatUnit.flowRate}`, 190, yPosition);
+    drawText('Actual Flow Rate:', 60, yPosition, 10, helveticaBold, primaryColor);
+    drawText(`${formatValue(selectionData?.actual_flowrate.toFixed(2))} ${formatUnit.flowRate}`, 190, yPosition);
     drawText('Safety Factor:', 320, yPosition, 10, helveticaBold, primaryColor);
     drawText(`${formatValue(selectionData?.safety_factor)}%`, 450, yPosition);
     
