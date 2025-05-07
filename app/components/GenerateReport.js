@@ -423,7 +423,7 @@ page.drawText("SDN. BHD.", {
     drawText('Actual Flow Rate:', 60, yPosition, 10, helveticaBold, primaryColor);
     drawText(`${formatValue(selectionData?.actual_flowrate.toFixed(2))} ${formatUnit.flowRate}`, 190, yPosition);
     drawText('Safety Factor:', 320, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue(selectionData?.safety_factor)}%`, 450, yPosition);
+    drawText(`${formatValue(selectionData?.safety_factor.toFixed(2))}%`, 450, yPosition);
     
     // Add footer to the first page
     addFooter(page1, 1, 5);

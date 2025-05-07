@@ -197,7 +197,7 @@ export default function Step3Confirmation() {
       if (selectionData.selectedModel) {
         const { data, error } = await supabase
           .from('cooling_tower_models')
-          .select('motor_output, fan_diameter, nominal_flowrate')
+          .select('motor_output, fan_diameter, nominal_flowrate, type')
           .eq('model_name', selectionData.selectedModel)
           .single();
 
@@ -270,16 +270,35 @@ export default function Step3Confirmation() {
     }
   };
 
-  // Update the coolingTowerFields array to separate left and right columns
+  // Update the leftColumnFields array to separate model and type
   const leftColumnFields = [
-    { label: "Tower Model", key: "towerModel", value: selectionData.selectedModel },
+    { 
+      label: "Tower Model", 
+      key: "towerModel", 
+      value: selectionData.selectedModel
+    },
+    { 
+      label: "Tower Type", 
+      key: "towerType", 
+      value: modelDetails?.type || ''  // Remove toUpperCase()
+    },
     { 
       label: "Number of Cells", 
       key: "numberOfCells", 
       value: Number(selectionData.numberOfCells || 1).toString() 
     },
-    { label: "Motor Output/Cell", key: "motorOutput", value: modelDetails?.motor_output, unit: "kW" },
-    { label: "Fan Diameter", key: "fanDiameter", value: modelDetails?.fan_diameter, unit: "mm" },
+    { 
+      label: "Motor Output/Cell", 
+      key: "motorOutput", 
+      value: modelDetails?.motor_output, 
+      unit: "kW" 
+    },
+    { 
+      label: "Fan Diameter", 
+      key: "fanDiameter", 
+      value: modelDetails?.fan_diameter, 
+      unit: "mm" 
+    },
   ];
 
   // Update the rightColumnFields array by changing the field labels and data sources

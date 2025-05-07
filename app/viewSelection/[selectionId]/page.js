@@ -131,10 +131,10 @@ export default function ViewSelection() {
           throw new Error('Unauthorized access');
         }
 
-        // First update the model details fetch in the useEffect
+        // Update the model details fetch in the useEffect
         const { data: modelData, error: modelError } = await supabase
           .from('cooling_tower_models')
-          .select('motor_output, fan_diameter, nominal_flowrate')
+          .select('motor_output, fan_diameter, nominal_flowrate, type')
           .eq('model_name', selection.cooling_tower_model)
           .single();
 
@@ -209,6 +209,7 @@ export default function ViewSelection() {
   // Split tower selection fields into left and right columns for better layout
   const leftColumnFields = [
     { label: "Tower Model", value: selectionData.cooling_tower_model },
+    { label: "Tower Type", value: modelDetails?.type || '' },
     { label: "Number of Cells", value: selectionData.number_of_cells?.toString() || "1" },
     { label: "Motor Output/Cell", value: modelDetails?.motor_output, unit: "kW" },
     { label: "Fan Diameter", value: modelDetails?.fan_diameter, unit: "mm" },

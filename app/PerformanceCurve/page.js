@@ -14,6 +14,11 @@ import {
   Legend
 } from 'chart.js';
 import { useState, useEffect, Suspense } from 'react';
+import { 
+  calculateColdWaterTemp, 
+  calculateApproach,
+  generatePerformanceCurveData 
+} from '@/formula/performanceCurveCalculations'; // Path to your formula module
 
 ChartJS.register(
   CategoryScale,
@@ -30,11 +35,26 @@ const formatDate = (dateString) => {
   return dateString.split('T')[0];
 };
 
+// Determine flow type based on model name
+const determineFlowType = (modelName) => {
+  // You can expand this logic based on your specific model naming conventions
+  if (!modelName) return "CROSSFLOW"; // Default
+  
+  const modelNameUpper = modelName.toUpperCase();
+  
+  if (modelNameUpper.includes("CF") || modelNameUpper.includes("COUNTER")) {
+    return "COUNTERFLOW";
+  } else {
+    return "CROSSFLOW";
+  }
+};
+
 function PerformanceContent() {
   const searchParams = useSearchParams();
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState('details'); // For mobile view
   const [activeRangeIndex, setActiveRangeIndex] = useState(null); // For mobile table view
+  const [flowType, setFlowType] = useState("CROSSFLOW"); // Default flow type
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -44,12 +64,16 @@ function PerformanceContent() {
     // Initial check
     checkScreenSize();
     
+    // Determine flow type based on model name
+    const modelName = searchParams.get('model') || '';
+    setFlowType(determineFlowType(modelName));
+    
     // Add event listener
     window.addEventListener('resize', checkScreenSize);
     
     // Cleanup
     return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
+  }, [searchParams]);
 
   const params = {
     modelName: searchParams.get('model') || '',
@@ -59,14 +83,14 @@ function PerformanceContent() {
     selectionBy: searchParams.get('selectionBy') || '',
     waterFlowRate: searchParams.get('flowRate') || '',
     atmosphericPressure: searchParams.get('pressure') || '',
-    hotWaterTemp: searchParams.get('hotWater') || '',
-    coldWaterTemp: searchParams.get('coldWater') || '',
-    wetBulbTemp: searchParams.get('wetBulb') || '',
-    dryBulbTemp: searchParams.get('dryBulb') || '',
+    hotWaterTemp: parseFloat(searchParams.get('hotWater')) || 0,
+    coldWaterTemp: parseFloat(searchParams.get('coldWater')) || 0,
+    wetBulbTemp: parseFloat(searchParams.get('wetBulb')) || 0,
+    dryBulbTemp: parseFloat(searchParams.get('dryBulb')) || 0,
     date: formatDate(searchParams.get('date')) || ''
   };
 
-  const designRange = parseFloat(params.hotWaterTemp) - parseFloat(params.coldWaterTemp);
+  const designRange = params.hotWaterTemp - params.coldWaterTemp;
 
   const [ranges, setRanges] = useState([
     Number((designRange * 0.6).toFixed(2)),
@@ -79,19 +103,33 @@ function PerformanceContent() {
   const [wbtValues, setWbtValues] = useState([15, 20, 25, 30, 35]);
 
   const handleRangeChange = (index, value) => {
-    const newRanges = [...ranges];
-    newRanges[index] = parseFloat(value) || 0;
-    setRanges(newRanges);
+    const parsed = parseFloat(value);
+    if (!isNaN(parsed) && parsed > 0 && parsed <= 30) { // Set reasonable limits
+      const newRanges = [...ranges];
+      newRanges[index] = parsed;
+      setRanges(newRanges);
+    }
   };
 
   const handleWbtChange = (index, value) => {
-    const newWbtValues = [...wbtValues];
-    newWbtValues[index] = parseFloat(value) || 0;
-    setWbtValues(newWbtValues);
+    const parsed = parseFloat(value);
+    if (!isNaN(parsed) && parsed >= -20 && parsed <= 50) { // Set reasonable limits
+      const newWbtValues = [...wbtValues];
+      newWbtValues[index] = parsed;
+      setWbtValues(newWbtValues);
+    }
   };
 
+  // Use the advanced calculation function instead of the simple one
   const calculateCWT = (wbt, range, flowRatePercent) => {
-    return parseFloat(params.hotWaterTemp) - (range * (1 - (wbt / 100)) * (flowRatePercent / 100));
+    const hotWaterTemp = params.hotWaterTemp;
+    return calculateColdWaterTemp(
+      hotWaterTemp, 
+      wbt, 
+      range, 
+      flowRatePercent,
+      flowType
+    );
   };
 
   const createDatasetForFlowRate = (flowRate) => {
@@ -102,6 +140,27 @@ function PerformanceContent() {
       tension: 0.4,
     }));
   };
+
+  // // Alternative approach using the generatePerformanceCurveData function
+  // const createDatasetForFlowRateAlt = (flowRate) => {
+  //   return ranges.map((range, rangeIndex) => {
+  //     // Generate data points for this range across all wet bulb temperatures
+  //     const coldWaterTemps = generatePerformanceCurveData(
+  //       params.hotWaterTemp,
+  //       range,
+  //       wbtValues,
+  //       flowRate,
+  //       flowType
+  //     );
+      
+  //     return {
+  //       label: `Range ${range}°C`,
+  //       data: coldWaterTemps,
+  //       borderColor: `hsl(${220 + rangeIndex * 30}, 70%, 50%)`,
+  //       tension: 0.4,
+  //     };
+  //   });
+  // };
 
   const chartOptions = {
     responsive: true,
@@ -118,7 +177,7 @@ function PerformanceContent() {
       },
       title: {
         display: true,
-        text: 'Cooling Tower Performance Curve',
+        text: `Cooling Tower Performance Curve (${flowType})`,
         font: {
           size: isMobile ? 14 : 16
         }
@@ -156,10 +215,21 @@ function PerformanceContent() {
     }
   };
 
-  const createChartData = (flowRate) => ({
-    labels: wbtValues,
-    datasets: createDatasetForFlowRate(flowRate)
-  });
+  // Update the createChartData function to ensure consistent calculations
+  const createChartData = (flowRate) => {
+    // Sort WBT values to ensure proper graph plotting
+    const sortedWbtValues = [...wbtValues].sort((a, b) => a - b);
+    
+    return {
+      labels: sortedWbtValues,
+      datasets: ranges.map((range, rangeIndex) => ({
+        label: `Range ${range.toFixed(1)}°C`,
+        data: sortedWbtValues.map(wbt => calculateCWT(wbt, range, flowRate)),
+        borderColor: `hsl(${220 + rangeIndex * 30}, 70%, 50%)`,
+        tension: 0.4,
+      }))
+    };
+  };
 
   const ProjectDetails = () => (
     <div className="mb-6">
@@ -187,6 +257,14 @@ function PerformanceContent() {
         <div>
           <span className="text-gray-700 font-medium">Date:</span>
           <span className="text-gray-900 ml-2">{params.date}</span>
+        </div>
+        <div>
+          <span className="text-gray-700 font-medium">Model:</span>
+          <span className="text-gray-900 ml-2">{params.modelName}</span>
+        </div>
+        <div>
+          <span className="text-gray-700 font-medium">Flow Type:</span>
+          <span className="text-gray-900 ml-2 capitalize">{flowType.toLowerCase()}</span>
         </div>
       </div>
     </div>
@@ -220,6 +298,22 @@ function PerformanceContent() {
           <span className="text-gray-700 font-medium">Dry Bulb Temp:</span>
           <span className="text-gray-900 ml-2">{params.dryBulbTemp} °C</span>
         </div>
+        <div>
+          <span className="text-gray-700 font-medium">Design Range:</span>
+          <span className="text-gray-900 ml-2">{designRange.toFixed(2)} °C</span>
+        </div>
+        <div>
+          <span className="text-gray-700 font-medium">Design Approach:</span>
+          <span className="text-gray-900 ml-2">
+            {calculateApproach(
+              params.hotWaterTemp, 
+              designRange, 
+              params.wetBulbTemp, 
+              100, 
+              flowType
+            ).toFixed(2)} °C
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -229,7 +323,7 @@ function PerformanceContent() {
       <h3 className="text-base font-bold text-gray-900 mb-2">Select Range</h3>
       <div className="flex flex-wrap gap-2">
         {ranges.map((range, index) => (
-                        <button
+          <button
             key={index}
             className={`px-2 py-1 text-xs rounded-md ${
               activeRangeIndex === index 
@@ -332,7 +426,11 @@ function PerformanceContent() {
                   </div>
                 </td>
                 {ranges.map((range, rangeIndex) => (
-                  <td key={rangeIndex} className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-center bg-gray-50 text-${isMobile ? 'xs' : 'sm'} text-black`}>
+                  <td 
+                    key={rangeIndex} 
+                    className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} 
+                      text-center bg-gray-50 text-${isMobile ? 'xs' : 'sm'} text-black`}
+                  >
                     {calculateCWT(wbt, range, 100).toFixed(1)}
                   </td>
                 ))}

@@ -429,6 +429,7 @@ export default function Step2CoolingTowerSelection() {
               <tr className="bg-gray-200">
                 <th className="border p-2 text-center text-gray-900">Select</th>
                 <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Model</th>
+                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Type</th>
                 <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Nominal Capacity/cell (RT)</th>
                 <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Nominal Flow Rate/cell (m³/hr)</th>
                 <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Motor Output (kW)</th>
@@ -460,6 +461,9 @@ export default function Step2CoolingTowerSelection() {
                     />
                   </td>
                   <td className="border p-2 text-left text-gray-900 whitespace-nowrap">{model.model_name}</td>
+                  <td className="border p-2 text-center text-gray-900 whitespace-nowrap">
+                    {model.type.toUpperCase()}
+                  </td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.nominal_capacity}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.nominal_flowrate.toFixed(2)}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.motor_output}</td>
