@@ -54,7 +54,7 @@ function PerformanceContent() {
   const params = {
     modelName: searchParams.get('model') || '',
     projectName: searchParams.get('projectName') || '',
-    clientName: searchParams.get('clientName') || '',
+    customerName: searchParams.get('customerName') || '',
     location: searchParams.get('location') || '',
     selectionBy: searchParams.get('selectionBy') || '',
     waterFlowRate: searchParams.get('flowRate') || '',
@@ -177,8 +177,8 @@ function PerformanceContent() {
           <span className="text-gray-900 ml-2">{params.projectName}</span>
         </div>
         <div>
-          <span className="text-gray-700 font-medium">Client Name:</span>
-          <span className="text-gray-900 ml-2">{params.clientName}</span>
+          <span className="text-gray-700 font-medium">Customer Name:</span>
+          <span className="text-gray-900 ml-2">{params.customerName}</span>
         </div>
         <div>
           <span className="text-gray-700 font-medium">Location:</span>

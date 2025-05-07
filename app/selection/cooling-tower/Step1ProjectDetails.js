@@ -28,7 +28,7 @@ const unitClass = "text-gray-900 w-16 text-right text-sm md:text-base";
 const requiredFields = [
   // Project Details
   "projectName",
-  "clientName",
+  "customerName",
   "location",
   "date",
   "selectionBy",
@@ -218,7 +218,7 @@ export default function Step1ProjectDetails() {
   // Update project details section
   const projectDetails = [
     { label: "Project Name", key: "projectName", placeholder: "Enter project name (required)" },
-    { label: "Client Name", key: "clientName", placeholder: "Enter client name (required)" },
+    { label: "Customer Name", key: "customerName", placeholder: "Enter customer name (required)" },
     { label: "Location", key: "location", placeholder: "Enter location (required)" },
     { label: "Date", key: "date", type: "date", placeholder: "" },
   ];

@@ -104,7 +104,7 @@ export default function ViewSelection() {
             id,
             user_email,
             project_name,
-            client_name,
+            customer_name,
             location,
             date_created,
             selection_by,
@@ -159,7 +159,7 @@ export default function ViewSelection() {
     const params = new URLSearchParams({
       model: selectionData.cooling_tower_model,
       projectName: selectionData.project_name,
-      clientName: selectionData.client_name,
+      customerName: selectionData.customer_name,
       location: selectionData.location,
       selectionBy: selectionData.selection_by,
       flowRate: selectionData.water_flow_rate.toString(),
@@ -191,7 +191,7 @@ export default function ViewSelection() {
   // Project details fields
   const projectDetailsFields = [
     { label: "Project Name", value: selectionData.project_name },
-    { label: "Client Name", value: selectionData.client_name },
+    { label: "Customer Name", value: selectionData.customer_name },
     { label: "Location", value: selectionData.location },
     { label: "Date", value: formatDate(selectionData.date_created) },
   ];

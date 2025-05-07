@@ -340,8 +340,8 @@ page.drawText("SDN. BHD.", {
     drawText(formatValue(selectionData?.selection_by), 420, yPosition);
     yPosition -= 45;
 
-    drawText('Client Name:', 60, yPosition, 10, helveticaBold, primaryColor);
-    drawText(formatValue(selectionData?.client_name), 170, yPosition);
+    drawText('Customer Name:', 60, yPosition, 10, helveticaBold, primaryColor);
+    drawText(formatValue(selectionData?.customer_name), 170, yPosition);
     drawText('Date:', 320, yPosition, 10, helveticaBold, primaryColor);
     drawText(formatDate(selectionData?.date_created), 420, yPosition);
     yPosition -= 45;

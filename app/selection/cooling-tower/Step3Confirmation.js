@@ -116,7 +116,7 @@ export default function Step3Confirmation() {
         id: selectionId,
         user_email: user.email,
         project_name: selectionData.projectName,
-        client_name: selectionData.clientName,
+        customer_name: selectionData.customerName,
         location: selectionData.location,
         date_created: dateToSave, // Use the properly formatted date
         selection_by: selectionData.selectionBy,
@@ -142,7 +142,7 @@ export default function Step3Confirmation() {
       // Convert local state format to database format for generateReport
       const selectionForReport = {
         project_name: selectionData.projectName,
-        client_name: selectionData.clientName,
+        customer_name: selectionData.customerName,
         location: selectionData.location,
         date_created: dateToSave,
         selection_by: selectionData.selectionBy,
@@ -216,7 +216,7 @@ export default function Step3Confirmation() {
     const params = new URLSearchParams({
       model: selectionData.selectedModel,
       projectName: selectionData.projectName,
-      clientName: selectionData.clientName,
+      customerName: selectionData.customerName,
       location: selectionData.location,
       selectionBy: selectionData.selectionBy,
       flowRate: selectionData.waterFlowRate,
@@ -237,7 +237,7 @@ export default function Step3Confirmation() {
       // Convert local state format to database format for generateReport
       const selectionForReport = {
         project_name: selectionData.projectName,
-        client_name: selectionData.clientName,
+        customer_name: selectionData.customerName,
         location: selectionData.location,
         date_created: selectionData.date,
         selection_by: selectionData.selectionBy,
@@ -307,7 +307,7 @@ export default function Step3Confirmation() {
   // Project details fields
   const projectDetailsFields = [
     { label: "Project Name", key: "projectName" },
-    { label: "Client Name", key: "clientName" },
+    { label: "Customer Name", key: "customerName" },
     { label: "Location", key: "location" },
   ];
 
