@@ -130,7 +130,7 @@ export default function Step3Confirmation() {
         number_of_cells: parseInt(selectionData.numberOfCells), // Remove the || 1 fallback
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
-        actual_flowrate: parseFloat(selectionData.actual_flowrate),
+        actual_flowrate: parseFloat(selectionData.actualFlowRate), // Changed from actual_flowrate to actualFlowRate
       };
 
       const { error: insertError } = await supabase
@@ -155,7 +155,7 @@ export default function Step3Confirmation() {
         atmospheric_pressure: parseFloat(selectionData.atmosphericPressure),
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
-        actual_flowrate: parseFloat(selectionData.actual_flowrate),
+        actual_flowrate: parseFloat(selectionData.actualFlowRate), // Changed from actual_flowrate to actualFlowRate
         number_of_cells: parseInt(selectionData.numberOfCells)
       };
 
@@ -250,7 +250,7 @@ export default function Step3Confirmation() {
         atmospheric_pressure: parseFloat(selectionData.atmosphericPressure),
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
-        actual_flowrate: parseFloat(selectionData.actual_flowrate),
+        actual_flowrate: parseFloat(selectionData.actualFlowRate),
         number_of_cells: parseInt(selectionData.numberOfCells)
       };
       
@@ -287,13 +287,13 @@ export default function Step3Confirmation() {
     { 
       label: "Nominal Flow Rate/Cell", 
       key: "nominalFlowRate", 
-      value: modelDetails?.nominal_flowrate.toFixed(2), // Changed from nominal_flow_rate to nominal_flowrate
+      value: modelDetails?.nominal_flowrate?.toFixed(2),
       unit: "m³/hr" 
     },
     { 
       label: "Actual Flow Rate", 
       key: "actualFlowRate", 
-      value: Number(selectionData.actualFlowRate).toFixed(2), 
+      value: Number(selectionData.actualFlowRate).toFixed(2), // Changed from actual_flowrate to actualFlowRate
       unit: "m³/hr" 
     },
     { 

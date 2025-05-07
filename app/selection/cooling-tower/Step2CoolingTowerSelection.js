@@ -80,13 +80,13 @@ export default function Step2CoolingTowerSelection() {
   useEffect(() => {
     if (coolingTowerModels.length > 0 && selectionData) {
       const calculatedModels = coolingTowerModels.map((model) => {
-        const actualCapacity = calculateCoolingCapacity(
-          Number(selectionData.hotWaterTemp),
-          Number(selectionData.coldWaterTemp),
-          Number(selectionData.wetBulbTemp),
-          Number(selectionData.waterFlowRate),
-          String(model.type).toUpperCase(),
-        );
+        // const actualCapacity = calculateCoolingCapacity(
+        //   Number(selectionData.hotWaterTemp),
+        //   Number(selectionData.coldWaterTemp),
+        //   Number(selectionData.wetBulbTemp),
+        //   Number(selectionData.waterFlowRate),
+        //   String(model.type).toUpperCase(),
+        // );
 
         const actualFlowRate = calculateFlowRate(
           Number(selectionData.hotWaterTemp),
@@ -96,8 +96,8 @@ export default function Step2CoolingTowerSelection() {
           String(model.type).toUpperCase(),
         )*selectedCells;
 
-        const designCapacity = model.nominal_capacity || 1;
-        const designFlowRate = model.nominal_flowrate || 1;
+        // const designCapacity = model.nominal_capacity || 1;
+        // const designFlowRate = model.nominal_flowrate || 1;
         // Corrected safety factor calculation: (design flow rate * cells) / actual capacity * 100
         // const safetyFactor = (designFlowRate * selectedCells) / actualFlowRate * 100;
         // const safetyFactor = designFlowRate;
@@ -229,7 +229,7 @@ export default function Step2CoolingTowerSelection() {
 
       {/* Safety Factor Range Selection */}
       <div className="mb-6 bg-gray-50 p-3 rounded-md">
-        <h3 className="text-sm font-semibold mb-2 text-gray-700">Safety Factor Range</h3>
+        <h3 className="text-sm font-semibold mb-2 text-gray-900">Safety Factor Range</h3>
         <div className="flex flex-wrap gap-3 mb-3">
           <div className="flex items-center">
             <label className="text-sm text-gray-700 mr-2">Min:</label>
