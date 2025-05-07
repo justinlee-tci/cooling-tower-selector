@@ -227,56 +227,90 @@ export default function Step2CoolingTowerSelection() {
     <div className="w-full mx-auto mt-4 p-4 bg-white shadow-md rounded-md">
       <h2 className="text-xl font-bold mb-4 text-gray-900">Cooling Tower Selection</h2>
 
-      {/* Safety Factor Range Selection */}
-      <div className="mb-6 bg-gray-50 p-3 rounded-md">
-        <h3 className="text-sm font-semibold mb-2 text-gray-900">Safety Factor Range</h3>
-        <div className="flex flex-wrap gap-3 mb-3">
-          <div className="flex items-center">
-            <label className="text-sm text-gray-700 mr-2">Min:</label>
-            <input
-              type="number"
-              min="0"
-              max={maxSafetyFactor}
-              value={minSafetyFactor}
-              onChange={(e) => {
-                const value = parseFloat(e.target.value);
-                if (!isNaN(value) && value >= 0 && value <= maxSafetyFactor) {
-                  setMinSafetyFactor(value);
-                }
+      {/* Top section with Safety Factor and Input Parameters side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {/* Safety Factor Range */}
+        <div className="bg-gray-50 p-3 rounded-md">
+          <h3 className="text-sm font-semibold mb-2 text-gray-900">Safety Factor Range</h3>
+          <div className="flex flex-wrap gap-3 mb-3">
+            <div className="flex items-center">
+              <label className="text-sm text-gray-700 mr-2">Min:</label>
+              <input
+                type="number"
+                min="0"
+                max={maxSafetyFactor}
+                value={minSafetyFactor}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value >= 0 && value <= maxSafetyFactor) {
+                    setMinSafetyFactor(value);
+                  }
+                }}
+                className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-gray-700"
+              />
+              <span className="ml-1 text-gray-700">%</span>
+            </div>
+            <div className="flex items-center">
+              <label className="text-sm text-gray-700 mr-2">Max:</label>
+              <input
+                type="number"
+                min={minSafetyFactor}
+                value={maxSafetyFactor}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (!isNaN(value) && value >= minSafetyFactor) {
+                    setMaxSafetyFactor(value);
+                  }
+                }}
+                className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-gray-700"
+              />
+              <span className="ml-1 text-gray-700">%</span>
+            </div>
+            <button
+              onClick={() => {
+                setMinSafetyFactor(100);
+                setMaxSafetyFactor(150);
               }}
-              className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-gray-700"
-            />
-            <span className="ml-1 text-gray-700">%</span>
+              className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
+            >
+              Reset to Default
+            </button>
           </div>
-          <div className="flex items-center">
-            <label className="text-sm text-gray-700 mr-2">Max:</label>
-            <input
-              type="number"
-              min={minSafetyFactor}
-              value={maxSafetyFactor}
-              onChange={(e) => {
-                const value = parseFloat(e.target.value);
-                if (!isNaN(value) && value >= minSafetyFactor) {
-                  setMaxSafetyFactor(value);
-                }
-              }}
-              className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-gray-700"
-            />
-            <span className="ml-1 text-gray-700">%</span>
+        </div>
+
+        {/* Input Parameters Display */}
+        <div className="bg-gray-50 p-3 rounded-md">
+          <h3 className="text-sm font-semibold mb-2 text-gray-900">Input Parameters</h3>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-700">Water Flow Rate:</span>
+              <span className="font-medium text-gray-700">{selectionData.waterFlowRate} m³/hr</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-700">Hot Water Temp:</span>
+              <span className="font-medium text-gray-700">{selectionData.hotWaterTemp} °C</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-700">Cold Water Temp:</span>
+              <span className="font-medium text-gray-700">{selectionData.coldWaterTemp} °C</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-700">Wet Bulb Temp:</span>
+              <span className="font-medium text-gray-700">{selectionData.wetBulbTemp} °C</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-700">Dry Bulb Temp:</span>
+              <span className="font-medium text-gray-700">{selectionData.dryBulbTemp} °C</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-700">Atm. Pressure:</span>
+              <span className="font-medium text-gray-700">{selectionData.atmosphericPressure} kPa</span>
+            </div>
           </div>
-          <button
-            onClick={() => {
-              setMinSafetyFactor(100);
-              setMaxSafetyFactor(150);
-            }}
-            className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
-          >
-            Reset to Default
-          </button>
         </div>
       </div>
-      
-      {/* Cells Selection */}
+
+      {/* Cells Selection - keep existing code */}
       <div className="mb-6 bg-gray-50 p-3 rounded-md">
         <div className="flex flex-col mb-2">
           <label className="text-sm font-semibold mb-2 text-gray-700">Number of Cells:</label>
