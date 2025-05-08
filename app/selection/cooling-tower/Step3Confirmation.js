@@ -126,7 +126,7 @@ export default function Step3Confirmation() {
         cold_water_temp: parseFloat(selectionData.coldWaterTemp),
         wet_bulb_temp: parseFloat(selectionData.wetBulbTemp),
         dry_bulb_temp: parseFloat(selectionData.dryBulbTemp),
-        atmospheric_pressure: parseFloat(selectionData.atmosphericPressure),
+        ambient_pressure: parseFloat(selectionData.ambientPressure),
         number_of_cells: parseInt(selectionData.numberOfCells), // Remove the || 1 fallback
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
@@ -152,7 +152,7 @@ export default function Step3Confirmation() {
         cold_water_temp: parseFloat(selectionData.coldWaterTemp),
         wet_bulb_temp: parseFloat(selectionData.wetBulbTemp),
         dry_bulb_temp: parseFloat(selectionData.dryBulbTemp),
-        atmospheric_pressure: parseFloat(selectionData.atmosphericPressure),
+        ambient_pressure: parseFloat(selectionData.ambientPressure),
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
         actual_flowrate: parseFloat(selectionData.actualFlowRate), // Changed from actual_flowrate to actualFlowRate
@@ -220,7 +220,7 @@ export default function Step3Confirmation() {
       location: selectionData.location,
       selectionBy: selectionData.selectionBy,
       flowRate: selectionData.waterFlowRate,
-      pressure: selectionData.atmosphericPressure,
+      pressure: selectionData.ambientPressure,
       hotWater: selectionData.hotWaterTemp,
       coldWater: selectionData.coldWaterTemp,
       wetBulb: selectionData.wetBulbTemp,
@@ -248,7 +248,7 @@ export default function Step3Confirmation() {
         cold_water_temp: parseFloat(selectionData.coldWaterTemp),
         wet_bulb_temp: parseFloat(selectionData.wetBulbTemp),
         dry_bulb_temp: parseFloat(selectionData.dryBulbTemp),
-        atmospheric_pressure: parseFloat(selectionData.atmosphericPressure),
+        ambient_pressure: parseFloat(selectionData.ambientPressure),
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
         actual_flowrate: parseFloat(selectionData.actualFlowRate),
@@ -334,7 +334,7 @@ export default function Step3Confirmation() {
   // Input parameters fields
   const inputParamsFields = [
     { label: "Water Flow Rate", key: "waterFlowRate", unit: "m³/hr" },
-    { label: "Atmospheric Pressure", key: "atmosphericPressure", unit: "kPa" },
+    { label: "Ambient Pressure", key: "ambientPressure", unit: "kPa" },
     { label: "Hot Water Temp", key: "hotWaterTemp", unit: "°C" },
     { label: "Cold Water Temp", key: "coldWaterTemp", unit: "°C" },
     { label: "Wet Bulb Temp", key: "wetBulbTemp", unit: "°C" },

@@ -373,8 +373,8 @@ page.drawText("SDN. BHD.", {
     // Design Conditions in two columns
     drawText('Water Flow Rate:', 60, yPosition, 10, helveticaBold, primaryColor);
     drawText(`${selectionData?.water_flow_rate} m³/hr`, 190, yPosition);
-    drawText('Atmospheric Pressure:', 320, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue(selectionData?.atmospheric_pressure)} ${formatUnit.pressure}`, 450, yPosition);
+    drawText('Ambient Pressure:', 320, yPosition, 10, helveticaBold, primaryColor);
+    drawText(`${formatValue(selectionData?.ambient_pressure)} ${formatUnit.pressure}`, 450, yPosition);
     yPosition -= 45;
 
     drawText('Hot Water Temperature:', 60, yPosition, 10, helveticaBold, primaryColor);

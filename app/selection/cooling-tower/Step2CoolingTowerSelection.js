@@ -303,8 +303,8 @@ export default function Step2CoolingTowerSelection() {
               <span className="font-medium text-gray-700">{selectionData.dryBulbTemp} °C</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-700">Atm. Pressure:</span>
-              <span className="font-medium text-gray-700">{selectionData.atmosphericPressure} kPa</span>
+              <span className="text-gray-700">Ambient Pressure:</span>
+              <span className="font-medium text-gray-700">{selectionData.ambientPressure} kPa</span>
             </div>
           </div>
         </div>

@@ -58,7 +58,7 @@ function PerformanceContent() {
     location: searchParams.get('location') || '',
     selectionBy: searchParams.get('selectionBy') || '',
     waterFlowRate: searchParams.get('flowRate') || '',
-    atmosphericPressure: searchParams.get('pressure') || '',
+    ambientPressure: searchParams.get('pressure') || '',
     hotWaterTemp: searchParams.get('hotWater') || '',
     coldWaterTemp: searchParams.get('coldWater') || '',
     wetBulbTemp: searchParams.get('wetBulb') || '',
@@ -119,7 +119,7 @@ function PerformanceContent() {
       },
       title: {
         display: true,
-        text: `${params.towerType} Cooling Tower Performance Curve`,
+        text: `Cooling Tower Performance Curve`,
         font: {
           size: isMobile ? 14 : 16
         }
@@ -210,8 +210,8 @@ function PerformanceContent() {
           <span className="text-gray-900 ml-2">{params.waterFlowRate} m³/hr</span>
         </div>
         <div>
-          <span className="text-gray-700 font-medium">Atmospheric Pressure:</span>
-          <span className="text-gray-900 ml-2">{params.atmosphericPressure} kPa</span>
+          <span className="text-gray-700 font-medium">Ambient Pressure:</span>
+          <span className="text-gray-900 ml-2">{params.ambientPressure} kPa</span>
         </div>
         <div>
           <span className="text-gray-700 font-medium">Hot Water Temp:</span>

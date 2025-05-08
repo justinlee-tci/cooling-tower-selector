@@ -118,7 +118,7 @@ export default function ViewSelection() {
             cold_water_temp,
             wet_bulb_temp,
             dry_bulb_temp,
-            atmospheric_pressure,
+            ambient_pressure,
             cooling_tower_model,
             safety_factor,
             actual_flowrate,
@@ -165,7 +165,7 @@ export default function ViewSelection() {
       location: selectionData.location,
       selectionBy: selectionData.selection_by,
       flowRate: selectionData.water_flow_rate.toString(),
-      pressure: selectionData.atmospheric_pressure.toString(),
+      pressure: selectionData.ambient_pressure.toString(),
       hotWater: selectionData.hot_water_temp.toString(),
       coldWater: selectionData.cold_water_temp.toString(),
       wetBulb: selectionData.wet_bulb_temp.toString(),
@@ -201,7 +201,7 @@ export default function ViewSelection() {
   // Input parameters fields
   const inputParametersFields = [
     { label: "Water Flow Rate", value: selectionData.water_flow_rate, unit: "m³/hr" },
-    { label: "Atmospheric Pressure", value: selectionData.atmospheric_pressure, unit: "kPa" },
+    { label: "Ambient Pressure", value: selectionData.ambient_pressure, unit: "kPa" },
     { label: "Hot Water Temp", value: selectionData.hot_water_temp, unit: "°C" },
     { label: "Cold Water Temp", value: selectionData.cold_water_temp, unit: "°C" },
     { label: "Wet Bulb Temp", value: selectionData.wet_bulb_temp, unit: "°C" },

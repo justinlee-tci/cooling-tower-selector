@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { useSelection } from "./SelectionContext";
 import { useFloating, arrow, shift, offset, FloatingPortal } from '@floating-ui/react';
 
-// Update parameter ranges with standard atmospheric pressure as default
+// Update parameter ranges
 const parameterRanges = {
   waterFlowRate: { min: 1, max: 10000 }, // m³/hr
-  atmosphericPressure: { 
+  ambientPressure: { 
     min: 90, 
     max: 105,
     default: 101.325 // Standard sea level pressure in kPa
@@ -34,7 +34,7 @@ const requiredFields = [
   "selectionBy",
   // Input Parameters
   "waterFlowRate",
-  "atmosphericPressure",
+  "ambientPressure",
   "hotWaterTemp",
   "coldWaterTemp",
   "wetBulbTemp",
@@ -111,9 +111,9 @@ export default function Step1ProjectDetails() {
 
   // Add useEffect to set default atmospheric pressure on component mount
   useEffect(() => {
-    if (!selectionData.atmosphericPressure) {
+    if (!selectionData.ambientPressure) {
       updateSelectionData({ 
-        atmosphericPressure: parameterRanges.atmosphericPressure.default 
+        ambientPressure: parameterRanges.ambientPressure.default 
       });
     }
     
@@ -227,15 +227,15 @@ export default function Step1ProjectDetails() {
   const inputParameters = [
     { label: "Water Flow Rate", key: "waterFlowRate", unit: "m³/hr", placeholder: "Enter flow rate" },
     { 
-      label: "Atmospheric Pressure", 
-      key: "atmosphericPressure", 
+      label: "Ambient Pressure", 
+      key: "ambientPressure", 
       unit: "kPa", 
       placeholder: "Default: 101.325 kPa"
     },
     { label: "Hot Water Temperature", key: "hotWaterTemp", unit: "°C", placeholder: "Enter temp" },
     { label: "Cold Water Temperature", key: "coldWaterTemp", unit: "°C", placeholder: "Enter temp" },
     { label: "Wet Bulb Temperature", key: "wetBulbTemp", unit: "°C", placeholder: "Enter temp" },
-    { label: "Dry Bulb Temperature", key: "dryBulbTemp", unit: "°C", placeholder: "Enter temp" },
+    { label: "Dry Bulb Temperature", key: "dryBulbTemp", unit: "°C", placeholder: "Enter temp" }
   ];
 
   return (

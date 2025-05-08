@@ -5,7 +5,7 @@
 
 // General constants
 const Cpair = 1.006;    // Specific heat of air (kJ/kg·K)
-const Cpvapor = 1.86;   // Specific heat of water vapor (kJ/kg·K)
+const Cpvapor = 1.805;   // Specific heat of water vapor (kJ/kg·K)
 const Cpwater = 4.186;  // Specific heat of water (kJ/kg·K)
 const hfg = 2501;       // Latent heat of vaporization (kJ/kg)
 const Mr = 0.62198;     // Molecular weight ratio of water vapor to dry air
@@ -18,13 +18,15 @@ const DEFAULT_FILL_FORMULA = "Double"; // Default filling formula type
 
 /**
  * Calculate Cold Water Temperature (CWT) based on parameters
+ * Original VBA function: CWT_WB_Range_C_Slope_LG_P_FTYPE_CALTYPE
+ * 
  * @param {number} WB - Wet Bulb temperature
  * @param {number} DTW - Range (Hot Water - Cold Water temperature)
  * @param {number} P1 - Atmospheric pressure (typically 101.325 kPa)
  * @param {string} FLOW - Flow type: "COUNTER" or "CROSS"
  * @returns {number} Cold Water Temperature
  */
-function calculateApproach(WB, DTW, P1, FLOW) {
+function calculateCWT(WB, DTW, P1, FLOW) {
     // Calculate Temperature inlet
     let TW1 = (90 + (DTW + WB)) / 2; 
     let RTW1 = (TW1 - (DTW + WB)) / 2;
@@ -85,6 +87,8 @@ function calculateApproach(WB, DTW, P1, FLOW) {
 
 /**
  * Calculate U/N by CTI
+ * Original VBA function: KaVL_HW_CW_WB_LG_P_FTYPE
+ * 
  * @param {number} TW1 - Hot water temperature
  * @param {number} TW2 - Cold water temperature
  * @param {number} WB - Wet bulb temperature
@@ -146,6 +150,8 @@ function UTN_by_CTI(TW1, TW2, WB, PP, FLOW) {
 
 /**
  * Calculate enthalpy of moist air
+ * Original VBA function: fh_DBT_WBT_P
+ * 
  * @param {number} DBT - Dry Bulb Temperature (°C)
  * @param {number} WBT - Wet Bulb Temperature (°C)
  * @param {number} P - Atmospheric pressure (kPa)
@@ -158,6 +164,8 @@ function calculateMoistAirEnthalpy(DBT, WBT, P) {
 
 /**
  * Calculate humidity ratio
+ * Original VBA function: fW_DBT_WBT_P
+ * 
  * @param {number} DBT - Dry Bulb Temperature (°C)
  * @param {number} WBT - Wet Bulb Temperature (°C)
  * @param {number} P - Atmospheric pressure (kPa)
@@ -184,6 +192,8 @@ function calculateHumidityRatio(DBT, WBT, P) {
 
 /**
  * Calculate U/N of Filling
+ * Original VBA function: UTN_of_Fi
+ * 
  * @param {string} Fi_Formula - Fill type formula: "Single" or "Double"
  * @returns {number} UTN value
  */
@@ -204,6 +214,8 @@ function calculateFillingPerformance(Fi_Formula) {
 
 /**
  * Calculate saturated vapor pressure
+ * Original VBA function: fPws
+ * 
  * @param {number} t - Temperature (°C)
  * @returns {number} Saturated vapor pressure (kPa)
  */
@@ -229,6 +241,8 @@ function calculateSaturatedVaporPressure(t) {
 
 /**
  * Calculate saturation factor for wet bulb calculations
+ * Original VBA function: Fswb
+ * 
  * @param {number} t - Temperature in Fahrenheit
  * @param {number} P - Pressure in psi
  * @returns {number} Saturation factor
@@ -254,14 +268,14 @@ function calculateSaturationFactor(t, P) {
 
 // Export functions for use in other modules
 module.exports = {
-    calculateApproach,
-    UTN_by_CTI,
-    calculateMoistAirEnthalpy,
-    calculateHumidityRatio,
-    calculateFillingPerformance,
-    calculateSaturatedVaporPressure,
-    calculateSaturationFactor,
-    // Export constants as well for reference
+    calculateCWT,                       // Original: CWT_WB_Range_C_Slope_LG_P_FTYPE_CALTYPE
+    UTN_by_CTI,                         // Original: KaVL_HW_CW_WB_LG_P_FTYPE
+    calculateMoistAirEnthalpy,          // Original: fh_DBT_WBT_P
+    calculateHumidityRatio,             // Original: fW_DBT_WBT_P
+    calculateFillingPerformance,        // Original: UTN_of_Fi
+    calculateSaturatedVaporPressure,    // Original: fPws
+    calculateSaturationFactor,          // Original: Fswb
+
     constants: {
         FILL_CONSTANT_A,
         FILL_SLOPE_B,
