@@ -11,9 +11,9 @@ const hfg = 2501;       // Latent heat of vaporization (kJ/kg)
 const Mr = 0.62198;     // Molecular weight ratio of water vapor to dry air
 
 // Fill performance constants
-const FILL_CONSTANT_A = 1.772;   // Filling performance constant
-const FILL_SLOPE_B = 0.78;      // Filling performance slope
-const DEFAULT_LG_RATIO = 1.44;  // Default L/G (Liquid to Gas) ratio
+// const FILL_CONSTANT_A = 1.626;   // C constant based on (KaV/L)/(L/G)^SLOPE 
+const FILL_SLOPE_B = -0.8;      // Fill's slope (b)
+const DEFAULT_LG_RATIO = 1.8488;  // Fill's L/G ratio (N)
 const DEFAULT_FILL_FORMULA = "Double"; // Default filling formula type
 
 /**
@@ -24,43 +24,45 @@ const DEFAULT_FILL_FORMULA = "Double"; // Default filling formula type
  * @param {number} DTW - Range (Hot Water - Cold Water temperature)
  * @param {number} P1 - Atmospheric pressure (typically 101.325 kPa)
  * @param {string} FLOW - Flow type: "COUNTER" or "CROSS"
+ * @param {number} flowRatePercent - Flow rate percentage (90, 100, or 110)
  * @returns {number} Cold Water Temperature
  */
-function calculateCWT(WB, DTW, P1, FLOW) {
+function calculateCWT(hotWaterTemp, coldWaterTemp, wetBulbTemp, WB, DTW, P1, FLOW, flowRatePercent) {
+    // Standardize flow type
+    let flowType = FLOW.toUpperCase();
+    if (flowType === "CROSSFLOW") flowType = "CROSS";
+    if (flowType === "COUNTERFLOW") flowType = "COUNTER";
+
     // Calculate Temperature inlet
     let TW1 = (90 + (DTW + WB)) / 2; 
     let RTW1 = (TW1 - (DTW + WB)) / 2;
     let TW2 = TW1 - DTW;
     let No = 0;
     let UTN_CTI, UTN_Fi;
-    
-    // Using constants for fill performance
-    const a = FILL_CONSTANT_A;  // Fill constant from global constant
-    const b = FILL_SLOPE_B;     // Fill slope from global constant
-    const N = DEFAULT_LG_RATIO; // L/G ratio from global constant
-    const Fi_Formula = DEFAULT_FILL_FORMULA; // Fill formula from global constant
+    let kavL = UTN_by_CTI(hotWaterTemp, coldWaterTemp, wetBulbTemp, P1, flowType, 100);
+    let a = kavL/Math.pow(DEFAULT_LG_RATIO, FILL_SLOPE_B);    
+    // Adjust L/G ratio based on flow rate percentage
+    const baseN = DEFAULT_LG_RATIO;
     
     // START iteration loop
     while (true) {
         let PP = P1;
         
-        UTN_CTI = UTN_by_CTI(TW1, TW2, WB, PP, FLOW);
-        UTN_Fi = calculateFillingPerformance(Fi_Formula);
+        UTN_CTI = UTN_by_CTI(TW1, TW2, WB, PP, flowType, flowRatePercent);
+        UTN_Fi = calculateFillingPerformance(a, DEFAULT_FILL_FORMULA, flowRatePercent);
         
         if (UTN_Fi === 0) {
-            N = 0;
             return TW2;
         }
         
         No = No + 1;
         
         if (UTN_CTI === 0) {
-            // GoTo Large
             TW1 = TW1 + RTW1;
             RTW1 = RTW1 / 2;
             TW2 = TW1 - DTW;
             if (No < 100) continue;
-            else return "?";
+            else return TW2;
         }
         
         if (UTN_CTI >= UTN_Fi - 0.000004 && UTN_CTI <= UTN_Fi + 0.000004) {
@@ -68,25 +70,23 @@ function calculateCWT(WB, DTW, P1, FLOW) {
         }
         
         if (UTN_CTI > UTN_Fi) {
-            // GoTo Large
             TW1 = TW1 + RTW1;
             RTW1 = RTW1 / 2;
             TW2 = TW1 - DTW;
             if (No < 100) continue;
-            else return "?";
+            else return TW2;
         } else {
-            // GoTo Small
             TW1 = TW1 - RTW1;
             RTW1 = RTW1 / 2;
             TW2 = TW1 - DTW;
             if (No < 100) continue;
-            else return "?";
+            else return TW2;
         }
     }
 }
 
 /**
- * Calculate U/N by CTI
+ * Calculate U/N by CTI (KaV/L) 
  * Original VBA function: KaVL_HW_CW_WB_LG_P_FTYPE
  * 
  * @param {number} TW1 - Hot water temperature
@@ -94,11 +94,17 @@ function calculateCWT(WB, DTW, P1, FLOW) {
  * @param {number} WB - Wet bulb temperature
  * @param {number} PP - Atmospheric pressure
  * @param {string} FLOW - Flow type: "COUNTER" or "CROSS"
+ * @param {number} flowRatePercent - Flow rate percentage (90, 100, or 110)
  * @returns {number} KaV/L value
  */
-function UTN_by_CTI(TW1, TW2, WB, PP, FLOW) {
+function UTN_by_CTI(TW1, TW2, WB, PP, FLOW, flowRatePercent) {
+    // Standardize flow type
+    let flowType = FLOW.toUpperCase();
+    if (flowType === "CROSSFLOW") flowType = "CROSS";
+    if (flowType === "COUNTERFLOW") flowType = "COUNTER";
+
     // Using L/G ratio from global constant
-    const N = DEFAULT_LG_RATIO;
+    const N = DEFAULT_LG_RATIO*flowRatePercent/100; // Adjusted L/G ratio
     let DT = TW1 - TW2;
     let PPP = PP;
     
@@ -134,9 +140,9 @@ function UTN_by_CTI(TW1, TW2, WB, PP, FLOW) {
     
     let result = DT * 4.186 * (X1 + X2 + X3 + X4) / 4;
     
-    if (FLOW === "COUNTER") {
+    if (flowType === "COUNTER") {
         return result;
-    } else if (FLOW === "CROSS") {
+    } else if (flowType === "CROSS") {
         let SS = (I2 - (I3 + N * DT)) / (I1 - I3);
         if (SS >= 1) {
             return 0;
@@ -195,13 +201,14 @@ function calculateHumidityRatio(DBT, WBT, P) {
  * Original VBA function: UTN_of_Fi
  * 
  * @param {string} Fi_Formula - Fill type formula: "Single" or "Double"
+ * @param {number} flowRatePercent - Flow rate percentage (90, 100, or 110)
  * @returns {number} UTN value
  */
-function calculateFillingPerformance(Fi_Formula) {
+function calculateFillingPerformance(a, Fi_Formula, flowRatePercent) {
     // Using constants for fill performance
-    const a = FILL_CONSTANT_A;  // Fill constant from global constant
+    // const a = FILL_CONSTANT_A;  // Fill constant from global constant
     const b = FILL_SLOPE_B;     // Fill slope from global constant
-    const N = DEFAULT_LG_RATIO; // L/G ratio from global constant
+    const N = DEFAULT_LG_RATIO*flowRatePercent/100; // adjusted L/G ratio from global constant
     
     if (Fi_Formula === "Single") {
         return Math.pow(10, (a * N + b));
@@ -267,19 +274,19 @@ function calculateSaturationFactor(t, P) {
 }
 
 // Export functions for use in other modules
-module.exports = {
+export {
     calculateCWT,                       // Original: CWT_WB_Range_C_Slope_LG_P_FTYPE_CALTYPE
     UTN_by_CTI,                         // Original: KaVL_HW_CW_WB_LG_P_FTYPE
     calculateMoistAirEnthalpy,          // Original: fh_DBT_WBT_P
     calculateHumidityRatio,             // Original: fW_DBT_WBT_P
     calculateFillingPerformance,        // Original: UTN_of_Fi
     calculateSaturatedVaporPressure,    // Original: fPws
-    calculateSaturationFactor,          // Original: Fswb
+    calculateSaturationFactor           // Original: Fswb
+};
 
-    constants: {
-        FILL_CONSTANT_A,
-        FILL_SLOPE_B,
-        DEFAULT_LG_RATIO,
-        DEFAULT_FILL_FORMULA
-    }
+export const constants = {
+    // FILL_CONSTANT_A,
+    FILL_SLOPE_B,
+    DEFAULT_LG_RATIO,
+    DEFAULT_FILL_FORMULA
 };

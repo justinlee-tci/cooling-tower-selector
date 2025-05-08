@@ -14,6 +14,7 @@ import {
   Legend
 } from 'chart.js';
 import { useState, useEffect, Suspense } from 'react';
+import { calculateCWT, UTN_by_CTI } from '@/formula/performanceCurveCalculations';
 
 ChartJS.register(
   CategoryScale,
@@ -34,7 +35,6 @@ function PerformanceContent() {
   const searchParams = useSearchParams();
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState('details'); // For mobile view
-  const [activeRangeIndex, setActiveRangeIndex] = useState(null); // For mobile table view
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -68,16 +68,23 @@ function PerformanceContent() {
   };
 
   const designRange = parseFloat(params.hotWaterTemp) - parseFloat(params.coldWaterTemp);
+  const designWBT = parseFloat(params.wetBulbTemp);
 
   const [ranges, setRanges] = useState([
-    Number((designRange * 0.6).toFixed(2)),
-    Number((designRange * 0.8).toFixed(2)),
-    Number(designRange.toFixed(2)),
-    Number((designRange * 1.2).toFixed(2)),
-    Number((designRange * 1.4).toFixed(2))
+    Number((designRange * 0.6).toFixed(1)),
+    Number((designRange * 0.8).toFixed(1)),
+    Number(designRange.toFixed(1)),
+    Number((designRange * 1.2).toFixed(1)),
+    Number((designRange * 1.4).toFixed(1))
   ]);
 
-  const [wbtValues, setWbtValues] = useState([15, 20, 25, 30, 35]);
+  const [wbtValues, setWbtValues] = useState([
+    designWBT - 2,
+    designWBT - 1,
+    designWBT,
+    designWBT + 1,
+    designWBT + 2
+  ]);
 
   const handleRangeChange = (index, value) => {
     const newRanges = [...ranges];
@@ -91,14 +98,41 @@ function PerformanceContent() {
     setWbtValues(newWbtValues);
   };
 
-  const calculateCWT = (wbt, range, flowRatePercent) => {
-    return parseFloat(params.hotWaterTemp) - (range * (1 - (wbt / 100)) * (flowRatePercent / 100));
+  const calculateColdWaterTemp = (wbt, range, flowRatePercent) => {
+      // Convert tower type to match format expected by calculateCWT
+    let flowType = "";
+    if (params.towerType?.toLowerCase() === "crossflow") {
+      flowType = "CROSS";
+    } else if (params.towerType?.toLowerCase() === "counterflow") {
+      flowType = "COUNTER";
+    } else {
+      flowType = "COUNTER"; // Default to counter flow if not specified
+    }
+    // const FILL_CONSTANT_A = UTN_by_CTI(
+    //   parseFloat(params.hotWaterTemp),
+    //   parseFloat(params.coldWaterTemp),
+    //   parseFloat(wbt),
+    //   parseFloat(params.ambientPressure),
+    //   flowType,
+    //   flowRatePercent
+    // );
+
+    return calculateCWT(
+      parseFloat(params.hotWaterTemp),
+      parseFloat(params.coldWaterTemp),
+      parseFloat(params.wetBulbTemp),
+      parseFloat(wbt),
+      parseFloat(range),
+      parseFloat(params.ambientPressure),
+      flowType,
+      flowRatePercent
+    );
   };
 
   const createDatasetForFlowRate = (flowRate) => {
     return ranges.map((range, rangeIndex) => ({
       label: `Range ${range}°C`,
-      data: wbtValues.map(wbt => calculateCWT(wbt, range, flowRate)),
+      data: wbtValues.map(wbt => calculateColdWaterTemp(wbt, range, flowRate)),
       borderColor: `hsl(${220 + rangeIndex * 30}, 70%, 50%)`,
       tension: 0.4,
     }));
@@ -233,141 +267,63 @@ function PerformanceContent() {
     </div>
   );
 
-  const RangeSelector = () => (
-    <div className="mb-4 md:hidden">
-      <h3 className="text-base font-bold text-gray-900 mb-2">Select Range</h3>
-      <div className="flex flex-wrap gap-2">
-        {ranges.map((range, index) => (
-          <button
-            key={index}
-            className={`px-2 py-1 text-xs rounded-md ${
-              activeRangeIndex === index 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-gray-200 text-gray-800'
-            }`}
-            onClick={() => setActiveRangeIndex(index)}
-          >
-            {range}°C
-          </button>
-        ))}
-        <button
-          className={`px-2 py-1 text-xs rounded-md ${
-            activeRangeIndex === null 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-200 text-gray-800'
-          }`}
-          onClick={() => setActiveRangeIndex(null)}
-        >
-          View All
-        </button>
-      </div>
-    </div>
-  );
-
   const PerformanceTable = () => {
-    // Mobile version with option to view one range at a time
-    if (isMobile && activeRangeIndex !== null) {
-      return (
-        <div className="overflow-x-auto pb-4">
-          <table className="min-w-full border-collapse border border-gray-300">
-            <thead>
-              <tr>
-                <th className="border border-gray-300 px-2 py-1 text-xs text-black font-bold">
-                  WBT (°C)
-                </th>
-                <th className="border border-gray-300 px-2 py-1 text-xs text-black font-bold">
-                  CWT (°C) - Range {ranges[activeRangeIndex]}°C
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {wbtValues.map((wbt, wbtIndex) => (
-                <tr key={wbtIndex}>
-                  <td className="border border-gray-300 px-2 py-1 text-center text-xs">
-                    <input
-                      type="number"
-                      value={wbt}
-                      onChange={(e) => handleWbtChange(wbtIndex, e.target.value)}
-                      className="w-12 text-center text-black text-xs"
-                      step="0.1"
-                    />
-                  </td>
-                  <td className="border border-gray-300 px-2 py-1 text-center bg-gray-50 text-xs text-black">
-                    {calculateCWT(wbt, ranges[activeRangeIndex], 100).toFixed(1)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
+    const flowRates = [90, 100, 110];
     
-    // Full table for desktop or "View All" on mobile
     return (
-      <div className="overflow-x-auto pb-4">
-        <table className="min-w-full border-collapse border border-gray-300">
-          <thead>
-            <tr>
-              <th className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-${isMobile ? 'xs' : 'sm'} text-black font-bold`}>
-                Range (°C)
-              </th>
-              {ranges.map((range, index) => (
-                <th key={index} className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-${isMobile ? 'xs' : 'sm'}`}>
-                  <input
-                    type="number"
-                    value={range}
-                    onChange={(e) => handleRangeChange(index, e.target.value)}
-                    className={`w-${isMobile ? '12' : '20'} text-center text-black text-${isMobile ? 'xs' : 'sm'}`}
-                    step="0.01"
-                  />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {wbtValues.map((wbt, wbtIndex) => (
-              <tr key={wbtIndex}>
-                <td className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-${isMobile ? 'xs' : 'sm'}`}>
-                  <div className="flex items-center">
-                    <span className={`mr-${isMobile ? '1' : '2'} text-black font-bold text-${isMobile ? 'xs' : 'sm'}`}>WBT (°C):</span>
-                    <input
-                      type="number"
-                      value={wbt}
-                      onChange={(e) => handleWbtChange(wbtIndex, e.target.value)}
-                      className={`w-${isMobile ? '12' : '16'} text-center text-black text-${isMobile ? 'xs' : 'sm'}`}
-                      step="0.1"
-                    />
-                  </div>
-                </td>
-                {ranges.map((range, rangeIndex) => (
-                  <td key={rangeIndex} className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-center bg-gray-50 text-${isMobile ? 'xs' : 'sm'} text-black`}>
-                    {calculateCWT(wbt, range, 100).toFixed(1)}
-                  </td>
+      <div className="space-y-8">
+        {flowRates.map(flowRate => (
+          <div key={flowRate} className="overflow-x-auto pb-4">
+            <h3 className="text-base font-bold text-gray-900 mb-2">
+              Performance Data - {flowRate}% Flow ({flowRate === 100 
+                ? parseFloat(params.waterFlowRate) 
+                : (parseFloat(params.waterFlowRate) * flowRate / 100).toFixed(1)} m³/hr)
+            </h3>
+            <table className="min-w-full border-collapse border border-gray-300">
+              <thead>
+                <tr>
+                  <th className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-${isMobile ? 'xs' : 'sm'} text-black font-bold`}>
+                    WBT (°C)
+                  </th>
+                  {ranges.map((range, index) => (
+                    <th key={index} className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-${isMobile ? 'xs' : 'sm'}`}>
+                      <input
+                        type="number"
+                        value={range}
+                        onChange={(e) => handleRangeChange(index, e.target.value)}
+                        className={`w-${isMobile ? '12' : '20'} text-center text-black text-${isMobile ? 'xs' : 'sm'}`}
+                        step="1"
+                      />
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {wbtValues.map((wbt, wbtIndex) => (
+                  <tr key={wbtIndex}>
+                    <td className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-${isMobile ? 'xs' : 'sm'}`}>
+                      <div className="flex items-center">
+                        <span className={`mr-${isMobile ? '1' : '2'} text-black font-bold text-${isMobile ? 'xs' : 'sm'}`}>WBT (°C):</span>
+                        <input
+                          type="number"
+                          value={wbt}
+                          onChange={(e) => handleWbtChange(wbtIndex, e.target.value)}
+                          className={`w-${isMobile ? '12' : '16'} text-center text-black text-${isMobile ? 'xs' : 'sm'}`}
+                          step="1"
+                        />
+                      </div>
+                    </td>
+                    {ranges.map((range, rangeIndex) => (
+                      <td key={rangeIndex} className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-center bg-gray-50 text-${isMobile ? 'xs' : 'sm'} text-black`}>
+                        {calculateColdWaterTemp(wbt, range, flowRate).toFixed(1)}
+                      </td>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <style jsx>{`
-          input[type="number"] {
-            border: 1px solid #e2e8f0;
-            border-radius: 0.25rem;
-            padding: ${isMobile ? '0.125rem' : '0.25rem'};
-            outline: none;
-            color: black;
-          }
-          
-          input[type="number"]:focus {
-            border-color: #4299e1;
-            box-shadow: 0 0 0 1px #4299e1;
-          }
-          
-          .bg-gray-50 {
-            background-color: #f8fafc;
-          }
-        `}</style>
+              </tbody>
+            </table>
+          </div>
+        ))}
       </div>
     );
   };
@@ -413,7 +369,6 @@ function PerformanceContent() {
       case 'table':
         return (
           <div>
-            <RangeSelector />
             <PerformanceTable />
           </div>
         );
