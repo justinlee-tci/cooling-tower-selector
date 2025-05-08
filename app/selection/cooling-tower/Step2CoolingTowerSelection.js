@@ -462,7 +462,7 @@ export default function Step2CoolingTowerSelection() {
                   </td>
                   <td className="border p-2 text-left text-gray-900 whitespace-nowrap">{model.model_name}</td>
                   <td className="border p-2 text-center text-gray-900 whitespace-nowrap">
-                    {model.type.toUpperCase()}
+                    {model.type}
                   </td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.nominal_capacity}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.nominal_flowrate.toFixed(2)}</td>

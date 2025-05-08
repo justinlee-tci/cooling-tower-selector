@@ -65,7 +65,11 @@ export default function ViewSelection() {
 
   const handleGenerateReport = async () => {
     try {
-      const pdfBytes = await generateReport(selectionData, modelDetails);
+      // Make sure modelDetails is included in the report generation
+      const pdfBytes = await generateReport({
+        ...selectionData,
+        tower_type: modelDetails?.type // Add tower type to report data
+      }, modelDetails);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -154,8 +158,6 @@ export default function ViewSelection() {
   }, [user, params.selectionId]);
 
   const handlePerformanceCurve = () => {
-    if (!selectionData) return;
-  
     const params = new URLSearchParams({
       model: selectionData.cooling_tower_model,
       projectName: selectionData.project_name,
@@ -168,11 +170,11 @@ export default function ViewSelection() {
       coldWater: selectionData.cold_water_temp.toString(),
       wetBulb: selectionData.wet_bulb_temp.toString(),
       dryBulb: selectionData.dry_bulb_temp.toString(),
-      date: new Date(selectionData.date_created).toISOString()
+      date: selectionData.date_created,
+      towerType: modelDetails?.type || '' // Add tower type from modelDetails
     });
-  
-    // Match the exact directory casing
-    window.open(`/PerformanceCurve?${params.toString()}`, '_blank', 'width=1024,height=768');
+
+    window.open(`/PerformanceCurve?${params.toString()}`, '_blank');
   };
 
   const handleBack = () => {

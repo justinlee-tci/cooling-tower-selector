@@ -225,7 +225,8 @@ export default function Step3Confirmation() {
       coldWater: selectionData.coldWaterTemp,
       wetBulb: selectionData.wetBulbTemp,
       dryBulb: selectionData.dryBulbTemp,
-      date: selectionData.date
+      date: selectionData.date,
+      towerType: modelDetails?.type || ''  // Add the tower type parameter
     });
 
     // Open in a new window

@@ -1,254 +1,271 @@
 /**
- * Enhanced Cooling Tower Calculator
- * Reverse-engineered functions to calculate cooling tower performance curve data
+ * Performance Curve Calculations for Cooling Tower Analysis
+ * Converted from VBA to JavaScript
  */
 
+// General constants
+const Cpair = 1.006;    // Specific heat of air (kJ/kg·K)
+const Cpvapor = 1.86;   // Specific heat of water vapor (kJ/kg·K)
+const Cpwater = 4.186;  // Specific heat of water (kJ/kg·K)
+const hfg = 2501;       // Latent heat of vaporization (kJ/kg)
+const Mr = 0.62198;     // Molecular weight ratio of water vapor to dry air
+
+// Fill performance constants
+const FILL_CONSTANT_A = 1.772;   // Filling performance constant
+const FILL_SLOPE_B = 0.78;      // Filling performance slope
+const DEFAULT_LG_RATIO = 1.44;  // Default L/G (Liquid to Gas) ratio
+const DEFAULT_FILL_FORMULA = "Double"; // Default filling formula type
+
 /**
- * Calculate the enthalpy of air at a specific temperature
- * @param {number} T - Temperature in °C
- * @returns {number} Enthalpy in kJ/kg
+ * Calculate Cold Water Temperature (CWT) based on parameters
+ * @param {number} WB - Wet Bulb temperature
+ * @param {number} DTW - Range (Hot Water - Cold Water temperature)
+ * @param {number} P1 - Atmospheric pressure (typically 101.325 kPa)
+ * @param {string} FLOW - Flow type: "COUNTER" or "CROSS"
+ * @returns {number} Cold Water Temperature
  */
-function calculateEnthalpy(T) {
-    const CA = 373.15 / (T + 273.15);
-    const CB = 1 / CA;
-    const C1 = -0.00000013816 * (Math.pow(10, 11.344 * (1 - CB)) - 1);
-    const C2 = 5.02808 * Math.log10(CA) + (-7.90298 * (CA - 1)) + Math.log10(1.03323);
-    const C3 = 0.0081328 * (Math.pow(10, -3.49149 * (CA - 1)) - 1);
-    const p = Math.pow(10, (C1 + C2 + C3));
-    return 0.24 * T + (597.3 + 0.441 * T) * 0.622 * p / (1.03323 - p);
-  }
-  
-  /**
-   * Calculate the cold water temperature based on wet bulb temperature,
-   * temperature range, and flow rate percentage
-   * @param {number} hotWaterTemp - Hot water inlet temperature (°C)
-   * @param {number} wetBulbTemp - Wet bulb temperature (°C)
-   * @param {number} range - Temperature range (°C)
-   * @param {number} flowRatePercent - Flow rate percentage (%)
-   * @param {string} flowType - Flow type ("CROSSFLOW" or "COUNTERFLOW")
-   * @returns {number} Cold water temperature (°C)
-   */
-  function calculateColdWaterTemp(hotWaterTemp, wetBulbTemp, range, flowRatePercent, flowType) {
-    // First calculate the approach
-    const approach = calculateApproach(hotWaterTemp, range, wetBulbTemp, flowRatePercent, flowType);
+function calculateApproach(WB, DTW, P1, FLOW) {
+    // Calculate Temperature inlet
+    let TW1 = (90 + (DTW + WB)) / 2; 
+    let RTW1 = (TW1 - (DTW + WB)) / 2;
+    let TW2 = TW1 - DTW;
+    let No = 0;
+    let UTN_CTI, UTN_Fi;
     
-    // Cold water temperature = hot water temperature - range
-    // or equivalently: wet bulb temperature + approach
-    return wetBulbTemp + approach;
-  }
-  
-  /**
-   * Calculate the approach (difference between cold water and wet bulb temperatures)
-   * @param {number} hotWaterTemp - Hot water inlet temperature (°C)
-   * @param {number} range - Temperature range (°C)
-   * @param {number} wetBulbTemp - Wet bulb temperature (°C)
-   * @param {number} flowRatePercent - Flow rate percentage (%)
-   * @param {string} flowType - Flow type ("CROSSFLOW" or "COUNTERFLOW")
-   * @returns {number} Approach temperature (°C)
-   */
-  function calculateApproach(hotWaterTemp, range, wetBulbTemp, flowRatePercent, flowType) {
-    // Adjust flow rate factor
-    const flowFactor = flowRatePercent / 100;
+    // Using constants for fill performance
+    const a = FILL_CONSTANT_A;  // Fill constant from global constant
+    const b = FILL_SLOPE_B;     // Fill slope from global constant
+    const N = DEFAULT_LG_RATIO; // L/G ratio from global constant
+    const Fi_Formula = DEFAULT_FILL_FORMULA; // Fill formula from global constant
     
-    // Calculate cold water temperature without approach adjustment
-    const coldWaterTemp = hotWaterTemp - range;
+    // START iteration loop
+    while (true) {
+        let PP = P1;
+        
+        UTN_CTI = UTN_by_CTI(TW1, TW2, WB, PP, FLOW);
+        UTN_Fi = calculateFillingPerformance(Fi_Formula);
+        
+        if (UTN_Fi === 0) {
+            N = 0;
+            return TW2;
+        }
+        
+        No = No + 1;
+        
+        if (UTN_CTI === 0) {
+            // GoTo Large
+            TW1 = TW1 + RTW1;
+            RTW1 = RTW1 / 2;
+            TW2 = TW1 - DTW;
+            if (No < 100) continue;
+            else return "?";
+        }
+        
+        if (UTN_CTI >= UTN_Fi - 0.000004 && UTN_CTI <= UTN_Fi + 0.000004) {
+            return TW2;
+        }
+        
+        if (UTN_CTI > UTN_Fi) {
+            // GoTo Large
+            TW1 = TW1 + RTW1;
+            RTW1 = RTW1 / 2;
+            TW2 = TW1 - DTW;
+            if (No < 100) continue;
+            else return "?";
+        } else {
+            // GoTo Small
+            TW1 = TW1 - RTW1;
+            RTW1 = RTW1 / 2;
+            TW2 = TW1 - DTW;
+            if (No < 100) continue;
+            else return "?";
+        }
+    }
+}
+
+/**
+ * Calculate U/N by CTI
+ * @param {number} TW1 - Hot water temperature
+ * @param {number} TW2 - Cold water temperature
+ * @param {number} WB - Wet bulb temperature
+ * @param {number} PP - Atmospheric pressure
+ * @param {string} FLOW - Flow type: "COUNTER" or "CROSS"
+ * @returns {number} KaV/L value
+ */
+function UTN_by_CTI(TW1, TW2, WB, PP, FLOW) {
+    // Using L/G ratio from global constant
+    const N = DEFAULT_LG_RATIO;
+    let DT = TW1 - TW2;
+    let PPP = PP;
     
-    // Baseline approach (difference between cold water temp and wet bulb temp)
-    let baseApproach = coldWaterTemp - wetBulbTemp;
+    let T1 = TW1;
+    let I1 = calculateMoistAirEnthalpy(T1, T1, PPP);
     
-    // Adjust approach based on flow rate
-    // For lower flow rates, the approach increases (less efficient cooling)
-    // For higher flow rates, the approach decreases (more efficient cooling)
-    let adjustedApproach;
+    let T2 = TW2;
+    let I2 = calculateMoistAirEnthalpy(T2, T2, PPP);
     
-    if (flowType === "COUNTERFLOW") {
-      // Counter flow towers are more efficient
-      adjustedApproach = baseApproach * (1 / flowFactor) * 0.9;
+    let T3 = WB;
+    let I3 = calculateMoistAirEnthalpy(T3, T3, PPP);
+    
+    let T4 = 0.9 * DT + TW2;
+    let I4 = calculateMoistAirEnthalpy(T4, T4, PPP);
+    
+    let T5 = 0.6 * DT + TW2;
+    let I5 = calculateMoistAirEnthalpy(T5, T5, PPP);
+    
+    let T6 = 0.4 * DT + TW2;
+    let I6 = calculateMoistAirEnthalpy(T6, T6, PPP);
+    
+    let T7 = 0.1 * DT + TW2;
+    let I7 = calculateMoistAirEnthalpy(T7, T7, PPP);
+    
+    let X1 = 1 / (I4 - (I3 + N * 0.9 * DT * 4.186));
+    let X2 = 1 / (I5 - (I3 + N * 0.6 * DT * 4.186));
+    let X3 = 1 / (I6 - (I3 + N * 0.4 * DT * 4.186));
+    let X4 = 1 / (I7 - (I3 + N * 0.1 * DT * 4.186));
+    
+    if (X1 <= 0 || X2 <= 0 || X3 <= 0 || X4 <= 0) {
+        return 0;
+    }
+    
+    let result = DT * 4.186 * (X1 + X2 + X3 + X4) / 4;
+    
+    if (FLOW === "COUNTER") {
+        return result;
+    } else if (FLOW === "CROSS") {
+        let SS = (I2 - (I3 + N * DT)) / (I1 - I3);
+        if (SS >= 1) {
+            return 0;
+        }
+        let FF = 1 - 0.106 * Math.pow((1 - SS), 3.5);
+        return result / FF;
     } else {
-      // Cross flow towers are less efficient
-      adjustedApproach = baseApproach * (1 / flowFactor);
+        return 0;
+    }
+}
+
+/**
+ * Calculate enthalpy of moist air
+ * @param {number} DBT - Dry Bulb Temperature (°C)
+ * @param {number} WBT - Wet Bulb Temperature (°C)
+ * @param {number} P - Atmospheric pressure (kPa)
+ * @returns {number} Enthalpy (kJ/kg)
+ */
+function calculateMoistAirEnthalpy(DBT, WBT, P) {
+    let w = calculateHumidityRatio(DBT, WBT, P);
+    return Cpair * DBT + w * (hfg + Cpvapor * DBT);
+}
+
+/**
+ * Calculate humidity ratio
+ * @param {number} DBT - Dry Bulb Temperature (°C)
+ * @param {number} WBT - Wet Bulb Temperature (°C)
+ * @param {number} P - Atmospheric pressure (kPa)
+ * @returns {number} Humidity ratio (kg/kg)
+ */
+function calculateHumidityRatio(DBT, WBT, P) {
+    if (WBT > DBT) {
+        console.error("Error: WBT > DBT");
+        return null;
     }
     
-    // Ensure approach is never negative (cold water can't be colder than wet bulb)
-    return Math.max(1, adjustedApproach);
-  }
-  
-  /**
-   * Calculate the cooling capacity of a tower
-   * @param {number} hotWaterTemp - Hot water inlet temperature (°C)
-   * @param {number} coldWaterTemp - Cold water outlet temperature (°C)
-   * @param {number} wetBulbTemp - Wet bulb temperature (°C)
-   * @param {number} flowRate - Water flow rate (m³/hr)
-   * @param {string} flowType - Flow type ("CROSSFLOW" or "COUNTERFLOW")
-   * @returns {number} Cooling capacity in RT (Refrigeration Tons)
-   */
-  function calculateCoolingCapacity(hotWaterTemp, coldWaterTemp, wetBulbTemp, flowRate, flowType) {
-    let N = 2;
-    let R_N = 1;
-    const FLOW = flowType.toUpperCase();
-  
-    let Fi_Formula = "Double";
-    let a, b, c, slope = 0.78, efficiency = 0.98;
-  
-    if (FLOW === "COUNTERFLOW") {
-      a = 0.700303572;
-      b = -1.311808;
-      c = 2.222;
-    } else {
-      a = 1.8488;
-      b = -0.8;
-      c = 1.772;
-    }
-  
-    for (let i = 0; i < 50; i++) {
-      const UTN_CTI = calculateUTN_by_CTI(hotWaterTemp, coldWaterTemp, wetBulbTemp, N, FLOW);
-      const UTN_Fi = calculateUTN_of_Fi(a, b, N, Fi_Formula);
-  
-      if (UTN_Fi === 0 || UTN_CTI === 0) {
-        N = 0;
-        break;
-      }
-  
-      if (Math.abs(UTN_CTI - UTN_Fi) <= 0.000004) break;
-  
-      if (UTN_CTI > UTN_Fi) N -= R_N;
-      else N += R_N;
-  
-      R_N /= 2;
-    }
-  
-    if (N === 0) return 0;
-    return flowRate / (N / c) / slope * efficiency;
-  }
-  
-  /**
-   * Calculate the UTN (Number of Transfer Units) based on CTI method
-   * @param {number} TW1 - Hot water inlet temperature (°C)
-   * @param {number} TW2 - Cold water outlet temperature (°C)
-   * @param {number} WB - Wet bulb temperature (°C)
-   * @param {number} N - L/G ratio (liquid to gas)
-   * @param {string} FLOW - Flow type ("CROSSFLOW" or "COUNTERFLOW")
-   * @returns {number} UTN value
-   */
-  function calculateUTN_by_CTI(TW1, TW2, WB, N, FLOW) {
-    const DT = TW1 - TW2;
-  
-    const I1 = calculateEnthalpy(TW1);
-    const I2 = calculateEnthalpy(TW2);
-    const I3 = calculateEnthalpy(WB);
-  
-    const I4 = calculateEnthalpy(0.9 * DT + TW2);
-    const I5 = calculateEnthalpy(0.6 * DT + TW2);
-    const I6 = calculateEnthalpy(0.4 * DT + TW2);
-    const I7 = calculateEnthalpy(0.1 * DT + TW2);
-  
-    const X1 = 1 / (I4 - (I3 + N * 0.9 * DT));
-    const X2 = 1 / (I5 - (I3 + N * 0.6 * DT));
-    const X3 = 1 / (I6 - (I3 + N * 0.4 * DT));
-    const X4 = 1 / (I7 - (I3 + N * 0.1 * DT));
-  
-    if (X1 <= 0 || X2 <= 0 || X3 <= 0 || X4 <= 0) return 0;
-  
-    let UTN = DT * (X1 + X2 + X3 + X4) / 4;
-  
-    if (FLOW === "COUNTERFLOW") {
-      return UTN;
-    } else if (FLOW === "CROSSFLOW") {
-      const SS = (I2 - (I3 + N * DT)) / (I1 - I3);
-      if (SS >= 1) return 0;
-      const FF = 1 - 0.106 * Math.pow(1 - SS, 3.5);
-      return UTN / FF;
-    }
-  
-    return 0;
-  }
-  
-  /**
-   * Calculate the UTN based on Fi formula
-   * @param {number} a - Coefficient a
-   * @param {number} b - Coefficient b
-   * @param {number} N - L/G ratio
-   * @param {string} Fi_Formula - Formula type ("Single" or "Double")
-   * @returns {number} UTN value
-   */
-  function calculateUTN_of_Fi(a, b, N, Fi_Formula) {
+    let PwsStar = calculateSaturatedVaporPressure(WBT);
+    
+    let tF = WBT * 1.8 + 32;
+    let Ppsi = 14.696 * P / 101.325;
+    
+    let Fs_wb = calculateSaturationFactor(tF, Ppsi);
+    
+    let WsStar = Mr * PwsStar * Fs_wb / (P - PwsStar * Fs_wb);
+    
+    return ((hfg + (Cpvapor - Cpwater) * WBT) * WsStar - Cpair * (DBT - WBT)) / 
+           (hfg + Cpvapor * DBT - Cpwater * WBT);
+}
+
+/**
+ * Calculate U/N of Filling
+ * @param {string} Fi_Formula - Fill type formula: "Single" or "Double"
+ * @returns {number} UTN value
+ */
+function calculateFillingPerformance(Fi_Formula) {
+    // Using constants for fill performance
+    const a = FILL_CONSTANT_A;  // Fill constant from global constant
+    const b = FILL_SLOPE_B;     // Fill slope from global constant
+    const N = DEFAULT_LG_RATIO; // L/G ratio from global constant
+    
     if (Fi_Formula === "Single") {
-      return Math.pow(10, a * N + b);
-    } else if (Fi_Formula === "Double") {
-      return a * Math.pow(N, b);
+        return Math.pow(10, (a * N + b));
+    }
+    if (Fi_Formula === "Double") {
+        return a * Math.pow(N, b);
     }
     return 0;
-  }
-  
-  /**
-   * Calculate the required flow rate for a given cooling capacity
-   * @param {number} hotWaterTemp - Hot water inlet temperature (°C)
-   * @param {number} coldWaterTemp - Cold water outlet temperature (°C)
-   * @param {number} wetBulbTemp - Wet bulb temperature (°C)
-   * @param {number} coolingCapacityRT - Cooling capacity in RT (Refrigeration Tons)
-   * @param {string} flowType - Flow type ("CROSSFLOW" or "COUNTERFLOW")
-   * @returns {number} Required water flow rate (m³/hr)
-   */
-  function calculateFlowRate(hotWaterTemp, coldWaterTemp, wetBulbTemp, coolingCapacityRT, flowType) {
-    let N = 2;
-    let R_N = 1;
-    let FLOW = flowType.toUpperCase();
-  
-    let Fi_Formula = "Double";
-    let a, b, c, slope = 0.78, efficiency = 0.98;
-  
-    if (FLOW === "COUNTERFLOW") {
-      a = 0.700303572;
-      b = -1.311808;
-      c = 2.222;
+}
+
+/**
+ * Calculate saturated vapor pressure
+ * @param {number} t - Temperature (°C)
+ * @returns {number} Saturated vapor pressure (kPa)
+ */
+function calculateSaturatedVaporPressure(t) {
+    let ABST = t + 273.15;
+    let lnPws;
+    
+    if (t >= -100 && t < 0) {
+        lnPws = -5674.359 / ABST + 6.3925247 + (-0.00968025 + (0.00000062215701 
+              + (2.0747825E-09 - 9.484024E-13 * ABST) * ABST) * ABST) * ABST 
+              + 4.1635019 * Math.log(ABST);
+    } else if (t >= 0 && t <= 200) {
+        lnPws = -5800.2206 / ABST + (-5.516256) + (-0.048640239 
+              + (0.000041764768 - 0.000000014452093 * ABST) * ABST) * ABST 
+              + 6.5459673 * Math.log(ABST);
     } else {
-      a = 1.8488;
-      b = -0.8;
-      c = 1.772;
+        console.error("Temperature out of [-100,200] °C range!");
+        return null;
     }
-  
-    for (let i = 0; i < 50; i++) {
-      const UTN_CTI = calculateUTN_by_CTI(hotWaterTemp, coldWaterTemp, wetBulbTemp, N, FLOW);
-      const UTN_Fi = calculateUTN_of_Fi(a, b, N, Fi_Formula);
-  
-      if (UTN_Fi === 0 || UTN_CTI === 0) {
-        N = 0;
-        break;
-      }
-  
-      if (Math.abs(UTN_CTI - UTN_Fi) <= 0.000004) break;
-  
-      if (UTN_CTI > UTN_Fi) N -= R_N;
-      else N += R_N;
-  
-      R_N /= 2;
-    }
-  
-    if (N === 0) return 0;
-  
-    return coolingCapacityRT * (N / c) * slope / efficiency;
-  }
-  
-  /**
-   * Generate performance curve data points for a specific range of wet bulb temperatures
-   * @param {number} hotWaterTemp - Hot water inlet temperature (°C)
-   * @param {number} range - Temperature range (°C)
-   * @param {array} wbtValues - Array of wet bulb temperatures (°C)
-   * @param {number} flowRatePercent - Flow rate percentage (%)
-   * @param {string} flowType - Flow type ("CROSSFLOW" or "COUNTERFLOW")
-   * @returns {array} Array of cold water temperatures
-   */
-  function generatePerformanceCurveData(hotWaterTemp, range, wbtValues, flowRatePercent, flowType) {
-    return wbtValues.map(wbt => {
-      return calculateColdWaterTemp(hotWaterTemp, wbt, range, flowRatePercent, flowType);
-    });
-  }
-  
-  // Export functions
-  export {
-    calculateCoolingCapacity,
-    calculateFlowRate,
-    calculateColdWaterTemp,
+    
+    return Math.exp(lnPws);
+}
+
+/**
+ * Calculate saturation factor for wet bulb calculations
+ * @param {number} t - Temperature in Fahrenheit
+ * @param {number} P - Pressure in psi
+ * @returns {number} Saturation factor
+ */
+function calculateSaturationFactor(t, P) {
+    const C1 = 1.000119;
+    const C2 = 0.000009184907;
+    const C3 = 1.286098E-11;
+    const C4 = -1.593274E-13;
+    const C5 = 0.0002872637;
+    const C6 = -0.000001618048;
+    const C7 = 0.00000001467535;
+    const C8 = 2.41896E-12;
+    const C9 = -1.371762E-10;
+    const C10 = -8.565893E-10;
+    const C11 = 1.229524E-10;
+    const C12 = -2.336628E-11;
+    
+    return (C1 + C2 * t + C3 * Math.pow(t, 4) + C4 * Math.pow(t, 5) + C5 * P + C6 * P * t) + 
+           (C7 * P * Math.pow(t, 2) + C8 * P * Math.pow(t, 4) + C9 * t * Math.pow(P, 4)) + 
+           (C10 * Math.pow(t, 2) * Math.pow(P, 2) + C11 * Math.pow(t, 2) * Math.pow(P, 3) + C12 * Math.pow(P, 2) * Math.pow(t, 3));
+}
+
+// Export functions for use in other modules
+module.exports = {
     calculateApproach,
-    generatePerformanceCurveData
-  };
+    UTN_by_CTI,
+    calculateMoistAirEnthalpy,
+    calculateHumidityRatio,
+    calculateFillingPerformance,
+    calculateSaturatedVaporPressure,
+    calculateSaturationFactor,
+    // Export constants as well for reference
+    constants: {
+        FILL_CONSTANT_A,
+        FILL_SLOPE_B,
+        DEFAULT_LG_RATIO,
+        DEFAULT_FILL_FORMULA
+    }
+};
