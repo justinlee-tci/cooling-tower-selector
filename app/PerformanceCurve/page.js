@@ -108,14 +108,6 @@ function PerformanceContent() {
     } else {
       flowType = "COUNTER"; // Default to counter flow if not specified
     }
-    // const FILL_CONSTANT_A = UTN_by_CTI(
-    //   parseFloat(params.hotWaterTemp),
-    //   parseFloat(params.coldWaterTemp),
-    //   parseFloat(wbt),
-    //   parseFloat(params.ambientPressure),
-    //   flowType,
-    //   flowRatePercent
-    // );
 
     return calculateCWT(
       parseFloat(params.hotWaterTemp),
@@ -130,12 +122,44 @@ function PerformanceContent() {
   };
 
   const createDatasetForFlowRate = (flowRate) => {
-    return ranges.map((range, rangeIndex) => ({
+    const datasets = ranges.map((range, rangeIndex) => ({
       label: `Range ${range}°C`,
       data: wbtValues.map(wbt => calculateColdWaterTemp(wbt, range, flowRate)),
       borderColor: `hsl(${220 + rangeIndex * 30}, 70%, 50%)`,
       tension: 0.4,
     }));
+
+    // Add design point only for 100% flow rate and if conditions exist in the table
+    if (flowRate === 100) {
+      const designWBT = parseFloat(params.wetBulbTemp);
+      const designCWT = parseFloat(params.coldWaterTemp);
+      
+      // Check if design WBT exists in the table
+      const wbtExists = wbtValues.some(wbt => Math.abs(wbt - designWBT) < 0.01);
+      
+      // Check if design CWT exists in any of the calculated values
+      const cwtExists = ranges.some(range => {
+        const calculatedCWT = calculateColdWaterTemp(designWBT, range, 100);
+        return Math.abs(calculatedCWT - designCWT) < 0.01;
+      });
+
+      if (wbtExists && cwtExists) {
+        datasets.push({
+          label: 'Design Point',
+          data: [{
+            x: designWBT,
+            y: designCWT
+          }],
+          backgroundColor: 'red',
+          borderColor: 'red',
+          pointRadius: 8,
+          pointStyle: 'circle',
+          showLine: false
+        });
+      }
+    }
+
+    return datasets;
   };
 
   const chartOptions = {
