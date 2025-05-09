@@ -8,11 +8,9 @@ const a_cf = 0.700303572;
 const b_cf = -1.311808;
 const c_cf = 2.222;
 
-// Crossflow Constants
+// Crossflow Constants //b = -0.728278 (for Tonnage Calculation)
 const a_xf = 1.69782;       // Originally 1.8488, but adjusted for better accuracy
 const b_xf = -0.7281;     // Originally -0.8, but adjusted for better accuracy
-// const a_xf = 1.8488;       // Original
-// const b_xf = -0.8;     //Original
 const c_xf = 1.772;
 
 function calculateEnthalpy(T) {
