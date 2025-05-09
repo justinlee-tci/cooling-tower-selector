@@ -38,7 +38,7 @@ const requiredFields = [
   "hotWaterTemp",
   "coldWaterTemp",
   "wetBulbTemp",
-  "dryBulbTemp",
+  // "dryBulbTemp" removed from required fields
 ];
 
 // Modify the RequiredFieldTooltip component
@@ -136,37 +136,75 @@ export default function Step1ProjectDetails() {
     return null;
   };
 
+  // Add this function after the validateInput function
+  const validateTemperatures = (temperatures) => {
+    const { hotWaterTemp, coldWaterTemp, dryBulbTemp, wetBulbTemp } = temperatures;
+    const errors = {};
+
+    // Convert to numbers for comparison
+    const hot = Number(hotWaterTemp);
+    const cold = Number(coldWaterTemp);
+    const dry = dryBulbTemp ? Number(dryBulbTemp) : null;
+    const wet = Number(wetBulbTemp);
+
+    // Validate hot water > cold water
+    if (hot <= cold) {
+      errors.hotWaterTemp = "Hot water temperature must be higher than cold water temperature";
+      errors.coldWaterTemp = "Cold water temperature must be lower than hot water temperature";
+    }
+
+    // Validate cold water > wet bulb
+    if (cold <= wet) {
+      errors.coldWaterTemp = "Cold water temperature must be higher than wet bulb temperature";
+      errors.wetBulbTemp = "Wet bulb temperature must be lower than cold water temperature";
+    }
+
+    // Only validate dry bulb if it's provided
+    if (dry !== null) {
+      // Validate dry bulb > wet bulb
+      if (dry <= wet) {
+        errors.dryBulbTemp = "Dry bulb temperature must be higher than wet bulb temperature";
+        errors.wetBulbTemp = "Wet bulb temperature must be lower than dry bulb temperature";
+      }
+    }
+
+    return errors;
+  };
+
   // Handle input change with validation
   const handleInputChange = (key, value) => {
     setTouchedFields(prev => ({ ...prev, [key]: true }));
     
-    // Special handling for date - normalize for storage
-    if (key === 'date') {
-      updateSelectionData({ [key]: value });
-    } else {
-      updateSelectionData({ [key]: value });
-    }
+    // Update the selection data first
+    updateSelectionData({ [key]: value });
     
-    // Add validation for selectionBy field
-    if (key === 'selectionBy' && (!value || value.trim() === '')) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [key]: 'Selection By is required'
-      }));
-    } else if (key === 'selectionBy') {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[key];
-        return newErrors;
-      });
-    }
-    
+    // Validate individual parameter ranges
     if (parameterRanges[key]) {
       const error = validateInput(key, Number(value));
       setValidationErrors(prev => ({
         ...prev,
         [key]: error
       }));
+    }
+
+    // Validate temperature relationships if this is a temperature field
+    if (['hotWaterTemp', 'coldWaterTemp', 'wetBulbTemp', 'dryBulbTemp'].includes(key)) {
+      // Clear all temperature-related errors first
+      const newErrors = { ...validationErrors };
+      ['hotWaterTemp', 'coldWaterTemp', 'wetBulbTemp', 'dryBulbTemp'].forEach(tempKey => {
+        delete newErrors[tempKey];
+      });
+      
+      // Then add new temperature validation errors
+      const tempErrors = validateTemperatures({
+        ...selectionData,
+        [key]: value
+      });
+      
+      setValidationErrors({
+        ...newErrors,
+        ...tempErrors
+      });
     }
   };
 
@@ -183,12 +221,11 @@ export default function Step1ProjectDetails() {
       (key) => !validationErrors[key]
     );
 
-    // Add debug logging to check values
-    console.log('Selection By:', selectionData.selectionBy);
-    console.log('All Fields Filled:', allFieldsFilled);
-    console.log('All Parameters Valid:', allParametersValid);
+    // Add temperature validation check
+    const tempErrors = validateTemperatures(selectionData);
+    const temperaturesValid = Object.keys(tempErrors).length === 0;
 
-    setIsFormComplete(allFieldsFilled && allParametersValid);
+    setIsFormComplete(allFieldsFilled && allParametersValid && temperaturesValid);
   }, [selectionData, validationErrors]);
   
   // Function to prepare all data before saving to database

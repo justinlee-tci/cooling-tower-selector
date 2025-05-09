@@ -161,11 +161,12 @@ export default function Login() {
         </form>
 
         <p className="text-base md:text-lg mt-6 text-center text-gray-800">
-          Don&apos;t have an account?{" "}
-          <a href="/auth/register" className="text-green-600 hover:underline">
-            Register
+          Don&apos;t have an account? Please reach out to {" "}
+          <a href="mailto:admin@thermal-cell.com" className="text-green-600 hover:underline">
+            admin@thermal-cell.com
           </a>
-        </p>        <div className="text-sm md:text-base mt-2 text-center text-gray-600">
+        </p>
+        <div className="text-sm md:text-base mt-2 text-center text-gray-600">
           <p>
             <a href="/auth/forgot-password" className="text-blue-600 hover:underline">
               Forgot your password?

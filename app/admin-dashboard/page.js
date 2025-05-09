@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [mobileView, setMobileView] = useState(false);
   const [activeTab, setActiveTab] = useState('users'); // For mobile tabs: 'users' or 'selections'
   const [userName, setUserName] = useState('');  // Added state for user's name
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     // Check if screen width is mobile on initial load
@@ -48,7 +49,7 @@ export default function AdminDashboard() {
       const fetchUserData = async () => {
         const { data, error } = await supabase
           .from("users")
-          .select("last_logged_in, name")
+          .select("last_logged_in, name, role")
           .eq("email", user.email)
           .single();
         if (error) {
@@ -56,6 +57,7 @@ export default function AdminDashboard() {
         } else {
           setLastLoggedIn(data?.last_logged_in);
           setUserName(data?.name || ''); // Set the user's name
+          setIsSuperAdmin(data?.role === 'superadmin'); // Check if the user is superadmin
         }
       };
       fetchUserData();
@@ -118,7 +120,9 @@ export default function AdminDashboard() {
         .delete()
         .eq("id", selectionToDelete.id);
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(`Failed to delete selection: ${error.message}`);
+      }
 
       // Remove the deleted selection from the local state
       setSelections(selections.filter(selection => selection.id !== selectionToDelete.id));
@@ -145,9 +149,9 @@ export default function AdminDashboard() {
       const { error: dbError } = await supabase
         .from('users')
         .delete()
-        .eq('email', userToDelete.email);
-
-      if (dbError) throw dbError;
+        .eq('email', userToDelete.email);      if (dbError) {
+        throw new Error(`Failed to delete user: ${dbError.message}`);
+      }
 
       setUsers(users.filter(u => u.email !== userToDelete.email));
       toast.success('User deleted successfully');
@@ -158,6 +162,10 @@ export default function AdminDashboard() {
       setShowDeleteUserConfirm(false);
       setUserToDelete(null);
     }
+  };
+
+  const handleRegisterNewUser = () => {
+    router.push('/admin-dashboard/register');
   };
 
   const formatDate = (dateString) => {
@@ -227,6 +235,16 @@ export default function AdminDashboard() {
             </div>
           </div>
         ))
+      )}
+      {isSuperAdmin && (
+        <div className="text-center">
+          <button
+            onClick={handleRegisterNewUser}
+            className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+          >
+            Register New User
+          </button>
+        </div>
       )}
     </div>
   );
@@ -307,10 +325,19 @@ export default function AdminDashboard() {
 
           {/* Desktop Layout */}
           {!mobileView && (
-            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Users Table - Desktop */}
+            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">              {/* Users Table - Desktop */}
               <div>
-                <h2 className="text-2xl font-bold mb-4 text-gray-900">User Accounts</h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">User Accounts</h2>
+                  {isSuperAdmin && (
+                    <button
+                      onClick={handleRegisterNewUser}
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    >
+                      Register New User
+                    </button>
+                  )}
+                </div>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/authContext";
 import { supabase } from "@/lib/supabaseClient";
+import { toast } from "react-hot-toast";
 import LiveWallpaper from "@/components/LiveWallpaper-2";
 
 const countries = [
@@ -26,8 +28,9 @@ const countries = [
   "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
 ].sort();
 
-export default function Register() {
+export default function AdminRegister() {
   const router = useRouter();
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,19 +39,47 @@ export default function Register() {
   const [country, setCountry] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showVerificationPopup, setShowVerificationPopup] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
 
+  // Check if the current user is a superadmin
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      if (!user) {
+        router.push("/auth/login");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("role")
+        .eq("email", user.email)
+        .single();
+
+      if (error || data?.role !== "superadmin") {
+        toast.error("Only superadmins can access this page");
+        router.push("/admin-dashboard");
+        return;
+      }
+
+      setIsSuperAdmin(true);
+    };
+
+    checkSuperAdmin();
+  }, [user, router]);
+
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (!isSuperAdmin) return;
+
     setError(null);
     setLoading(true);
-    console.log("Form submitted");
 
     try {
       // Check if passwords match
       if (password !== confirmPassword) {
-        setError("Passwords do not match.");
+        setError("Passwords do not match");
         setLoading(false);
         return;
       }
@@ -73,22 +104,19 @@ export default function Register() {
         return;
       }
 
-      console.log("Auth response:", data);
-      
+      // Step 2: Insert user into the users table
       if (data.user) {
-        // Step 2: Insert user into the users table
-        const { data: insertData, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from("users")
           .insert([{
             name,
             email,
-            password, // Note: Consider using Supabase Auth only and not storing passwords
+            password, // Include the password field here
             company,
             country,
-            role: "user", // Using the ENUM value
-            last_logged_in: new Date().toISOString(),
-          }])
-          .select();
+            role: "user",
+            last_logged_in: null
+          }]);
 
         if (insertError) {
           if (insertError.code === '23505') {
@@ -98,25 +126,25 @@ export default function Register() {
           }
           console.error("Insert error: ", insertError);
           setLoading(false);
-        } else {
-          console.log("Registration successful, showing verification popup");
-          // Show verification popup instead of redirecting
-          setRegisteredEmail(email);
-          setShowVerificationPopup(true);
-          setLoading(false);
-          
-          // Clear form fields after successful registration
-          setName("");
-          setEmail("");
-          setPassword("");
-          setConfirmPassword("");
-          setCompany("");
-          setCountry("");
+          return;
         }
+
+        // Show success message and clean up
+        setRegisteredEmail(email);
+        setShowVerificationPopup(true);
+        setLoading(false);
+        
+        // Clear form fields after successful registration
+        setName("");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setCompany("");
+        setCountry("");
       }
     } catch (err) {
-      console.error("Unexpected error:", err);
-      setError("An unexpected error occurred. Please try again.");
+      console.error("Registration error:", err);
+      setError(err.message || "Failed to register user");
       setLoading(false);
     }
   };
@@ -128,10 +156,11 @@ export default function Register() {
     }
   };
 
-  // Handle redirection to login page after closing the popup
+  // Handle closing the popup and returning to admin dashboard
   const handleClosePopup = () => {
     setShowVerificationPopup(false);
-    router.push("/auth/login");
+    // Stay on the same page (registration page) or go back to admin dashboard
+    router.push("/admin-dashboard");
   };
 
   return (
@@ -220,21 +249,23 @@ export default function Register() {
                 </option>
               ))}
             </select>
+          </div>          <div className="flex space-x-4">
+            <button
+              type="button"
+              onClick={() => router.push("/admin-dashboard")}
+              className="w-1/2 bg-gray-500 text-white py-3 text-sm sm:text-base font-semibold rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-1/2 bg-blue-600 text-white py-3 text-sm sm:text-base font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+            >
+              {loading ? "Processing..." : "Register User"}
+            </button>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 text-sm sm:text-base font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-400 mt-2"
-          >
-            {loading ? "Processing..." : "Register"}
-          </button>
         </form>
-        <p className="text-sm sm:text-base mt-4 text-center text-gray-800">
-          Already have an account?{" "}
-          <a href="/auth/login" className="text-green-600 hover:underline">
-            Login
-          </a>
-        </p>
 
         {/* Add copyright notice at the bottom */}
         <div className="mt-6 text-center">
@@ -261,15 +292,15 @@ export default function Register() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-green-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              <h3 className="text-lg font-bold mb-2 text-black">Please Verify Your Email</h3>
+              <h3 className="text-lg font-bold mb-2 text-black">User Registration Successful</h3>
               <p className="text-gray-700 mb-3 text-sm">
-                We have sent a verification link to <span className="font-medium">{registeredEmail}</span>
+                We have sent a verification link to <span className="font-medium">{registeredEmail}</span>. Please ask the user to verify their email and sign in.
               </p>
               <button
                 onClick={handleClosePopup}
                 className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 font-medium text-sm"
               >
-                Proceed to Login
+                Return to Dashboard
               </button>
             </div>
           </div>
