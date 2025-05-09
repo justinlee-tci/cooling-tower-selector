@@ -91,7 +91,11 @@ export default function Register() {
           .select();
 
         if (insertError) {
-          setError("Database error saving new user: " + insertError.message);
+          if (insertError.code === '23505') {
+            setError("User already exists, please proceed to login with email");
+          } else {
+            setError("Database error saving new user: " + insertError.message);
+          }
           console.error("Insert error: ", insertError);
           setLoading(false);
         } else {

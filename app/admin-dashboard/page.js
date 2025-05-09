@@ -141,17 +141,12 @@ export default function AdminDashboard() {
     if (!userToDelete) return;
 
     try {
-      // Delete from Supabase Auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(
-        userToDelete.id
-      );
-      if (authError) throw authError;
-
-      // Delete from users table
+      // Delete from users table only
       const { error: dbError } = await supabase
         .from('users')
         .delete()
         .eq('email', userToDelete.email);
+
       if (dbError) throw dbError;
 
       setUsers(users.filter(u => u.email !== userToDelete.email));

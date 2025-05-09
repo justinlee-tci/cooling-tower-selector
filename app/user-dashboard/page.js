@@ -185,8 +185,10 @@ export default function Dashboard() {
       <Navbar />
       <div className="flex-grow p-4 md:p-6">
         <div className="bg-white bg-opacity-90 p-4 md:p-8 rounded-2xl shadow-lg">
-          <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-900">Welcome to the User Dashboard!</h1>
-          <p className="mt-2 md:mt-4 text-center text-base md:text-lg text-gray-800">Hello, {user?.email}</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-900">Welcome to your Dashboard!</h1>
+          <p className="mt-2 md:mt-4 text-center text-base md:text-lg text-gray-800">
+            Hello, {user?.user_metadata?.name || user?.email}
+          </p>
           {lastLoggedIn && (
             <p className="mt-2 md:mt-4 text-center text-sm md:text-lg text-gray-600">
               Last logged in: {formatLastLoggedIn(lastLoggedIn)}
