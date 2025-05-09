@@ -42,13 +42,14 @@ export default function ForgotPasswordPage() {
     <div className="flex flex-col min-h-screen relative">
       <LiveWallpaper className="fixed inset-0 -z-10" />      <div className="flex-grow flex items-center justify-center p-6 relative z-10">
         <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
-          <div className="flex justify-center mb-8">            <img 
+          <div className="flex justify-center mb-8">            
+            <img 
               src="/company-logo.jpg" 
               alt="Company Logo" 
               className="h-16 md:h-24 w-auto object-contain"
             />
           </div>
-          <h2 className="text-3xl font-bold mb-2 mt-6 text-center text-gray-900">Forgot Password</h2>
+          <h2 className="text-3xl font-bold mb-2 mt-16 text-center text-gray-900">Forgot Password</h2>
           <p className="text-center text-gray-600 mb-8">
             Enter your email address and we'll send you instructions to reset your password.
           </p>
