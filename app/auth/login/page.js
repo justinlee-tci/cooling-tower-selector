@@ -165,13 +165,10 @@ export default function Login() {
           <a href="/auth/register" className="text-green-600 hover:underline">
             Register
           </a>
-        </p>
-        <div className="text-sm md:text-base mt-2 text-center text-gray-600">
-          <p>Forgot your password?</p>
-          <p className="mt-1">
-            Please reach out to{" "}
-            <a href="mailto:admin@thermal-cell.com" className="text-blue-600 hover:underline">
-              admin@thermal-cell.com
+        </p>        <div className="text-sm md:text-base mt-2 text-center text-gray-600">
+          <p>
+            <a href="/auth/forgot-password" className="text-blue-600 hover:underline">
+              Forgot your password?
             </a>
           </p>
         </div>
