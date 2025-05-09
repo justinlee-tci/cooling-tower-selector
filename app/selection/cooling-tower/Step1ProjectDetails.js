@@ -353,6 +353,22 @@ export default function Step1ProjectDetails() {
           Next
         </button>
       </div>
+
+      {/* Add Disclaimer and Copyright at bottom */}
+      <div className="mt-12 space-y-4">
+        <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
+          <p className="text-sm text-gray-600">
+            <span className="font-semibold">DISCLAIMER:</span> The selection results shown here are for preliminary reference only. 
+            Actual cooling tower performance may vary depending on various environmental and operational factors. 
+            For detailed analysis, specifications, and performance guarantees, please consult with your sales engineer 
+            or technical representative.
+          </p>
+        </div>
+        
+        <div className="text-center text-sm text-gray-500">
+          <p>© 2025 Cooling Tower Selector. All Rights Reserved.</p>
+        </div>
+      </div>
     </div>
   );
 }

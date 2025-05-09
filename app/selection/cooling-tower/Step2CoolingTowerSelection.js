@@ -217,7 +217,7 @@ export default function Step2CoolingTowerSelection() {
       {/* Top section with Safety Factor and Input Parameters side by side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Safety Factor Range */}
-        <div className="bg-gray-50 p-3 rounded-md">
+        <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
           <h3 className="text-sm font-semibold mb-2 text-gray-900">Safety Factor Range</h3>
           <div className="flex flex-wrap gap-3 mb-3">
             <div className="flex items-center">
@@ -266,7 +266,7 @@ export default function Step2CoolingTowerSelection() {
         </div>
 
         {/* Input Parameters Display */}
-        <div className="bg-gray-50 p-3 rounded-md">
+        <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
           <h3 className="text-sm font-semibold mb-2 text-gray-900">Input Parameters</h3>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="flex justify-between">
@@ -297,8 +297,8 @@ export default function Step2CoolingTowerSelection() {
         </div>
       </div>
 
-      {/* Cells Selection - keep existing code */}
-      <div className="mb-6 bg-gray-50 p-3 rounded-md">
+      {/* Cells Selection */}
+      <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-md">
         <div className="flex flex-col mb-2">
           <label className="text-sm font-semibold mb-2 text-gray-700">Number of Cells:</label>
           <div className="flex items-center">

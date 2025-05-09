@@ -432,7 +432,7 @@ function PerformanceContent() {
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 bg-white shadow-md rounded-md">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">{params.flowType} Performance Curve</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">{params.flowType} Performance Curve</h2>
       
       {/* Mobile View */}
       {isMobile && (
@@ -485,6 +485,21 @@ function PerformanceContent() {
           </div>
         </>
       )}
+
+      {/* Disclaimer - Moved to bottom */}
+      <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-md">
+        <p className="text-sm text-gray-600">
+          <span className="font-semibold">DISCLAIMER:</span> The performance curves and calculations shown here are for preliminary reference only. 
+          Actual cooling tower performance may vary depending on various environmental and operational factors. 
+          For detailed analysis, specifications, and performance guarantees, please consult with your sales engineer 
+          or technical representative.
+        </p>
+      </div>
+
+      {/* Copyright Notice */}
+      <div className="mt-4 text-center">
+        <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Thermal-Cell Sdn. Bhd. All rights reserved.</p>
+      </div>
     </div>
   );
 }

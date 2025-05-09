@@ -132,7 +132,6 @@ export default function Register() {
 
   return (
     <div className="relative z-10 flex items-center justify-center min-h-screen bg-gray-200">
-      {/* Live Wallpaper renders below because of -z-10 */}
       <LiveWallpaper />
       <div className="bg-white p-4 sm:p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
         {/* Add Logo Image with bottom margin */}
@@ -232,6 +231,11 @@ export default function Register() {
             Login
           </a>
         </p>
+
+        {/* Add copyright notice at the bottom */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Thermal-Cell Sdn. Bhd. All rights reserved.</p>
+        </div>
       </div>
 
       {/* Email Verification Popup */}

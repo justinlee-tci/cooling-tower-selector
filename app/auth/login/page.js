@@ -175,6 +175,11 @@ export default function Login() {
             </a>
           </p>
         </div>
+
+        {/* Add copyright notice at the bottom */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-500">&copy; {new Date().getFullYear()} Thermal-Cell Sdn. Bhd. All rights reserved.</p>
+        </div>
       </div>
     </div>
   );

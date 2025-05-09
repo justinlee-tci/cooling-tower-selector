@@ -1,6 +1,15 @@
 /**
- * Cooling Tower Calculator
- * Converts VBA functions to JavaScript for calculating cooling tower performance
+ * Cooling Tower Calculator for Reference Tonnage
+ * Converted from VBA to JavaScript
+ * 
+ * DISCLAIMER:
+ * The calculations and results provided by this module are for preliminary reference only.
+ * Actual performance may vary depending on various environmental and operational factors.
+ * For detailed analysis, specifications, and guarantees, please consult with your 
+ * sales engineer or technical representative.
+ * 
+ * The manufacturer reserves the right to modify or update calculation methods
+ * and accepts no liability for decisions made based on these calculations alone.
  */
 
 // Counterflow Constants

@@ -206,7 +206,7 @@ page.drawText("SDN. BHD.", {
       }
     };
 
-    // Function to add footer to a page
+    // Update the addFooter function
     const addFooter = (page, pageNumber, totalPages) => {
       const { width, height } = page.getSize();
       
@@ -227,10 +227,19 @@ page.drawText("SDN. BHD.", {
         color: primaryColor,
       });
       
-      // Add footer text
+      // Add footer text on the left
       page.drawText('Confidential - For Project Use Only', {
         x: 50,
         y: 25,
+        size: 7,
+        color: textColor,
+        font: timesItalic,
+      });
+      
+      // Add copyright text in the middle
+      page.drawText(`© ${new Date().getFullYear()} Thermal-Cell Sdn. Bhd. All rights reserved.`, {
+        x: width / 2 - 80,
+        y: 15,
         size: 7,
         color: textColor,
         font: timesItalic,
