@@ -156,22 +156,26 @@ export default function ViewSelection() {
 
     fetchSelectionDetails();
   }, [user, params.selectionId]);
-
   const handlePerformanceCurve = () => {
+    if (!selectionData) {
+      setErrorMessage("Selection data not available");
+      return;
+    }
+
     const params = new URLSearchParams({
-      model: selectionData.cooling_tower_model,
-      projectName: selectionData.project_name,
-      customerName: selectionData.customer_name,
-      location: selectionData.location,
-      selectionBy: selectionData.selection_by,
-      flowRate: selectionData.water_flow_rate.toString(),
-      pressure: selectionData.ambient_pressure.toString(),
-      hotWater: selectionData.hot_water_temp.toString(),
-      coldWater: selectionData.cold_water_temp.toString(),
-      wetBulb: selectionData.wet_bulb_temp.toString(),
-      dryBulb: selectionData.dry_bulb_temp.toString(),
-      date: selectionData.date_created,
-      towerType: modelDetails?.type || '' // Add tower type from modelDetails
+      model: selectionData.cooling_tower_model || '',
+      projectName: selectionData.project_name || '',
+      customerName: selectionData.customer_name || '',
+      location: selectionData.location || '',
+      selectionBy: selectionData.selection_by || '',
+      flowRate: (selectionData.water_flow_rate || '').toString(),
+      pressure: (selectionData.ambient_pressure || '').toString(),
+      hotWater: (selectionData.hot_water_temp || '').toString(),
+      coldWater: (selectionData.cold_water_temp || '').toString(),
+      wetBulb: (selectionData.wet_bulb_temp || '').toString(),
+      dryBulb: (selectionData.dry_bulb_temp || '').toString(),
+      date: formatDate(selectionData.date_created) || '',
+      towerType: modelDetails?.type || ''
     });
 
     window.open(`/PerformanceCurve?${params.toString()}`, '_blank');
