@@ -319,7 +319,7 @@ export default function Step3Confirmation() {
     { 
       label: "Safety Factor", 
       key: "safetyFactor", 
-      value: Number(selectionData.safetyFactor).toFixed(2), 
+      value: Number(Math.round(selectionData.safetyFactor)), 
       unit: "%" 
     },
   ];

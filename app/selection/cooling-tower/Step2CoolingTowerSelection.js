@@ -80,13 +80,6 @@ export default function Step2CoolingTowerSelection() {
   useEffect(() => {
     if (coolingTowerModels.length > 0 && selectionData) {
       const calculatedModels = coolingTowerModels.map((model) => {
-        // const actualCapacity = calculateCoolingCapacity(
-        //   Number(selectionData.hotWaterTemp),
-        //   Number(selectionData.coldWaterTemp),
-        //   Number(selectionData.wetBulbTemp),
-        //   Number(selectionData.waterFlowRate),
-        //   String(model.type).toUpperCase(),
-        // );
 
         const actualFlowRate = calculateFlowRate(
           Number(selectionData.hotWaterTemp),
@@ -96,12 +89,6 @@ export default function Step2CoolingTowerSelection() {
           String(model.type).toUpperCase(),
         )*selectedCells;
 
-        // const designCapacity = model.nominal_capacity || 1;
-        // const designFlowRate = model.nominal_flowrate || 1;
-        // Corrected safety factor calculation: (design flow rate * cells) / actual capacity * 100
-        // const safetyFactor = (designFlowRate * selectedCells) / actualFlowRate * 100;
-        // const safetyFactor = designFlowRate;
-        // const safetyFactor = actualFlowRate;
         const safetyFactor = actualFlowRate / selectionData.waterFlowRate * 100;
 
         return { 
@@ -216,7 +203,7 @@ export default function Step2CoolingTowerSelection() {
           
           <div className="text-gray-800 font-medium">Safety Factor:</div>
           <div className={`text-right font-medium ${model.safetyFactor >= 100 ? "text-green-600" : "text-red-600"}`}>
-            {model.safetyFactor.toFixed(2)}%
+            {Math.round(model.safetyFactor)}%
           </div>
         </div>
       </div>
@@ -473,7 +460,7 @@ export default function Step2CoolingTowerSelection() {
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualFlowRate.toFixed(2)}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">
                     <span className={model.safetyFactor >= 100 ? "text-green-600" : "text-red-600"}>
-                      {model.safetyFactor.toFixed(2)}%
+                      {Math.round(model.safetyFactor)}%
                     </span>
                   </td>
                 </tr>

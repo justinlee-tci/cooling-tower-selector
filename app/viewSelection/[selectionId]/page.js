@@ -230,7 +230,7 @@ export default function ViewSelection() {
     },
     { 
       label: "Safety Factor", 
-      value: Number(selectionData.safety_factor).toFixed(2), 
+      value: Number(Math.round(selectionData.safety_factor)), 
       unit: "%" 
     },
   ];

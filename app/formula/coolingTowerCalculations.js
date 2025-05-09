@@ -3,6 +3,18 @@
  * Converts VBA functions to JavaScript for calculating cooling tower performance
  */
 
+// Counterflow Constants
+const a_cf = 0.700303572;
+const b_cf = -1.311808;
+const c_cf = 2.222;
+
+// Crossflow Constants
+const a_xf = 1.69782;       // Originally 1.8488, but adjusted for better accuracy
+const b_xf = -0.7281;     // Originally -0.8, but adjusted for better accuracy
+// const a_xf = 1.8488;       // Original
+// const b_xf = -0.8;     //Original
+const c_xf = 1.772;
+
 function calculateEnthalpy(T) {
     const CA = 373.15 / (T + 273.15);
     const CB = 1 / CA;
@@ -64,13 +76,13 @@ function calculateEnthalpy(T) {
     let a, b, c, slope = 0.78, efficiency = 0.98;
   
     if (FLOW === "COUNTERFLOW") {
-      a = 0.700303572;
-      b = -1.311808;
-      c = 2.222;
+      a = a_cf;
+      b = b_cf;
+      c = c_cf;
     } else {
-      a = 1.8488;
-      b = -0.8;
-      c = 1.772;
+      a = a_xf;
+      b = b_xf;
+      c = c_xf;
     }
   
     for (let i = 0; i < 50; i++) {
@@ -102,13 +114,13 @@ function calculateEnthalpy(T) {
     let a, b, c, slope = 0.78, efficiency = 0.98;
   
     if (FLOW === "COUNTERFLOW") {
-      a = 0.700303572;
-      b = -1.311808;
-      c = 2.222;
+      a = a_cf;
+      b = b_cf;
+      c = c_cf;
     } else {
-      a = 1.8488;
-      b = -0.8;
-      c = 1.772;
+      a = a_xf;
+      b = b_xf;
+      c = c_xf;
     }
   
     for (let i = 0; i < 50; i++) {
