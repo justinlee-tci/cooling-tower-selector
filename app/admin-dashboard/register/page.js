@@ -28,13 +28,16 @@ const countries = [
   "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
 ].sort();
 
+  // Default password for all new users - Edit this constant to change the default password
+const DEFAULT_PASSWORD = "Welcome-Thermal-Cell!";
+
 export default function AdminRegister() {
   const router = useRouter();
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [password] = useState(DEFAULT_PASSWORD);
+  const [confirmPassword] = useState(DEFAULT_PASSWORD);
   const [company, setCompany] = useState("");
   const [country, setCountry] = useState("");
   const [loading, setLoading] = useState(false);
@@ -77,17 +80,12 @@ export default function AdminRegister() {
     setLoading(true);
 
     try {
-      // Check if passwords match
-      if (password !== confirmPassword) {
-        setError("Passwords do not match");
-        setLoading(false);
-        return;
-      }
-
-      // Step 1: Sign up with Supabase Auth
+      console.log("Registering user with password:", DEFAULT_PASSWORD);
+      
+      // Step 1: Sign up with Supabase Auth using the default password
       const { data, error: authError } = await supabase.auth.signUp({
         email,
-        password,
+        password: DEFAULT_PASSWORD, // Ensure we're using the constant directly
         options: {
           data: {
             name,
@@ -98,20 +96,22 @@ export default function AdminRegister() {
       });
 
       if (authError) {
-        setError(authError.message);
+        setError("Authentication error: " + authError.message);
         console.error("Auth error: ", authError);
         setLoading(false);
         return;
       }
+
+      console.log("Auth signup successful, user:", data?.user?.email);
 
       // Step 2: Insert user into the users table
       if (data.user) {
         const { error: insertError } = await supabase
           .from("users")
           .insert([{
+            email, // Using email as primary key (matches your schema)
             name,
-            email,
-            password, // Include the password field here
+            password: DEFAULT_PASSWORD, // Your schema requires this field
             company,
             country,
             role: "user",
@@ -137,8 +137,6 @@ export default function AdminRegister() {
         // Clear form fields after successful registration
         setName("");
         setEmail("");
-        setPassword("");
-        setConfirmPassword("");
         setCompany("");
         setCountry("");
       }
@@ -176,8 +174,20 @@ export default function AdminRegister() {
           />
         </div>
 
-        <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center text-gray-900">Register</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center text-gray-900">Register New User</h2>
         {error && <p className="text-red-600 text-sm sm:text-base mb-3">{error}</p>}
+        
+        {/* Default password notice */}
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <span className="font-medium">Note:</span> All new users will be assigned the default password: 
+            <span className="font-medium ml-1 bg-blue-100 px-2 py-1 rounded">{DEFAULT_PASSWORD}</span>
+          </p>
+          <p className="text-sm text-blue-800 mt-1">
+            Please make sure to include this password in your communication to the user.
+          </p>
+        </div>
+        
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label className="block text-gray-900 text-sm sm:text-base mb-1">Full Name</label>
@@ -205,22 +215,19 @@ export default function AdminRegister() {
             <label className="block text-gray-900 text-sm sm:text-base mb-1">Password</label>
             <input
               type="password"
-              placeholder="At least 6 characters"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 text-sm sm:text-base border border-gray-500 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 text-gray-900"
-              required
+              className="w-full p-3 text-sm sm:text-base border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+              disabled
             />
+            <p className="text-xs text-gray-500 mt-1">Default password is pre-filled and cannot be changed</p>
           </div>
           <div>
             <label className="block text-gray-900 text-sm sm:text-base mb-1">Confirm Password</label>
             <input
               type="password"
-              placeholder="Re-enter your password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full p-3 text-sm sm:text-base border border-gray-500 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 text-gray-900"
-              required
+              className="w-full p-3 text-sm sm:text-base border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+              disabled
             />
           </div>
           <div>
@@ -249,7 +256,8 @@ export default function AdminRegister() {
                 </option>
               ))}
             </select>
-          </div>          <div className="flex space-x-4">
+          </div>
+          <div className="flex space-x-4">
             <button
               type="button"
               onClick={() => router.push("/admin-dashboard")}
@@ -294,7 +302,14 @@ export default function AdminRegister() {
               </svg>
               <h3 className="text-lg font-bold mb-2 text-black">User Registration Successful</h3>
               <p className="text-gray-700 mb-3 text-sm">
-                We have sent a verification link to <span className="font-medium">{registeredEmail}</span>. Please ask the user to verify their email and sign in.
+                We have sent a verification link to <span className="font-medium">{registeredEmail}</span>. 
+              </p>
+              <p className="text-gray-700 mb-4 text-sm">
+                The verification email contains instructions to complete their registration. 
+                They will need to use this default password for initial login:
+              </p>
+              <p className="font-medium bg-gray-100 px-3 py-2 rounded mb-4 text-gray-800">
+                {DEFAULT_PASSWORD}
               </p>
               <button
                 onClick={handleClosePopup}
