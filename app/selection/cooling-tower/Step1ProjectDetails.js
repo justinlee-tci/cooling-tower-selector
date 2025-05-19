@@ -403,7 +403,7 @@ export default function Step1ProjectDetails() {
         </div>
         
         <div className="text-center text-sm text-gray-500">
-          <p>© 2025 Cooling Tower Selector. All Rights Reserved.</p>
+          <p>© 2025 Thermal-Cell. All Rights Reserved.</p>
         </div>
       </div>
     </div>
