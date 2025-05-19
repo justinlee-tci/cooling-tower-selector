@@ -42,6 +42,9 @@ export default function AdminDashboard() {
     if (!user) {
       router.push("/auth/login");
     }
+    if (user && user.role !== "superadmin") {
+      router.push("/auth/login");
+    }
   }, [user, router]);
 
   useEffect(() => {
