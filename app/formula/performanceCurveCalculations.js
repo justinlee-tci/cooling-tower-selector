@@ -21,8 +21,8 @@ const Mr = 0.62198;     // Molecular weight ratio of water vapor to dry air
 
 // Fill performance constants
 // const FILL_CONSTANT_A = 1.626;   // C constant based on (KaV/L)/(L/G)^SLOPE 
-const FILL_SLOPE_B = -0.8;      // Fill's slope (b)
-const DEFAULT_LG_RATIO = 1.8488;  // Fill's L/G ratio (N)
+const FILL_SLOPE_B = -0.813;      // Fill's slope (b)
+const DEFAULT_LG_RATIO = 1.49;  // Fill's L/G ratio (N)
 const DEFAULT_FILL_FORMULA = "Double"; // Default filling formula type
 
 /**

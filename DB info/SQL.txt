@@ -2,86 +2,97 @@
 CREATE TYPE user_role AS ENUM ('user', 'superadmin');
 
 -- Users Table (Primary Key: email)
-CREATE TABLE users (
-    email TEXT PRIMARY KEY,  -- Using email as the unique identifier
-    name TEXT NOT NULL,
-    password TEXT NOT NULL,
-    company TEXT NOT NULL,
-    country TEXT NOT NULL,
-    role user_role NOT NULL,  -- Using ENUM type for role
-    last_logged_in TIMESTAMP
-);
+create table public.users (
+  email text not null,
+  name text not null,
+  password text not null,
+  company text not null,
+  country text not null,
+  role public.user_role not null,
+  last_logged_in timestamp with time zone null,
+  constraint users_pkey primary key (email)
+) TABLESPACE pg_default;
 
--- Cooling Tower Models Table (Primary Key: model_name)
-CREATE TABLE cooling_tower_models (
-    model_name TEXT PRIMARY KEY,  -- Using model_name as the unique identifier
-    type TEXT NOT NULL,
-    nominal_capacity FLOAT NOT NULL, -- m3/h
-    nominal_flowrate FLOAT NOT NULL,  -- m3/h
-    motor_output FLOAT NOT NULL,  -- kW
-    fan_diameter FLOAT NOT NULL,  -- mm
-    dry_weight FLOAT NOT NULL,  -- kg
-    operating_weight FLOAT NOT NULL,  -- kg
-    hot_water_temp FLOAT NOT NULL DEFAULT 37,  -- °C (fixed)
-    cold_water_temp FLOAT NOT NULL DEFAULT 32,  -- °C (fixed)
-    wet_bulb_temp FLOAT NOT NULL DEFAULT 27,  -- °C (fixed)
-    drift_loss TEXT NOT NULL DEFAULT '<0.005%',  
-    cell_length FLOAT NOT NULL,  -- mm
-    cell_width FLOAT NOT NULL,  -- mm
-    cell_height FLOAT NOT NULL,  -- mm
-    fan_stack_height FLOAT NOT NULL,  -- mm
-    structure TEXT NOT NULL,
-    body_material TEXT NOT NULL,
-    hardware TEXT NOT NULL,
-    infill TEXT NOT NULL,
-    motor_make TEXT NOT NULL,
-    volt_phase_cycle TEXT NOT NULL,
-    motor_type TEXT NOT NULL,
-    fan_type TEXT NOT NULL,
-    blade_material TEXT NOT NULL,
-    hub_material TEXT NOT NULL,
-    drive_type TEXT NOT NULL,
-    inlet_pipe FLOAT NOT NULL,  -- mm
-    outlet_pipe FLOAT NOT NULL,  -- mm
-    drain_overflow_pipe FLOAT NOT NULL,  -- mm
-    auto_manual_pipe FLOAT NOT NULL,  -- mm
-    inlet_pipe_qty FLOAT NOT NULL,
-    outlet_pipe_qty FLOAT NOT NULL,
-    drain_overflow_pipe_qty FLOAT NOT NULL,
-    auto_manual_pipe_qty FLOAT NOT NULL
-);
+create table public.cooling_tower_models (
+  model_name text not null,
+  type text not null,
+  nominal_capacity double precision not null,
+  nominal_flowrate double precision not null,
+  motor_output double precision not null,
+  fan_diameter double precision not null,
+  dry_weight double precision not null,
+  operating_weight double precision not null,
+  hot_water_temp double precision not null default 37,
+  cold_water_temp double precision not null default 32,
+  wet_bulb_temp double precision not null default 27,
+  drift_loss text not null default '<0.005%'::text,
+  cell_length double precision not null,
+  cell_width double precision not null,
+  cell_height double precision not null,
+  fan_stack_height double precision not null,
+  structure text not null,
+  body_material text not null,
+  hardware text not null,
+  infill text not null,
+  motor_make text not null,
+  volt_phase_cycle text not null,
+  motor_type text not null,
+  fan_type text not null,
+  blade_material text not null,
+  hub_material text not null,
+  drive_type text not null,
+  inlet_pipe double precision not null,
+  outlet_pipe double precision not null,
+  drain_overflow_pipe double precision not null,
+  auto_manual_pipe double precision not null,
+  inlet_pipe_qty double precision not null,
+  outlet_pipe_qty double precision not null,
+  drain_overflow_pipe_qty double precision not null,
+  auto_manual_pipe_qty double precision not null,
+  constraint cooling_tower_models_pkey primary key (model_name)
+) TABLESPACE pg_default;
 
 
+create table public.selections (
+  id text not null,
+  user_email text not null,
+  project_name text null,
+  customer_name text null,
+  location text null,
+  date_created timestamp without time zone null,
+  selection_by text null,
+  description text null,
+  water_flow_rate double precision not null,
+  hot_water_temp double precision not null,
+  cold_water_temp double precision not null,
+  wet_bulb_temp double precision not null,
+  dry_bulb_temp double precision null,
+  ambient_pressure double precision not null,
+  cooling_tower_model text not null,
+  number_of_cells integer not null,
+  safety_factor double precision not null,
+  actual_flowrate double precision not null,
+  constraint selections_pkey primary key (id),
+  constraint selections_cooling_tower_model_fkey foreign KEY (cooling_tower_model) references cooling_tower_models (model_name)
+) TABLESPACE pg_default;
 
-CREATE TABLE selections (
-    id text PRIMARY KEY,  -- Using SERIAL as primary key for selections
-    user_email TEXT NOT NULL,
-    project_name TEXT,
-    client_name TEXT,
-    location TEXT,
-    date_created TIMESTAMP,
-    selection_by TEXT,
-    description TEXT,
-    water_flow_rate FLOAT NOT NULL,  -- m3/h
-    hot_water_temp FLOAT NOT NULL,  -- °C
-    cold_water_temp FLOAT NOT NULL,  -- °C
-    wet_bulb_temp FLOAT NOT NULL,  -- °C
-    dry_bulb_temp FLOAT NOT NULL,  -- °C
-    atmospheric_pressure FLOAT NOT NULL,  -- kPa
-    cooling_tower_model TEXT NOT NULL,  -- References cooling_tower_models(model_name)
-    number_of_cells INT NOT NULL, 
-    safety_factor FLOAT NOT NULL,  -- dynamically calculated
-    actual_capacity FLOAT NOT NULL  -- m3/h
-);
-
-CREATE TABLE cooling_tower_performance (
-    model_name TEXT NOT NULL REFERENCES cooling_tower_models(model_name) ON DELETE CASCADE,
-    wet_bulb_temp FLOAT NOT NULL,  -- °C
-    cold_water_temp FLOAT NOT NULL,  -- °C
-    hot_water_temp FLOAT NOT NULL,  -- °C
-    capacity FLOAT NOT NULL,  -- m³/h
-    PRIMARY KEY (model_name, wet_bulb_temp, cold_water_temp, hot_water_temp)  -- Composite PK
-);
+create table public.cooling_tower_performance (
+  model_name text not null,
+  wet_bulb_temp double precision not null,
+  cold_water_temp double precision not null,
+  hot_water_temp double precision not null,
+  capacity double precision not null,
+  lg_ratio double precision null,
+  kahl double precision null,
+  slope double precision null,
+  constraint cooling_tower_performance_pkey primary key (
+    model_name,
+    wet_bulb_temp,
+    cold_water_temp,
+    hot_water_temp
+  ),
+  constraint cooling_tower_performance_model_name_fkey foreign KEY (model_name) references cooling_tower_models (model_name) on delete CASCADE
+) TABLESPACE pg_default;
 
 
 app
