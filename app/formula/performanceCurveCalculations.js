@@ -19,24 +19,28 @@ const Cpwater = 4.186;  // Specific heat of water (kJ/kg·K)
 const hfg = 2501;       // Latent heat of vaporization (kJ/kg)
 const Mr = 0.62198;     // Molecular weight ratio of water vapor to dry air
 
-// Fill performance constants
-// const FILL_CONSTANT_A = 1.626;   // C constant based on (KaV/L)/(L/G)^SLOPE 
-const FILL_SLOPE_B = -0.813;      // Fill's slope (b)
-const DEFAULT_LG_RATIO = 1.49;  // Fill's L/G ratio (N)
-const DEFAULT_FILL_FORMULA = "Double"; // Default filling formula type
+// Default values (fallback when database values are not available)
+const DEFAULT_FILL_SLOPE_B = -0.813;      // Default fill's slope (b)
+const DEFAULT_LG_RATIO = 1.49;           // Default fill's L/G ratio (N)
+const DEFAULT_FILL_FORMULA = "Double";   // Default filling formula type
 
 /**
  * Calculate Cold Water Temperature (CWT) based on parameters
  * Original VBA function: CWT_WB_Range_C_Slope_LG_P_FTYPE_CALTYPE
  * 
- * @param {number} WB - Wet Bulb temperature
+ * @param {number} hotWaterTemp - Hot water temperature
+ * @param {number} coldWaterTemp - Cold water temperature  
+ * @param {number} wetBulbTemp - Original wet bulb temperature
+ * @param {number} WB - Target wet bulb temperature
  * @param {number} DTW - Range (Hot Water - Cold Water temperature)
  * @param {number} P1 - Atmospheric pressure (typically 101.325 kPa)
  * @param {string} FLOW - Flow type: "COUNTER" or "CROSS"
  * @param {number} flowRatePercent - Flow rate percentage (90, 100, or 110)
+ * @param {number} lgRatio - L/G ratio from database
+ * @param {number} slope - Slope from database
  * @returns {number} Cold Water Temperature
  */
-function calculateCWT(hotWaterTemp, coldWaterTemp, wetBulbTemp, WB, DTW, P1, FLOW, flowRatePercent) {
+function calculateCWT(hotWaterTemp, coldWaterTemp, wetBulbTemp, WB, DTW, P1, FLOW, flowRatePercent, lgRatio = DEFAULT_LG_RATIO, slope = DEFAULT_FILL_SLOPE_B) {
     // Standardize flow type
     let flowType = FLOW.toUpperCase();
     if (flowType === "CROSSFLOW") flowType = "CROSS";
@@ -48,17 +52,17 @@ function calculateCWT(hotWaterTemp, coldWaterTemp, wetBulbTemp, WB, DTW, P1, FLO
     let TW2 = TW1 - DTW;
     let No = 0;
     let UTN_CTI, UTN_Fi;
-    let kavL = UTN_by_CTI(hotWaterTemp, coldWaterTemp, wetBulbTemp, P1, flowType, 100);
-    let a = kavL/Math.pow(DEFAULT_LG_RATIO, FILL_SLOPE_B);    
-    // Adjust L/G ratio based on flow rate percentage
-    const baseN = DEFAULT_LG_RATIO;
+    
+    // Calculate KaV/L using the provided parameters
+    let kavL = UTN_by_CTI(hotWaterTemp, coldWaterTemp, wetBulbTemp, P1, flowType, 100, lgRatio);
+    let a = kavL / Math.pow(lgRatio, slope);    
     
     // START iteration loop
     while (true) {
         let PP = P1;
         
-        UTN_CTI = UTN_by_CTI(TW1, TW2, WB, PP, flowType, flowRatePercent);
-        UTN_Fi = calculateFillingPerformance(a, DEFAULT_FILL_FORMULA, flowRatePercent);
+        UTN_CTI = UTN_by_CTI(TW1, TW2, WB, PP, flowType, flowRatePercent, lgRatio);
+        UTN_Fi = calculateFillingPerformance(a, DEFAULT_FILL_FORMULA, flowRatePercent, lgRatio, slope);
         
         if (UTN_Fi === 0) {
             return TW2;
@@ -104,16 +108,17 @@ function calculateCWT(hotWaterTemp, coldWaterTemp, wetBulbTemp, WB, DTW, P1, FLO
  * @param {number} PP - Atmospheric pressure
  * @param {string} FLOW - Flow type: "COUNTER" or "CROSS"
  * @param {number} flowRatePercent - Flow rate percentage (90, 100, or 110)
+ * @param {number} lgRatio - L/G ratio from database
  * @returns {number} KaV/L value
  */
-function UTN_by_CTI(TW1, TW2, WB, PP, FLOW, flowRatePercent) {
+function UTN_by_CTI(TW1, TW2, WB, PP, FLOW, flowRatePercent, lgRatio = DEFAULT_LG_RATIO) {
     // Standardize flow type
     let flowType = FLOW.toUpperCase();
     if (flowType === "CROSSFLOW") flowType = "CROSS";
     if (flowType === "COUNTERFLOW") flowType = "COUNTER";
 
-    // Using L/G ratio from global constant
-    const N = DEFAULT_LG_RATIO*flowRatePercent/100; // Adjusted L/G ratio
+    // Using L/G ratio from parameter instead of global constant
+    const N = lgRatio * flowRatePercent / 100; // Adjusted L/G ratio
     let DT = TW1 - TW2;
     let PPP = PP;
     
@@ -209,15 +214,17 @@ function calculateHumidityRatio(DBT, WBT, P) {
  * Calculate U/N of Filling
  * Original VBA function: UTN_of_Fi
  * 
+ * @param {number} a - Fill constant 'a'
  * @param {string} Fi_Formula - Fill type formula: "Single" or "Double"
  * @param {number} flowRatePercent - Flow rate percentage (90, 100, or 110)
+ * @param {number} lgRatio - L/G ratio from database
+ * @param {number} slope - Slope from database
  * @returns {number} UTN value
  */
-function calculateFillingPerformance(a, Fi_Formula, flowRatePercent) {
-    // Using constants for fill performance
-    // const a = FILL_CONSTANT_A;  // Fill constant from global constant
-    const b = FILL_SLOPE_B;     // Fill slope from global constant
-    const N = DEFAULT_LG_RATIO*flowRatePercent/100; // adjusted L/G ratio from global constant
+function calculateFillingPerformance(a, Fi_Formula, flowRatePercent, lgRatio = DEFAULT_LG_RATIO, slope = DEFAULT_FILL_SLOPE_B) {
+    // Use parameters instead of global constants
+    const b = slope;     // Fill slope from parameter
+    const N = lgRatio * flowRatePercent / 100; // adjusted L/G ratio from parameter
     
     if (Fi_Formula === "Single") {
         return Math.pow(10, (a * N + b));
@@ -294,8 +301,7 @@ export {
 };
 
 export const constants = {
-    // FILL_CONSTANT_A,
-    FILL_SLOPE_B,
+    DEFAULT_FILL_SLOPE_B,
     DEFAULT_LG_RATIO,
     DEFAULT_FILL_FORMULA
 };

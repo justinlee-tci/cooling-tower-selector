@@ -15,6 +15,7 @@ import {
 } from 'chart.js';
 import { useState, useEffect, Suspense } from 'react';
 import { calculateCWT, UTN_by_CTI } from '@/formula/performanceCurveCalculations';
+import { createClient } from '@supabase/supabase-js';
 
 ChartJS.register(
   CategoryScale,
@@ -26,6 +27,12 @@ ChartJS.register(
   Legend
 );
 
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 const formatDate = (dateString) => {
   if (!dateString) return '';
   return dateString.split('T')[0];
@@ -35,6 +42,9 @@ function PerformanceContent() {
   const searchParams = useSearchParams();
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState('details'); // For mobile view
+  const [performanceData, setPerformanceData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -66,6 +76,57 @@ function PerformanceContent() {
     date: formatDate(searchParams.get('date')) || '',
     towerType: searchParams.get('towerType') || ''
   };
+
+  // Fetch performance data from Supabase
+  useEffect(() => {
+    const fetchPerformanceData = async () => {
+      if (!params.modelName || !params.hotWaterTemp || !params.coldWaterTemp || !params.wetBulbTemp) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        
+        // Query for exact match or closest performance data
+        const { data, error } = await supabase
+          .from('cooling_tower_performance')
+          .select('lg_ratio, slope')
+          .eq('model_name', params.modelName)
+          .eq('hot_water_temp', parseFloat(params.hotWaterTemp))
+          .eq('cold_water_temp', parseFloat(params.coldWaterTemp))
+          .eq('wet_bulb_temp', parseFloat(params.wetBulbTemp))
+          .single();
+
+        if (error) {
+          // If exact match not found, try to get any data for this model
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('cooling_tower_performance')
+            .select('lg_ratio, slope')
+            .eq('model_name', params.modelName)
+            .limit(1)
+            .single();
+
+          if (fallbackError) {
+            console.warn('No performance data found for model:', params.modelName);
+            setError('Performance data not found for this model');
+          } else {
+            setPerformanceData(fallbackData);
+            console.warn('Using fallback performance data for model:', params.modelName);
+          }
+        } else {
+          setPerformanceData(data);
+        }
+      } catch (err) {
+        console.error('Error fetching performance data:', err);
+        setError('Failed to fetch performance data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPerformanceData();
+  }, [params.modelName, params.hotWaterTemp, params.coldWaterTemp, params.wetBulbTemp]);
 
   const designRange = parseFloat(params.hotWaterTemp) - parseFloat(params.coldWaterTemp);
   const designWBT = parseFloat(params.wetBulbTemp);
@@ -99,7 +160,7 @@ function PerformanceContent() {
   };
 
   const calculateColdWaterTemp = (wbt, range, flowRatePercent) => {
-      // Convert tower type to match format expected by calculateCWT
+    // Convert tower type to match format expected by calculateCWT
     let flowType = "";
     if (params.towerType?.toLowerCase() === "crossflow") {
       flowType = "CROSS";
@@ -109,6 +170,10 @@ function PerformanceContent() {
       flowType = "COUNTER"; // Default to counter flow if not specified
     }
 
+    // Get lg_ratio and slope from database, or use defaults if not available
+    const lgRatio = performanceData?.lg_ratio || 1.49; // Default L/G ratio
+    const slope = performanceData?.slope || -0.813; // Default slope
+
     return calculateCWT(
       parseFloat(params.hotWaterTemp),
       parseFloat(params.coldWaterTemp),
@@ -117,7 +182,9 @@ function PerformanceContent() {
       parseFloat(range),
       parseFloat(params.ambientPressure),
       flowType,
-      flowRatePercent
+      flowRatePercent,
+      lgRatio,
+      slope
     );
   };
 
@@ -288,11 +355,36 @@ function PerformanceContent() {
           <span className="text-gray-900 ml-2">{params.dryBulbTemp} °C</span>
         </div>
       </div>
+      
+      {/* Performance Data Status */}
+      {performanceData && (
+        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+          <p className="text-sm text-green-700">
+            <span className="font-semibold">Performance Data:</span> Using L/G Ratio: {performanceData.lg_ratio?.toFixed(3)}, Slope: {performanceData.slope?.toFixed(3)}
+          </p>
+        </div>
+      )}
+      
+      {error && (
+        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-700">
+            <span className="font-semibold">Warning:</span> {error}. Using default values for calculations.
+          </p>
+        </div>
+      )}
     </div>
   );
 
   const PerformanceTable = () => {
     const flowRates = [90, 100, 110];
+    
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center py-8">
+          <div className="text-gray-600">Loading performance data...</div>
+        </div>
+      );
+    }
     
     return (
       <div className="space-y-8">
@@ -306,16 +398,16 @@ function PerformanceContent() {
             <table className="min-w-full border-collapse border border-gray-300">
               <thead>
                 <tr>
-                  <th className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-${isMobile ? 'xs' : 'sm'} text-black font-bold`}>
+                  <th className={`border border-gray-300 ${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2 text-sm'} text-black font-bold`}>
                     WBT (°C)
                   </th>
                   {ranges.map((range, index) => (
-                    <th key={index} className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-${isMobile ? 'xs' : 'sm'}`}>
+                    <th key={index} className={`border border-gray-300 ${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2 text-sm'}`}>
                       <input
                         type="number"
                         value={range}
                         onChange={(e) => handleRangeChange(index, e.target.value)}
-                        className={`w-${isMobile ? '12' : '20'} text-center text-black text-${isMobile ? 'xs' : 'sm'}`}
+                        className={`${isMobile ? 'w-12 text-xs' : 'w-20 text-sm'} text-center text-black`}
                         step="1"
                       />
                     </th>
@@ -325,20 +417,20 @@ function PerformanceContent() {
               <tbody>
                 {wbtValues.map((wbt, wbtIndex) => (
                   <tr key={wbtIndex}>
-                    <td className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-${isMobile ? 'xs' : 'sm'}`}>
+                    <td className={`border border-gray-300 ${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2 text-sm'}`}>
                       <div className="flex items-center">
-                        <span className={`mr-${isMobile ? '1' : '2'} text-black font-bold text-${isMobile ? 'xs' : 'sm'}`}>WBT (°C):</span>
+                        <span className={`${isMobile ? 'mr-1 text-xs' : 'mr-2 text-sm'} text-black font-bold`}>WBT (°C):</span>
                         <input
                           type="number"
                           value={wbt}
                           onChange={(e) => handleWbtChange(wbtIndex, e.target.value)}
-                          className={`w-${isMobile ? '12' : '16'} text-center text-black text-${isMobile ? 'xs' : 'sm'}`}
+                          className={`${isMobile ? 'w-12 text-xs' : 'w-16 text-sm'} text-center text-black`}
                           step="1"
                         />
                       </div>
                     </td>
                     {ranges.map((range, rangeIndex) => (
-                      <td key={rangeIndex} className={`border border-gray-300 px-${isMobile ? '2' : '4'} py-${isMobile ? '1' : '2'} text-center bg-gray-50 text-${isMobile ? 'xs' : 'sm'} text-black`}>
+                      <td key={rangeIndex} className={`border border-gray-300 ${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2 text-sm'} text-center bg-gray-50 text-black`}>
                         {calculateColdWaterTemp(wbt, range, flowRate).toFixed(1)}
                       </td>
                     ))}
@@ -403,7 +495,7 @@ function PerformanceContent() {
               <h3 className="text-base font-bold text-gray-900 mb-2">
                 {params.towerType} Performance - 90% Flow ({(parseFloat(params.waterFlowRate) * 0.9).toFixed(1)} m³/hr)
               </h3>
-              <div className="w-full h-[300px]">
+              <div className="w-full h-72">
                 <Line data={createChartData(90)} options={chartOptions} />
               </div>
             </div>
@@ -411,7 +503,7 @@ function PerformanceContent() {
               <h3 className="text-base font-bold text-gray-900 mb-2">
                 {params.towerType} Performance - 100% Flow ({parseFloat(params.waterFlowRate)} m³/hr)
               </h3>
-              <div className="w-full h-[300px]">
+              <div className="w-full h-72">
                 <Line data={createChartData(100)} options={chartOptions} />
               </div>
             </div>
@@ -419,7 +511,7 @@ function PerformanceContent() {
               <h3 className="text-base font-bold text-gray-900 mb-2">
                 {params.towerType} Performance - 110% Flow ({(parseFloat(params.waterFlowRate) * 1.1).toFixed(1)} m³/hr)
               </h3>
-              <div className="w-full h-[300px]">
+              <div className="w-full h-72">
                 <Line data={createChartData(110)} options={chartOptions} />
               </div>
             </div>
@@ -430,9 +522,19 @@ function PerformanceContent() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 bg-white shadow-md rounded-md">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-gray-600">Loading performance data...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 bg-white shadow-md rounded-md">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">{params.flowType} Performance Curve</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">{params.towerType} Performance Curve</h2>
       
       {/* Mobile View */}
       {isMobile && (
@@ -458,27 +560,27 @@ function PerformanceContent() {
           <div className="space-y-12">
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                {params.flowType} Performance Curve - 90% Flow Rate ({(parseFloat(params.waterFlowRate) * 0.9).toFixed(1)} m³/hr)
+                {params.towerType} Performance Curve - 90% Flow Rate ({(parseFloat(params.waterFlowRate) * 0.9).toFixed(1)} m³/hr)
               </h3>
-              <div className="w-full h-[400px]">
+              <div className="w-full h-96">
                 <Line data={createChartData(90)} options={chartOptions} />
               </div>
             </div>
 
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                {params.flowType} Performance Curve - 100% Flow Rate ({parseFloat(params.waterFlowRate)} m³/hr)
+                {params.towerType} Performance Curve - 100% Flow Rate ({parseFloat(params.waterFlowRate)} m³/hr)
               </h3>
-              <div className="w-full h-[400px]">
+              <div className="w-full h-96">
                 <Line data={createChartData(100)} options={chartOptions} />
               </div>
             </div>
 
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                {params.flowType} Performance Curve - 110% Flow Rate ({(parseFloat(params.waterFlowRate) * 1.1).toFixed(1)} m³/hr)
+                {params.towerType} Performance Curve - 110% Flow Rate ({(parseFloat(params.waterFlowRate) * 1.1).toFixed(1)} m³/hr)
               </h3>
-              <div className="w-full h-[400px]">
+              <div className="w-full h-96">
                 <Line data={createChartData(110)} options={chartOptions} />
               </div>
             </div>
