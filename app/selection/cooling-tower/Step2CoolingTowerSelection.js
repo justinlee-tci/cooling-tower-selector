@@ -274,6 +274,10 @@ export default function Step2CoolingTowerSelection() {
               <span className="font-medium text-gray-700">{selectionData.waterFlowRate} m³/hr</span>
             </div>
             <div className="flex justify-between">
+              <span className="text-gray-700">Ambient Pressure:</span>
+              <span className="font-medium text-gray-700">{selectionData.ambientPressure} kPa</span>
+            </div>
+            <div className="flex justify-between">
               <span className="text-gray-700">Hot Water Temp:</span>
               <span className="font-medium text-gray-700">{selectionData.hotWaterTemp} °C</span>
             </div>
@@ -288,10 +292,6 @@ export default function Step2CoolingTowerSelection() {
             <div className="flex justify-between">
               <span className="text-gray-700">Dry Bulb Temp:</span>
               <span className="font-medium text-gray-700">{selectionData.dryBulbTemp} °C</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-700">Ambient Pressure:</span>
-              <span className="font-medium text-gray-700">{selectionData.ambientPressure} kPa</span>
             </div>
           </div>
         </div>

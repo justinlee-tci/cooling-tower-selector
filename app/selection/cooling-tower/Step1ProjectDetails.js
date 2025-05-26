@@ -5,16 +5,16 @@ import { useFloating, arrow, shift, offset, FloatingPortal } from '@floating-ui/
 
 // Update parameter ranges
 const parameterRanges = {
-  waterFlowRate: { min: 1, max: 10000 }, // m³/hr
+  waterFlowRate: { min: 1, max: 100000 }, // m³/hr
   ambientPressure: { 
     min: 90, 
     max: 105,
     default: 101.325 // Standard sea level pressure in kPa
   },
-  hotWaterTemp: { min: 20, max: 50 }, // °C
-  coldWaterTemp: { min: 15, max: 35 }, // °C
-  wetBulbTemp: { min: 10, max: 35 }, // °C
-  dryBulbTemp: { min: 15, max: 45 }, // °C
+  hotWaterTemp: { min: 20, max: 80 }, // °C
+  coldWaterTemp: { min: 15, max: 70 }, // °C
+  wetBulbTemp: { min: 10, max: 50}, // °C
+  dryBulbTemp: { min: 15, max: 60 }, // °C
 };
 
 // Update the styling constants
