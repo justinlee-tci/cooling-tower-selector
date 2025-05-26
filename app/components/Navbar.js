@@ -222,7 +222,7 @@ const Navbar = () => {
           </Link>
           
           {/* Selection menu items - only show for user role */}
-          {role === "user" && (
+          {(role === "user" || role === "superadmin") && (
             <div>
               <div className="text-gray-700 px-3 py-2 rounded-md text-base font-medium">
                 Selection
