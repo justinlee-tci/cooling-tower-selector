@@ -8,7 +8,7 @@ const parameterRanges = {
   waterFlowRate: { min: 1, max: 100000 }, // m³/hr
   ambientPressure: { 
     min: 90, 
-    max: 105,
+    max: 500,
     default: 101.325 // Standard sea level pressure in kPa
   },
   hotWaterTemp: { min: 20, max: 80 }, // °C
