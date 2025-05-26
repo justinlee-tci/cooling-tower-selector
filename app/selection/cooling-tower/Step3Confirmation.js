@@ -172,9 +172,15 @@ export default function Step3Confirmation() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
         
-        // Show success message and redirect to user dashboard
+        // Show success message and redirect to dashboard
         toast.success("Selection saved successfully!");
-        router.push("/user-dashboard");
+        if (user.role === 'user') {
+          router.push("/user-dashboard");
+        }
+          else {
+          router.push("/admin-dashboard");
+        }
+        
       } catch (reportError) {
         console.error('Error generating report:', reportError);
         // Still redirect to dashboard since the selection was saved

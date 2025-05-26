@@ -127,8 +127,10 @@ export default function AdminDashboard() {
       // Remove the deleted selection from the local state
       setSelections(selections.filter(selection => selection.id !== selectionToDelete.id));
       
-      toast.success("Selection deleted successfully");
-    } catch (error) {
+        toast.success("Selection deleted successfully", {
+          duration: 1000 // 2 seconds
+        });
+      } catch (error) {
       console.error("Error deleting selection:", error);
       toast.error("Failed to delete selection");
     } finally {
@@ -154,7 +156,9 @@ export default function AdminDashboard() {
       }
 
       setUsers(users.filter(u => u.email !== userToDelete.email));
-      toast.success('User deleted successfully');
+        toast.success("User deleted successfully", {
+          duration: 1000 // 2 seconds
+        });
     } catch (error) {
       console.error('Error deleting user:', error);
       toast.error('Failed to delete user');
