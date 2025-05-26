@@ -41,32 +41,79 @@ const requiredFields = [
   // "dryBulbTemp" removed from required fields
 ];
 
-// Modify the RequiredFieldTooltip component
-const RequiredFieldTooltip = ({ show }) => {
-  const [reference, setReference] = useState(null);
+// Modified RequiredFieldTooltip component with proper boundary handling
+const RequiredFieldTooltip = ({ show, anchorElement }) => {
   const {x, y, strategy, refs} = useFloating({
-    placement: 'top',
-    middleware: [offset(5)],
     elements: {
-      reference: reference
-    }
+      reference: anchorElement
+    },
+    placement: 'top',
+    middleware: [
+      offset(8),
+      shift({ padding: 8 }) // Ensures tooltip stays within viewport with 8px padding
+    ],
   });
+
+  if (!show || !anchorElement) return null;
+
+  return (
+    <FloatingPortal>
+      <div
+        ref={refs.setFloating}
+        style={{
+          position: strategy,
+          top: y ?? 0,
+          left: x ?? 0,
+          zIndex: 9999,
+        }}
+        className="bg-red-500 text-white px-3 py-2 rounded text-xs font-medium shadow-lg max-w-xs whitespace-nowrap"
+      >
+        This field is required
+      </div>
+    </FloatingPortal>
+  );
+};
+
+// Enhanced RequiredFieldIndicator component
+const RequiredFieldIndicator = ({ show, fieldKey }) => {
+  const [anchorRef, setAnchorRef] = useState(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  useEffect(() => {
+    let timeoutId;
+    if (show) {
+      setShowTooltip(true);
+      // Auto-hide tooltip after 2 seconds on mobile
+      timeoutId = setTimeout(() => {
+        setShowTooltip(false);
+      }, 1500);
+    } else {
+      setShowTooltip(false);
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [show]);
 
   if (!show) return null;
 
   return (
-    <div
-      ref={refs.setFloating}
-      style={{
-        position: strategy,
-        top: y ?? 0,
-        left: x ?? 0,
-        width: 'max-content'
-      }}
-      className="absolute bg-red-500 text-white px-2 py-1 rounded text-sm z-50"
-    >
-      This field is required
-    </div>
+    <>
+      <div 
+        ref={setAnchorRef}
+        className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center cursor-help"
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        onClick={() => setShowTooltip(!showTooltip)} // Toggle on mobile tap
+      >
+        <span className="text-red-500 text-lg font-bold">*</span>
+      </div>
+      <RequiredFieldTooltip 
+        show={showTooltip} 
+        anchorElement={anchorRef}
+      />
+    </>
   );
 };
 
@@ -297,12 +344,10 @@ export default function Step1ProjectDetails() {
               onChange={(e) => handleInputChange("selectionBy", e.target.value)}
               onBlur={() => setTouchedFields(prev => ({ ...prev, selectionBy: true }))}
             />
-            {touchedFields.selectionBy && !selectionData.selectionBy && (
-              <div className="absolute -top-2 right-2">
-                <span className="text-red-500">*</span>
-                <RequiredFieldTooltip show={true} />
-              </div>
-            )}
+            <RequiredFieldIndicator 
+              show={touchedFields.selectionBy && !selectionData.selectionBy}
+              fieldKey="selectionBy"
+            />
           </div>
         </div>
       </div>
@@ -324,12 +369,10 @@ export default function Step1ProjectDetails() {
                 onChange={(e) => handleInputChange(key, e.target.value)}
                 onBlur={() => setTouchedFields(prev => ({ ...prev, [key]: true }))}
               />
-              {touchedFields[key] && !selectionData[key] && (
-                <div className="absolute -top-2 right-2">
-                  <span className="text-red-500">*</span>
-                  <RequiredFieldTooltip show={true} />
-                </div>
-              )}
+              <RequiredFieldIndicator 
+                show={touchedFields[key] && !selectionData[key]}
+                fieldKey={key}
+              />
             </div>
           </div>
         ))}
@@ -355,7 +398,7 @@ export default function Step1ProjectDetails() {
           <div key={key} className="flex flex-col space-y-1">
             <div className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
               <label className={labelClass}>{label}:</label>
-              <div className={inputContainerClass}>
+              <div className={`${inputContainerClass} relative`}>
                 <input
                   type="number"
                   required
@@ -363,10 +406,18 @@ export default function Step1ProjectDetails() {
                   className={`${parameterInputClass} ${validationErrors[key] ? 'border-red-500' : ''}`}
                   value={selectionData[key] || ""}
                   onChange={(e) => handleInputChange(key, e.target.value)}
+                  onBlur={() => setTouchedFields(prev => ({ ...prev, [key]: true }))}
                   min={parameterRanges[key]?.min}
                   max={parameterRanges[key]?.max}
                 />
                 <span className={unitClass}>{unit}</span>
+                {/* Show required indicator for required fields */}
+                {requiredFields.includes(key) && (
+                  <RequiredFieldIndicator 
+                    show={touchedFields[key] && !selectionData[key]}
+                    fieldKey={key}
+                  />
+                )}
               </div>
             </div>
             {validationErrors[key] && (
