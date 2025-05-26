@@ -28,16 +28,23 @@ const countries = [
   "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
 ].sort();
 
-  // Default password for all new users - Edit this constant to change the default password
-const DEFAULT_PASSWORD = "Welcome-Thermal-Cell!";
+// Function to generate dynamic password based on name and company
+const generatePassword = (email) => {
+  if (!email) return "";
+
+  const username = email.split('@')[0];
+  const cleaned = username.replace(/[^a-zA-Z0-9]/g, '');
+  const firstFour = cleaned.substring(0, 4).toUpperCase();
+
+  return `${firstFour}Welcome-Thermal-Cell!${firstFour}`;
+};
+
 
 export default function AdminRegister() {
   const router = useRouter();
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password] = useState(DEFAULT_PASSWORD);
-  const [confirmPassword] = useState(DEFAULT_PASSWORD);
   const [company, setCompany] = useState("");
   const [country, setCountry] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,6 +52,13 @@ export default function AdminRegister() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showVerificationPopup, setShowVerificationPopup] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [generatedPassword, setGeneratedPassword] = useState("");
+
+  // Generate password whenever name or company changes
+  useEffect(() => {
+    const password = generatePassword(email);
+    setGeneratedPassword(password);
+  }, [email]);
 
   // Check if the current user is a superadmin
   useEffect(() => {
@@ -79,13 +93,15 @@ export default function AdminRegister() {
     setError(null);
     setLoading(true);
 
+    const dynamicPassword = generatePassword(email);
+
     try {
-      console.log("Registering user with password:", DEFAULT_PASSWORD);
+      console.log("Registering user with password:", dynamicPassword);
       
-      // Step 1: Sign up with Supabase Auth using the default password
+      // Step 1: Sign up with Supabase Auth using the dynamic password
       const { data, error: authError } = await supabase.auth.signUp({
         email,
-        password: DEFAULT_PASSWORD, // Ensure we're using the constant directly
+        password: dynamicPassword,
         options: {
           data: {
             name,
@@ -111,7 +127,7 @@ export default function AdminRegister() {
           .insert([{
             email, // Using email as primary key (matches your schema)
             name,
-            password: DEFAULT_PASSWORD, // Your schema requires this field
+            password: dynamicPassword, // Store the generated password
             company,
             country,
             role: "user",
@@ -133,12 +149,6 @@ export default function AdminRegister() {
         setRegisteredEmail(email);
         setShowVerificationPopup(true);
         setLoading(false);
-        
-        // Clear form fields after successful registration
-        setName("");
-        setEmail("");
-        setCompany("");
-        setCountry("");
       }
     } catch (err) {
       console.error("Registration error:", err);
@@ -157,6 +167,11 @@ export default function AdminRegister() {
   // Handle closing the popup and returning to admin dashboard
   const handleClosePopup = () => {
     setShowVerificationPopup(false);
+      // Clear form fields after closing the popup
+  setName("");
+  setEmail("");
+  setCompany("");
+  setCountry("");
     // Stay on the same page (registration page) or go back to admin dashboard
     router.push("/admin-dashboard");
   };
@@ -177,12 +192,17 @@ export default function AdminRegister() {
         <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center text-gray-900">Register New User</h2>
         {error && <p className="text-red-600 text-sm sm:text-base mb-3">{error}</p>}
         
-        {/* Default password notice */}
+        {/* Dynamic password notice */}
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            <span className="font-medium">Note:</span> All new users will be assigned the default password: 
-            <span className="font-medium ml-1 bg-blue-100 px-2 py-1 rounded">{DEFAULT_PASSWORD}</span>
+            <span className="font-medium">Note:</span> Password will be automatically generated based on name and company:
           </p>
+          {generatedPassword && (
+            <p className="text-sm text-blue-800 mt-1">
+              <span className="font-medium">Generated Password:</span>
+              <span className="font-medium ml-1 bg-blue-100 px-2 py-1 rounded">{generatedPassword}</span>
+            </p>
+          )}
           <p className="text-sm text-blue-800 mt-1">
             Please make sure to include this password in your communication to the user.
           </p>
@@ -209,25 +229,6 @@ export default function AdminRegister() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-3 text-sm sm:text-base border border-gray-500 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 text-gray-900"
               required
-            />
-          </div>
-          <div>
-            <label className="block text-gray-900 text-sm sm:text-base mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              className="w-full p-3 text-sm sm:text-base border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
-              disabled
-            />
-            <p className="text-xs text-gray-500 mt-1">Default password is pre-filled and cannot be changed</p>
-          </div>
-          <div>
-            <label className="block text-gray-900 text-sm sm:text-base mb-1">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              className="w-full p-3 text-sm sm:text-base border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
-              disabled
             />
           </div>
           <div>
@@ -267,7 +268,7 @@ export default function AdminRegister() {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !generatedPassword}
               className="w-1/2 bg-blue-600 text-white py-3 text-sm sm:text-base font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
             >
               {loading ? "Processing..." : "Register User"}
@@ -306,10 +307,10 @@ export default function AdminRegister() {
               </p>
               <p className="text-gray-700 mb-4 text-sm">
                 The verification email contains instructions to complete their registration. 
-                They will need to use this default password for initial login:
+                They will need to use this generated password for initial login:
               </p>
-              <p className="font-medium bg-gray-100 px-3 py-2 rounded mb-4 text-gray-800">
-                {DEFAULT_PASSWORD}
+              <p className="font-medium bg-gray-100 px-3 py-2 rounded mb-4 text-gray-900">
+                {generatedPassword}
               </p>
               <button
                 onClick={handleClosePopup}
