@@ -206,21 +206,6 @@ export default function UserDetails() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        {/* Remove the background color here */}
-        <LiveWallpaper /> {/* Make sure this is at the top */}
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="bg-white p-8 rounded-xl shadow-md">
-            <p className="text-xl text-center text-black">Loading user details...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col min-h-screen">
       {/* Remove the background color here */}
@@ -337,7 +322,8 @@ export default function UserDetails() {
 
         {/* Confirmation Modal */}
         {showConfirmation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          
+          <div className="fixed inset-0 bg-opacity-50 flex items-center bg-opacity-40 backdrop-blur-sm justify-center z-50">
             <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
               <h3 className="text-xl font-bold mb-4 text-black">Confirm Changes</h3>
               

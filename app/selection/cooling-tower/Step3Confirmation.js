@@ -172,14 +172,28 @@ export default function Step3Confirmation() {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
         
-        // Show success message and redirect to dashboard
-        toast.success("Selection saved successfully!");
-        if (user.role === 'user') {
-          router.push("/user-dashboard");
-        }
-          else {
-          router.push("/admin-dashboard");
-        }
+        const { data: { user } } = await supabase.auth.getUser();
+                toast.success("Selection saved successfully!");
+
+const email = user?.email;
+const { data, error } = await supabase
+  .from('users')
+  .select('role')
+  .eq('email', email)
+  .single();
+
+if (error) {
+  console.error("Error fetching user role:", error);
+} else {
+  const role = data.role;
+  console.log("User role:", role);
+
+  if (role === 'superadmin') {
+    router.push("/admin-dashboard");
+  } else {
+    router.push("/user-dashboard");
+  }
+}
         
       } catch (reportError) {
         console.error('Error generating report:', reportError);

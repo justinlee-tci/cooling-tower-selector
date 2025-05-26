@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/authContext";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "react-hot-toast";
 import LiveWallpaper from "@/components/LiveWallpaper-2";
+import Navbar from "@/components/Navbar";
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
@@ -187,10 +188,12 @@ export default function AdminRegister() {
 
   return (
     <>
-      <div className="relative z-10 flex items-center justify-center min-h-screen bg-gray-200">
-        <LiveWallpaper />
-        <div className="bg-white p-4 sm:p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
-          {/* Add Logo Image with bottom margin */}
+    <LiveWallpaper />
+      <Navbar />
+      <div className="flex-grow flex items-center justify-center p-6 relative z-10">
+        {/* Add relative and z-10 to ensure content is above the wallpaper */}
+        <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
+            {/* Add Logo Image with bottom margin */}
           <div className="flex justify-center mb-6">
             <img 
               src="/company-logo.jpg" 
@@ -198,7 +201,6 @@ export default function AdminRegister() {
               className="h-16 sm:h-20 w-auto object-contain"
             />
           </div>
-
           <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center text-gray-900">Register New User</h2>
           {error && <p className="text-red-600 text-sm sm:text-base mb-3">{error}</p>}
           
