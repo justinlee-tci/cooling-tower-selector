@@ -347,7 +347,7 @@ export default function Step3Confirmation() {
       {showConfirmation && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           {/* Semi-transparent backdrop */}
-          <div className="absolute inset-0 bg-gray-900 bg-opacity-30 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-opacity-40 backdrop-blur-sm" />
           
           {/* Modal content */}
           <div className="relative bg-white/90 p-4 md:p-6 rounded-lg shadow-xl w-11/12 max-w-md mx-auto backdrop-blur-md border border-gray-200">

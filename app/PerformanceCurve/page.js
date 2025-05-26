@@ -171,8 +171,8 @@ function PerformanceContent() {
     }
 
     // Get lg_ratio and slope from database, or use defaults if not available
-    const lgRatio = performanceData?.lg_ratio || 1.49; // Default L/G ratio
-    const slope = performanceData?.slope || -0.813; // Default slope
+    const lgRatio = performanceData?.lg_ratio; // Default L/G ratio
+    const slope = performanceData?.slope; // Default slope
 
     return calculateCWT(
       parseFloat(params.hotWaterTemp),
@@ -357,13 +357,13 @@ function PerformanceContent() {
       </div>
       
       {/* Performance Data Status */}
-      {performanceData && (
+      {/* {performanceData && (
         <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
           <p className="text-sm text-green-700">
             <span className="font-semibold">Performance Data:</span> Using L/G Ratio: {performanceData.lg_ratio?.toFixed(3)}, Slope: {performanceData.slope?.toFixed(3)}
           </p>
         </div>
-      )}
+      )} */}
       
       {error && (
         <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
