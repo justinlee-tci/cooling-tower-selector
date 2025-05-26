@@ -231,7 +231,7 @@ export default function UserDetails() {
         <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
           <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">Account Details</h2>
           <p className="text-center text-gray-600 mb-8">
-            {userRole === "superadmin" ? "Admin mode - All fields editable" : "User mode - Password editable only"}
+            {userRole === "superadmin" ? "Admin mode - All fields editable" : "Password editable only"}
           </p>
           {error && <p className="text-red-600 text-lg mb-4">{error}</p>}
           {success && <p className="text-green-600 text-lg mb-4">{success}</p>}
