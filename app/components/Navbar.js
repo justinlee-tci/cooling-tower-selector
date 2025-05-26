@@ -151,7 +151,7 @@ const Navbar = () => {
             </Link>
             
             {/* Selection dropdown menu - only show for user role */}
-            {role === "user" || role ==="superadmin" && (
+            {(role === "user" || role === "superadmin")  && (
               <div className="relative" ref={dropdownRef}>
                 <button 
                   onClick={(e) => {
