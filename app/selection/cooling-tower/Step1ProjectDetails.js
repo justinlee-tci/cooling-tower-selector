@@ -262,17 +262,17 @@ export default function Step1ProjectDetails() {
 
   // Update input parameters section with more descriptive placeholder
   const inputParameters = [
-    { label: "Water Flow Rate", key: "waterFlowRate", unit: "m³/hr", placeholder: "Enter flow rate" },
+    { label: "Water Flow Rate", key: "waterFlowRate", unit: "m³/hr", placeholder: "Enter flow rate (required)" },
     { 
       label: "Ambient Pressure", 
       key: "ambientPressure", 
       unit: "kPa", 
       placeholder: "Default: 101.325 kPa"
     },
-    { label: "Hot Water Temperature", key: "hotWaterTemp", unit: "°C", placeholder: "Enter temp" },
-    { label: "Cold Water Temperature", key: "coldWaterTemp", unit: "°C", placeholder: "Enter temp" },
-    { label: "Wet Bulb Temperature", key: "wetBulbTemp", unit: "°C", placeholder: "Enter temp" },
-    { label: "Dry Bulb Temperature", key: "dryBulbTemp", unit: "°C", placeholder: "Enter temp" }
+    { label: "Hot Water Temperature", key: "hotWaterTemp", unit: "°C", placeholder: "Enter temp (required)" },
+    { label: "Cold Water Temperature", key: "coldWaterTemp", unit: "°C", placeholder: "Enter temp (required)" },
+    { label: "Wet Bulb Temperature", key: "wetBulbTemp", unit: "°C", placeholder: "Enter temp (required)" },
+    { label: "Dry Bulb Temperature", key: "dryBulbTemp", unit: "°C", placeholder: "Enter temp (not required)" }
   ];
 
   return (
