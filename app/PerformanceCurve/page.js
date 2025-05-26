@@ -244,7 +244,7 @@ function PerformanceContent() {
       },
       title: {
         display: true,
-        text: `Cooling Tower Performance Curve`,
+        text: `Thermal Performance Curve`,
         font: {
           size: isMobile ? 14 : 16
         }
@@ -534,7 +534,9 @@ function PerformanceContent() {
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 bg-white shadow-md rounded-md">
-      <h2 className="text-xl font-bold text-gray-900 mb-4">{params.towerType} Performance Curve</h2>
+      {/* <h2 className="text-xl font-bold text-gray-900 mb-4">{params.towerType} Performance Curve</h2> */}
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Thermal Performance Curve</h2>
+
       
       {/* Mobile View */}
       {isMobile && (
