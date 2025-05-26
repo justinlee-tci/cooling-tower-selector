@@ -99,8 +99,10 @@ export default function Dashboard() {
 
       // Remove the deleted selection from the local state
       setSelections(selections.filter(selection => selection.id !== selectionToDelete.id));
-      
-      toast.success("Selection deleted successfully");
+      // Show success message
+      toast.success("Selection deleted successfully", {
+      duration: 1000 // 2 seconds
+      });
     } catch (error) {
       console.error("Error deleting selection:", error);
       toast.error("Failed to delete selection");
