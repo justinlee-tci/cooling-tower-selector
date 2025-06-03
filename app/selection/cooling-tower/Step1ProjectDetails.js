@@ -17,6 +17,9 @@ const parameterRanges = {
   dryBulbTemp: { min: 15, max: 60 }, // °C
 };
 
+// Minimum approach temperature for reliable calculations
+const MIN_APPROACH_TEMP = 3; // °C
+
 // Update the styling constants
 const labelClass = "w-full md:w-44 font-medium text-gray-900 whitespace-nowrap mb-1 md:mb-0";
 const inputContainerClass = "w-full md:flex-1 flex items-center space-x-2";
@@ -183,40 +186,55 @@ export default function Step1ProjectDetails() {
     return null;
   };
 
-  // Add this function after the validateInput function
-  const validateTemperatures = (temperatures) => {
-    const { hotWaterTemp, coldWaterTemp, dryBulbTemp, wetBulbTemp } = temperatures;
-    const errors = {};
+  // Enhanced temperature validation with approach temperature check
+const validateTemperatures = (temperatures) => {
+  const { hotWaterTemp, coldWaterTemp, dryBulbTemp, wetBulbTemp } = temperatures;
+  const errors = {};
 
-    // Convert to numbers for comparison
-    const hot = Number(hotWaterTemp);
-    const cold = Number(coldWaterTemp);
-    const dry = dryBulbTemp ? Number(dryBulbTemp) : null;
-    const wet = Number(wetBulbTemp);
+  // Convert to numbers for comparison
+  const hot = Number(hotWaterTemp);
+  const cold = Number(coldWaterTemp);
+  const dry = dryBulbTemp ? Number(dryBulbTemp) : null;
+  const wet = Number(wetBulbTemp);
 
-    // Validate hot water > cold water
-    if (hot <= cold) {
-      errors.hotWaterTemp = "Hot water temperature must be higher than cold water temperature";
-      errors.coldWaterTemp = "Cold water temperature must be lower than hot water temperature";
-    }
-
-    // Validate cold water > wet bulb
-    if (cold <= wet) {
-      errors.coldWaterTemp = "Cold water temperature must be higher than wet bulb temperature";
-      errors.wetBulbTemp = "Wet bulb temperature must be lower than cold water temperature";
-    }
-
-    // Only validate dry bulb if it's provided
-    if (dry !== null) {
-      // Validate dry bulb > wet bulb
-      if (dry <= wet) {
-        errors.dryBulbTemp = "Dry bulb temperature must be higher than wet bulb temperature";
-        errors.wetBulbTemp = "Wet bulb temperature must be lower than dry bulb temperature";
-      }
-    }
-
+  // Skip validation if any required temperature is missing or invalid
+  if (isNaN(hot) || isNaN(cold) || isNaN(wet)) {
     return errors;
-  };
+  }
+
+  // Validate hot water > cold water
+  if (hot <= cold) {
+    errors.hotWaterTemp = "Hot water temperature must be higher than cold water temperature";
+    errors.coldWaterTemp = "Cold water temperature must be lower than hot water temperature";
+  }
+
+  // Validate cold water > wet bulb
+  if (cold <= wet) {
+    errors.coldWaterTemp = "Cold water temperature must be higher than wet bulb temperature";
+    errors.wetBulbTemp = "Wet bulb temperature must be lower than cold water temperature";
+  }
+
+  // **FIXED: Validate approach temperature (Cold Water - Wet Bulb >= 3°C)**
+  const approachTemp = cold - wet;
+  if (approachTemp < MIN_APPROACH_TEMP) { // Changed from <= to <
+    const requiredColdTemp = wet + MIN_APPROACH_TEMP;
+    const requiredWetBulbTemp = cold - MIN_APPROACH_TEMP;
+    
+    errors.coldWaterTemp = `Approach temperature (${approachTemp.toFixed(1)}°C) is too small. Cold water must be at least ${requiredColdTemp.toFixed(1)}°C for reliable calculations`;
+    errors.wetBulbTemp = `Approach temperature (${approachTemp.toFixed(1)}°C) is too small. Wet bulb must be at most ${requiredWetBulbTemp.toFixed(1)}°C for reliable calculations`;
+  }
+
+  // Only validate dry bulb if it's provided
+  if (dry !== null && !isNaN(dry)) {
+    // Validate dry bulb > wet bulb
+    if (dry <= wet) {
+      errors.dryBulbTemp = "Dry bulb temperature must be higher than wet bulb temperature";
+      errors.wetBulbTemp = "Wet bulb temperature must be lower than dry bulb temperature";
+    }
+  }
+
+  return errors;
+};
 
   // Handle input change with validation
   const handleInputChange = (key, value) => {
@@ -242,7 +260,7 @@ export default function Step1ProjectDetails() {
         delete newErrors[tempKey];
       });
       
-      // Then add new temperature validation errors
+      // Then add new temperature validation errors (including approach temp check)
       const tempErrors = validateTemperatures({
         ...selectionData,
         [key]: value
@@ -268,7 +286,7 @@ export default function Step1ProjectDetails() {
       (key) => !validationErrors[key]
     );
 
-    // Add temperature validation check
+    // Add temperature validation check (including approach temperature)
     const tempErrors = validateTemperatures(selectionData);
     const temperaturesValid = Object.keys(tempErrors).length === 0;
 
@@ -298,6 +316,19 @@ export default function Step1ProjectDetails() {
     // Then proceed to next step
     nextStep();
   };
+
+  // Calculate and display current approach temperature for user reference
+  const getCurrentApproachTemp = () => {
+    const cold = Number(selectionData.coldWaterTemp);
+    const wet = Number(selectionData.wetBulbTemp);
+    
+    if (!isNaN(cold) && !isNaN(wet)) {
+      return cold - wet;
+    }
+    return null;
+  };
+
+  const currentApproach = getCurrentApproachTemp();
 
   // Update project details section
   const projectDetails = [
@@ -393,6 +424,35 @@ export default function Step1ProjectDetails() {
 
       {/* Input Parameters - Modified for mobile */}
       <h3 className="text-lg font-bold mt-6 mb-4 text-gray-900">Input Parameters</h3>
+      
+      {/* **NEW: Approach Temperature Info Box** */}
+      {currentApproach !== null && (
+        <div className={`mb-4 p-3 rounded-md border ${
+          currentApproach < MIN_APPROACH_TEMP 
+            ? 'bg-red-50 border-red-200' 
+            : 'bg-green-50 border-green-200'
+        }`}>
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-gray-900">
+              Current Approach Temperature: 
+            </span>
+            <span className={`font-bold ${
+              currentApproach < MIN_APPROACH_TEMP 
+                ? 'text-red-600' 
+                : 'text-green-600'
+            }`}>
+              {currentApproach.toFixed(1)}°C
+            </span>
+          </div>
+          <p className="text-sm text-gray-600 mt-1">
+            {currentApproach < MIN_APPROACH_TEMP 
+              ? `⚠️ Approach temperature must be => ${MIN_APPROACH_TEMP}°C for reliable cooling tower calculations`
+              : `✅ Approach temperature is acceptable for reliable calculations`
+            }
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-8 md:gap-y-4">
         {inputParameters.map(({ label, key, unit, placeholder }) => (
           <div key={key} className="flex flex-col space-y-1">
@@ -450,6 +510,10 @@ export default function Step1ProjectDetails() {
             Actual cooling tower performance may vary depending on various environmental and operational factors. 
             For detailed analysis, specifications, and performance guarantees, please consult with your sales engineer 
             or technical representative.
+          </p>
+          <p className="text-sm text-gray-600 mt-2">
+            <span className="font-semibold">Note:</span> Approach temperature (Cold Water - Wet Bulb) must be greater than {MIN_APPROACH_TEMP}°C 
+            for reliable cooling tower calculations. Lower approach temperatures may result in calculation errors.
           </p>
         </div>
         
