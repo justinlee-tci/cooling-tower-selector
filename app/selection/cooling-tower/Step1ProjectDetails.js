@@ -18,7 +18,7 @@ const parameterRanges = {
 };
 
 // Minimum approach temperature for reliable calculations
-const MIN_APPROACH_TEMP = 3; // °C
+const MIN_APPROACH_TEMP = 2; // °C
 
 // Update the styling constants
 const labelClass = "w-full md:w-44 font-medium text-gray-900 whitespace-nowrap mb-1 md:mb-0";

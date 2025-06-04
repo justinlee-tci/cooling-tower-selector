@@ -89,6 +89,14 @@ export default function Step2CoolingTowerSelection() {
           String(model.type).toUpperCase(),
         )*selectedCells;
 
+        const actualCapacity = calculateCoolingCapacity(
+          Number(selectionData.hotWaterTemp),
+          Number(selectionData.coldWaterTemp),
+          Number(selectionData.wetBulbTemp),
+          Number(model.nominal_capacity),
+          String(model.type).toUpperCase(),
+        )*selectedCells;
+
         const safetyFactor = actualFlowRate / selectionData.waterFlowRate * 100;
 
         return { 
