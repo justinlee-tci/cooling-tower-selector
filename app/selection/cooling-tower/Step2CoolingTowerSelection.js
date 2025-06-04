@@ -102,6 +102,7 @@ export default function Step2CoolingTowerSelection() {
         return { 
           ...model, 
           actualFlowRate: Number(actualFlowRate), 
+          actualCapacity: Number(actualCapacity),
           safetyFactor: Number(safetyFactor) 
         };
       });
@@ -120,6 +121,7 @@ export default function Step2CoolingTowerSelection() {
           updateSelectionData({
             numberOfCells: selectedCells,
             actualFlowRate: selectedModel.actualFlowRate,
+            actualCapacity: selectedModel.actualCapacity,
             safetyFactor: selectedModel.safetyFactor
           });
         }
@@ -139,6 +141,7 @@ export default function Step2CoolingTowerSelection() {
     updateSelectionData({
       selectedModel: model.model_name,
       actualFlowRate: model.actualFlowRate,
+      actualCapacity: model.actualCapacity,
       safetyFactor: model.safetyFactor,
       numberOfCells: selectedCells
     });
@@ -163,6 +166,16 @@ export default function Step2CoolingTowerSelection() {
     });
     nextStep();
   };
+
+  // Get selected model details for display
+  const getSelectedModelDetails = () => {
+    if (!selectionData.selectedModel) return null;
+    
+    // Find the selected model from filteredModels (which includes calculated values)
+    return filteredModels.find(model => model.model_name === selectionData.selectedModel);
+  };
+
+  const selectedModelDetails = getSelectedModelDetails();
 
   // Render a model card for mobile view
   const renderModelCard = (model) => {
@@ -206,7 +219,10 @@ export default function Step2CoolingTowerSelection() {
           <div className="text-gray-800 font-medium">Operating Weight:</div>
           <div className="text-right text-gray-900 font-medium">{model.operating_weight} kg</div>
           
-          <div className="text-gray-800 font-medium">Actual Capacity:</div>
+          {/* <div className="text-gray-800 font-medium">Actual Capacity:</div>
+          <div className="text-right text-gray-900 font-medium">{model.actualCapacity.toFixed(2)} RT</div> */}
+          
+          <div className="text-gray-800 font-medium">Actual Flow Rate:</div>
           <div className="text-right text-gray-900 font-medium">{model.actualFlowRate.toFixed(2)} m³/hr</div>
           
           <div className="text-gray-800 font-medium">Safety Factor:</div>
@@ -301,9 +317,82 @@ export default function Step2CoolingTowerSelection() {
               <span className="text-gray-700">Dry Bulb Temp:</span>
               <span className="font-medium text-gray-700">{selectionData.dryBulbTemp} °C</span>
             </div>
+            {selectedModelDetails && (
+              <div className="flex justify-between">
+                <span className="text-gray-700">Design Condition RT:</span>
+                <span className="font-medium text-gray-700">
+                  {calculateCoolingCapacity(
+                    Number(selectionData.hotWaterTemp),
+                    Number(selectionData.coldWaterTemp),
+                    Number(selectionData.wetBulbTemp),
+                    Number(selectionData.waterFlowRate),
+                    String(selectedModelDetails.type).toUpperCase()
+                  ).toFixed(2)} RT
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Model Selected Section */}
+      {selectedModelDetails && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
+          <h3 className="text-lg font-semibold mb-3 text-blue-900">Model Selected:</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Model:</span>
+              <span className="font-semibold text-blue-900">{selectedModelDetails.model_name}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Type:</span>
+              <span className="font-semibold text-blue-900">{selectedModelDetails.type}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Nominal Capacity/cell:</span>
+              <span className="font-semibold text-blue-900">{selectedModelDetails.nominal_capacity} RT</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Nominal Flow Rate/cell:</span>
+              <span className="font-semibold text-blue-900">{selectedModelDetails.nominal_flowrate.toFixed(2)} m³/hr</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Motor Output:</span>
+              <span className="font-semibold text-blue-900">{selectedModelDetails.motor_output} kW</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Fan Diameter:</span>
+              <span className="font-semibold text-blue-900">{selectedModelDetails.fan_diameter} mm</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Dry Weight:</span>
+              <span className="font-semibold text-blue-900">{selectedModelDetails.dry_weight} kg</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Operating Weight:</span>
+              <span className="font-semibold text-blue-900">{selectedModelDetails.operating_weight} kg</span>
+            </div>
+            {/* <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Actual Capacity:</span>
+              <span className="font-semibold text-blue-900">{selectedModelDetails.actualCapacity.toFixed(2)} RT</span>
+            </div> */}
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Actual Flow Rate:</span>
+              <span className="font-semibold text-blue-900">{selectedModelDetails.actualFlowRate.toFixed(2)} m³/hr</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Safety Factor:</span>
+              <span className={`font-semibold ${selectedModelDetails.safetyFactor >= 100 ? "text-green-600" : "text-red-600"}`}>
+                {Math.round(selectedModelDetails.safetyFactor)}%
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-800 font-medium">Number of Cells:</span>
+              <span className="font-semibold text-blue-900">{selectedCells}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cells Selection */}
       <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-md">
@@ -431,6 +520,7 @@ export default function Step2CoolingTowerSelection() {
                 <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Fan Diameter (mm)</th>
                 <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Dry Weight (kg)</th>
                 <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Operating Weight (kg)</th>
+                {/* <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Actual Capacity (RT)</th> */}
                 <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Actual Flow Rate (m³/hr)</th>
                 <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Safety Factor (%)</th>
               </tr>
@@ -465,6 +555,7 @@ export default function Step2CoolingTowerSelection() {
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.fan_diameter}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.dry_weight}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.operating_weight}</td>
+                  {/* <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualCapacity.toFixed(2)}</td> */}
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualFlowRate.toFixed(2)}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">
                     <span className={model.safetyFactor >= 100 ? "text-green-600" : "text-red-600"}>
