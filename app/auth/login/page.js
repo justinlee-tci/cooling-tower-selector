@@ -45,7 +45,7 @@ export default function Login() {
             if (updateError && mounted) {
               console.error('Error updating last logged in time:', updateError);
             }
-          }, 3500);
+          }, 10000); // Delay of 5 seconds
         }
       } catch (error) {
         if (mounted) {

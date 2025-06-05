@@ -148,6 +148,10 @@ export default function Dashboard() {
       return "Invalid date format";
     }
   };
+
+  const handleAccountDetailsClick = () => {
+    router.push("/account-details"); // Adjust this path to match your actual route
+  };
   
   // Card view for mobile display
   const SelectionCardView = () => (
@@ -191,6 +195,37 @@ export default function Dashboard() {
           <p className="mt-2 md:mt-4 text-center text-base md:text-lg text-gray-800">
             Hello, {user?.user_metadata?.name || user?.email}
           </p>
+          
+          {/* Password change notice for first-time users */}
+          {lastLoggedIn === null && (
+            <div className="mt-4 md:mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-amber-800">
+                    Security Notice
+                  </h3>
+                  <div className="mt-2 text-sm text-amber-700">
+                    <p>
+                      This appears to be your first login. For security purposes, please change your password in{' '}
+                      <button
+                        onClick={handleAccountDetailsClick}
+                        className="font-bold underline text-amber-800 hover:text-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 rounded"
+                      >
+                        ACCOUNT DETAILS
+                      </button>{' '}
+                      now to ensure your account is secure.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {lastLoggedIn && (
             <p className="mt-2 md:mt-4 text-center text-sm md:text-lg text-gray-600">
               Last logged in: {formatLastLoggedIn(lastLoggedIn)}
