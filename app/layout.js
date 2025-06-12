@@ -2,6 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/lib/authContext";
 import { LastLoginTracking } from "@/components/LastLoginTracking";
 import { Toaster } from "react-hot-toast";
+import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"; // Keep this import in layout.js
 
 const geistSans = Geist({
