@@ -40,6 +40,12 @@ const generatePassword = (email) => {
   return `${firstFour}Welcome-Thermal-Cell!${firstFour}`;
 };
 
+// Add this email validation function at the top with other functions
+const isValidEmail = (email) => {
+  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+};
+
 
 export default function AdminRegister() {
   const router = useRouter();
@@ -91,6 +97,11 @@ export default function AdminRegister() {
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
     if (!isSuperAdmin) return;
+    
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address (e.g., user@domain.com)");
+      return;
+    }
     
     // Show confirmation popup instead of directly registering
     setShowConfirmation(true);
@@ -238,10 +249,19 @@ export default function AdminRegister() {
                 type="email"
                 placeholder="example@domain.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error && isValidEmail(e.target.value)) {
+                    setError(null);
+                  }
+                }}
+                pattern="[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
                 className="w-full p-3 text-sm sm:text-base border border-gray-500 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 text-gray-900"
                 required
               />
+              {email && !isValidEmail(email) && (
+                <p className="text-red-500 text-sm mt-1">Please enter a valid email address</p>
+              )}
             </div>
             <div>
               <label className="block text-gray-900 text-sm sm:text-base mb-1">Company</label>
