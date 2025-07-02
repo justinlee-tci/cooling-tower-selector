@@ -435,7 +435,7 @@ page.drawText("SDN. BHD.", {
     drawText(`${formatValue(Math.round(selectionData?.safety_factor))}%`, 450, yPosition);
     
     // Add footer to the first page
-    addFooter(page1, 1, 5);
+    addFooter(page1, 1, 4);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Page 2 - Tower Specifications
@@ -606,7 +606,7 @@ page.drawText("SDN. BHD.", {
     });
 
     // Add footer to the second page
-    addFooter(page2, 2, 5);
+    addFooter(page2, 2, 4);
 
     // Page 3 - Tower Model Drawing (Single Cell)
     const page3 = pdfDoc.addPage();
@@ -682,7 +682,7 @@ page.drawText("SDN. BHD.", {
     }
 
     // Add footer to the third page
-    addFooter(page3, 3, 5);
+    addFooter(page3, 3, 4);
 
     // Page 4 - Foundation Drawing
     const page4 = pdfDoc.addPage();
@@ -757,38 +757,7 @@ page.drawText("SDN. BHD.", {
     }
 
     // Add footer to the fourth page
-    addFooter(page4, 4, 5);
-
-    // Page 5 - Performance Curve (previously Page 4)
-    const page5 = pdfDoc.addPage();
-    await addLetterhead(page5);
-    
-    yPosition = height - 150;
-    
-    // 6. Performance Curve
-    yPosition = addSectionTitle(page5, '6. PERFORMANCE CURVE', yPosition+15);
-
-    // Add placeholder for performance curve
-    page5.drawRectangle({
-      x: 50,
-      y: yPosition - 300,
-      width: width - 100,
-      height: 300,
-      borderColor: secondaryColor,
-      borderWidth: 1,
-      color: rgb(0.98, 0.98, 0.98),
-    });
-
-    page5.drawText('Performance curve to be added later', {
-      x: width / 2 - 100,
-      y: yPosition - 150,
-      size: 12,
-      font: helveticaBold,
-      color: primaryColor,
-    });
-
-    // Add footer to the fifth page
-    addFooter(page5, 5, 5);
+    addFooter(page4, 4, 4);
 
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
