@@ -20,23 +20,28 @@ const parameterRanges = {
 // Minimum approach temperature for reliable calculations
 const MIN_APPROACH_TEMP = 2; // °C
 
-// Flow rate conversion utility
+// Flow rate conversion utility (now supports m³/hr, L/min, US GPM)
 const convertFlowRate = (value, fromUnit, toUnit) => {
   if (!value) return "";
   const numValue = parseFloat(value);
   if (isNaN(numValue)) return "";
 
+  // Conversion factors
+  // 1 m³/hr = 1000/60 L/min = 4.40287 US GPM
+  // 1 US GPM = 0.2271247 m³/hr = 3.78541 L/min
+
   if (fromUnit === toUnit) return numValue;
-  
-  // Convert L/min to m³/hr
-  if (fromUnit === "L/min" && toUnit === "m³/hr") {
-    return (numValue * 60 / 1000).toFixed(2);
-  }
-  // Convert m³/hr to L/min
-  if (fromUnit === "m³/hr" && toUnit === "L/min") {
-    return (numValue * 1000 / 60).toFixed(2);
-  }
-  
+
+  // Convert input to m³/hr first
+  let valueInM3hr = numValue;
+  if (fromUnit === "L/min") valueInM3hr = numValue * 60 / 1000;
+  if (fromUnit === "US GPM") valueInM3hr = numValue * 0.2271247;
+
+  // Convert from m³/hr to target unit
+  if (toUnit === "m³/hr") return Number(valueInM3hr.toFixed(2));
+  if (toUnit === "L/min") return Number((valueInM3hr * 1000 / 60).toFixed(2));
+  if (toUnit === "US GPM") return Number((valueInM3hr / 0.2271247).toFixed(2));
+
   return numValue;
 };
 
@@ -338,11 +343,11 @@ const validateTemperatures = (temperatures) => {
     // Prepare and update the data before moving to next step
     const normalizedData = prepareDataForSaving();
 
-    // Convert flow rate to m³/hr if it's in L/min
-    if (flowRateUnit === "L/min" && normalizedData.waterFlowRate) {
-      normalizedData.waterFlowRate = convertFlowRate(normalizedData.waterFlowRate, "L/min", "m³/hr");
+    // Convert flow rate to m³/hr if it's not already
+    if (flowRateUnit !== "m³/hr" && normalizedData.waterFlowRate) {
+      normalizedData.waterFlowRate = convertFlowRate(normalizedData.waterFlowRate, flowRateUnit, "m³/hr");
     }
-    
+
     // Update the selection data with normalized values
     updateSelectionData(normalizedData);
     
@@ -527,11 +532,12 @@ const validateTemperatures = (temperatures) => {
                   <select
                     value={flowRateUnit}
                     onChange={(e) => handleUnitChange(e.target.value)}
-                    className={`border-2 border-gray-150 p-1.5 rounded w-28 text-gray-900 text-sm md:text-base bg-white ml-2 focus:border-blue-400 focus:ring-1 focus:ring-blue-300 ${validationErrors[key] ? 'border-red-500' : ''}`}
-                    style={{ minWidth: 75 }}
+                    className={`border-2 border-gray-150 p-1.5 rounded w-36 text-gray-900 text-sm md:text-base bg-white ml-2 focus:border-blue-400 focus:ring-1 focus:ring-blue-300 ${validationErrors[key] ? 'border-red-500' : ''}`}
+                    style={{ minWidth: 110 }}
                   >
                     <option value="m³/hr">m³/hr</option>
                     <option value="L/min">L/min</option>
+                    <option value="US GPM">US GPM</option>
                   </select>
                 ) : (
                   <span className={unitClass}>{unit}</span>
