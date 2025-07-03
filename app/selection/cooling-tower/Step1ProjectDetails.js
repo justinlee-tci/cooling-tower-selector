@@ -457,6 +457,7 @@ const validateTemperatures = (temperatures) => {
                 fieldKey={key}
               />
             </div>
+            {/* REMOVE error message here for project details */}
           </div>
         ))}
       </div>
@@ -522,19 +523,19 @@ const validateTemperatures = (temperatures) => {
                   min={parameterRanges[key]?.min}
                   max={parameterRanges[key]?.max}
                 />
-{showUnitSelector ? (
-  <select
-    value={flowRateUnit}
-    onChange={(e) => handleUnitChange(e.target.value)}
-    className={`border-2 border-gray-150 p-1.5 rounded w-28 text-gray-900 text-sm md:text-base bg-white ml-2 focus:border-blue-400 focus:ring-1 focus:ring-blue-300 ${validationErrors[key] ? 'border-red-500' : ''}`}
-    style={{ minWidth: 75 }}
-  >
-    <option value="m³/hr">m³/hr</option>
-    <option value="L/min">L/min</option>
-  </select>
-) : (
-  <span className={unitClass}>{unit}</span>
-)}
+                {showUnitSelector ? (
+                  <select
+                    value={flowRateUnit}
+                    onChange={(e) => handleUnitChange(e.target.value)}
+                    className={`border-2 border-gray-150 p-1.5 rounded w-28 text-gray-900 text-sm md:text-base bg-white ml-2 focus:border-blue-400 focus:ring-1 focus:ring-blue-300 ${validationErrors[key] ? 'border-red-500' : ''}`}
+                    style={{ minWidth: 75 }}
+                  >
+                    <option value="m³/hr">m³/hr</option>
+                    <option value="L/min">L/min</option>
+                  </select>
+                ) : (
+                  <span className={unitClass}>{unit}</span>
+                )}
                 {/* Show required indicator for required fields */}
                 {requiredFields.includes(key) && (
                   <RequiredFieldIndicator 
@@ -544,6 +545,7 @@ const validateTemperatures = (temperatures) => {
                 )}
               </div>
             </div>
+            {/* Show error message ONLY for input parameters */}
             {validationErrors[key] && (
               <p className="text-red-500 text-sm ml-0 md:ml-48">{validationErrors[key]}</p>
             )}
@@ -572,7 +574,7 @@ const validateTemperatures = (temperatures) => {
           <p className="text-sm text-gray-600">
             <span className="font-semibold">DISCLAIMER:</span> The selection results shown here are for preliminary reference only. 
             Actual cooling tower performance may vary depending on various environmental and operational factors. 
-            For detailed analysis, specifications, and performance guarantees, please consult with your sales engineer 
+            For detailed analysis and specifications, please consult with your sales engineer 
             or technical representative.
           </p>
           <p className="text-sm text-gray-600 mt-2">
