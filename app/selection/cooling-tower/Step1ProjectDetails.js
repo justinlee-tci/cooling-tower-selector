@@ -3,32 +3,35 @@ import { useEffect, useState } from "react";
 import { useSelection } from "./SelectionContext";
 import { useFloating, arrow, shift, offset, FloatingPortal } from '@floating-ui/react';
 
-// Update parameter ranges
+// Update parameter ranges with general cooling tower application limits
 const parameterRanges = {
   waterFlowRate: { min: 0, max: 10000000 }, // m³/hr
   ambientPressure: { 
-    min: 90, 
-    max: 500,
+    min: 80,   // General lower limit for cooling tower applications (kPa)
+    max: 110,  // General upper limit for cooling tower applications (kPa)
     default: 101.325 // Standard sea level pressure in kPa
   },
-  hotWaterTemp: { min: 20, max: 80 }, // °C
-  coldWaterTemp: { min: 15, max: 70 }, // °C
-  wetBulbTemp: { min: 10, max: 50}, // °C
-  dryBulbTemp: { min: 15, max: 60 }, // °C
+  // Reasonable temperature ranges for cooling tower applications
+  // (°C values, will convert to °F if needed)
+  hotWaterTemp: { min: 20, max: 80 },      // °C (68°F to 176°F)
+  coldWaterTemp: { min: 15, max: 60 },     // °C (59°F to 140°F)
+  wetBulbTemp: { min: -10, max: 40 },      // °C (14°F to 104°F)
+  dryBulbTemp: { min: -10, max: 60 },      // °C (14°F to 140°F)
 };
 
 // Minimum approach temperature for reliable calculations
 const MIN_APPROACH_TEMP = 2; // °C
 
-// Flow rate conversion utility (now supports m³/hr, L/min, US GPM)
+// Flow rate conversion utility (now supports m³/hr, L/min, US GPM, L/s)
 const convertFlowRate = (value, fromUnit, toUnit) => {
   if (!value) return "";
   const numValue = parseFloat(value);
   if (isNaN(numValue)) return "";
 
   // Conversion factors
-  // 1 m³/hr = 1000/60 L/min = 4.40287 US GPM
-  // 1 US GPM = 0.2271247 m³/hr = 3.78541 L/min
+  // 1 m³/hr = 1000/60 L/min = 4.40287 US GPM = 1000/3600 L/s
+  // 1 US GPM = 0.2271247 m³/hr = 3.78541 L/min = 0.0630902 L/s
+  // 1 L/s = 3.6 m³/hr = 60 L/min = 15.8503 US GPM
 
   if (fromUnit === toUnit) return numValue;
 
@@ -36,13 +39,40 @@ const convertFlowRate = (value, fromUnit, toUnit) => {
   let valueInM3hr = numValue;
   if (fromUnit === "L/min") valueInM3hr = numValue * 60 / 1000;
   if (fromUnit === "US GPM") valueInM3hr = numValue * 0.2271247;
+  if (fromUnit === "L/s") valueInM3hr = numValue * 3.6;
 
   // Convert from m³/hr to target unit
   if (toUnit === "m³/hr") return Number(valueInM3hr.toFixed(2));
   if (toUnit === "L/min") return Number((valueInM3hr * 1000 / 60).toFixed(2));
   if (toUnit === "US GPM") return Number((valueInM3hr / 0.2271247).toFixed(2));
+  if (toUnit === "L/s") return Number((valueInM3hr / 3.6).toFixed(2));
 
   return numValue;
+};
+
+// Temperature conversion utility (°C ↔ °F)
+const convertTemperature = (value, fromUnit, toUnit) => {
+  if (value === "" || value === undefined || value === null) return "";
+  const numValue = parseFloat(value);
+  if (isNaN(numValue) || fromUnit === toUnit) return value;
+  if (fromUnit === "°C" && toUnit === "°F") return Number((numValue * 9/5 + 32).toFixed(2));
+  if (fromUnit === "°F" && toUnit === "°C") return Number(((numValue - 32) * 5/9).toFixed(2));
+  return value;
+};
+
+// Add this utility for elevation <-> pressure conversion
+// Standard atmosphere: P = 101.325 * (1 - 2.25577e-5 * h)^5.25588
+const elevationToPressure = (elevationMeters) => {
+  if (elevationMeters === "" || elevationMeters === undefined || elevationMeters === null) return "";
+  const h = parseFloat(elevationMeters);
+  if (isNaN(h)) return "";
+  return Number((101.325 * Math.pow(1 - 2.25577e-5 * h, 5.25588)).toFixed(3));
+};
+const pressureToElevation = (pressureKpa) => {
+  if (pressureKpa === "" || pressureKpa === undefined || pressureKpa === null) return "";
+  const p = parseFloat(pressureKpa);
+  if (isNaN(p) || p <= 0) return "";
+  return Number(((1 - Math.pow(p / 101.325, 1 / 5.25588)) / 2.25577e-5).toFixed(1));
 };
 
 // Update the styling constants
@@ -178,12 +208,27 @@ const normalizeDateForStorage = (dateString) => {
   return `${year}-${month}-${day}`;
 };
 
+// Add these helpers above your component
+const ELEVATION_MIN = (() => {
+  // Max pressure = min elevation (sea level), so min elevation is 0 m
+  return 0;
+})();
+const ELEVATION_MAX = (() => {
+  // Min pressure = max elevation
+  // Solve: P = 101.325 * (1 - 2.25577e-5 * h)^5.25588 for h, where P = parameterRanges.ambientPressure.min
+  // h = (1 - (P / 101.325)^(1/5.25588)) / 2.25577e-5
+  const Pmin = parameterRanges.ambientPressure.min;
+  return Math.round((1 - Math.pow(Pmin / 101.325, 1 / 5.25588)) / 2.25577e-5);
+})();
+
 export default function Step1ProjectDetails() {
   const { selectionData, updateSelectionData, nextStep } = useSelection();
   const [isFormComplete, setIsFormComplete] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
   const [flowRateUnit, setFlowRateUnit] = useState("m³/hr"); // Add state for flow rate unit
+  const [temperatureUnit, setTemperatureUnit] = useState("°C");
+  const [pressureInputMode, setPressureInputMode] = useState("pressure"); // "pressure" or "elevation"
 
   // Add useEffect to set default atmospheric pressure on component mount
   useEffect(() => {
@@ -214,14 +259,13 @@ export default function Step1ProjectDetails() {
 
   // Enhanced temperature validation with approach temperature check
 const validateTemperatures = (temperatures) => {
-  const { hotWaterTemp, coldWaterTemp, dryBulbTemp, wetBulbTemp } = temperatures;
+  // Always validate in °C
+  const getC = v => convertTemperature(v, temperatureUnit, "°C");
+  const hot = Number(getC(temperatures.hotWaterTemp));
+  const cold = Number(getC(temperatures.coldWaterTemp));
+  const dry = temperatures.dryBulbTemp ? Number(getC(temperatures.dryBulbTemp)) : null;
+  const wet = Number(getC(temperatures.wetBulbTemp));
   const errors = {};
-
-  // Convert to numbers for comparison
-  const hot = Number(hotWaterTemp);
-  const cold = Number(coldWaterTemp);
-  const dry = dryBulbTemp ? Number(dryBulbTemp) : null;
-  const wet = Number(wetBulbTemp);
 
   // Skip validation if any required temperature is missing or invalid
   if (isNaN(hot) || isNaN(cold) || isNaN(wet)) {
@@ -304,6 +348,71 @@ const validateTemperatures = (temperatures) => {
         ...tempErrors
       });
     }
+
+    // Special handling for pressure/elevation sync
+    if (key === "ambientPressure" && pressureInputMode === "elevation") {
+      // User is inputting elevation, store both elevation and calculated pressure
+      const pressure = elevationToPressure(value);
+      updateSelectionData({ ambientPressure: pressure, elevation: value });
+
+      // Validate elevation range
+      let error = null;
+      const elevNum = Number(value);
+      if (isNaN(elevNum) || elevNum < ELEVATION_MIN || elevNum > ELEVATION_MAX) {
+        error = `Must be between ${ELEVATION_MIN} and ${ELEVATION_MAX} meters`;
+      }
+      setValidationErrors(prev => ({
+        ...prev,
+        [key]: error
+      }));
+      return;
+    } else if (key === "ambientPressure" && pressureInputMode === "pressure") {
+      // User is inputting pressure, store both pressure and calculated elevation
+      const elevation = pressureToElevation(value);
+      updateSelectionData({ ambientPressure: value, elevation });
+
+      // Validate pressure range
+      let error = null;
+      const pNum = Number(value);
+      if (isNaN(pNum) || pNum < parameterRanges.ambientPressure.min || pNum > parameterRanges.ambientPressure.max) {
+        error = `Must be between ${parameterRanges.ambientPressure.min} and ${parameterRanges.ambientPressure.max} kPa`;
+      }
+      setValidationErrors(prev => ({
+        ...prev,
+        [key]: error
+      }));
+      return;
+    }
+
+    // ...existing code for other fields...
+    updateSelectionData({ [key]: value });
+
+    if (parameterRanges[key]) {
+      let valueToValidate = Number(value);
+      if (key === 'waterFlowRate' && flowRateUnit === 'L/min') {
+        valueToValidate = Number(convertFlowRate(value, 'L/min', 'm³/hr'));
+      }
+      const error = validateInput(key, valueToValidate);
+      setValidationErrors(prev => ({
+        ...prev,
+        [key]: error
+      }));
+    }
+
+    if (['hotWaterTemp', 'coldWaterTemp', 'wetBulbTemp', 'dryBulbTemp'].includes(key)) {
+      const newErrors = { ...validationErrors };
+      ['hotWaterTemp', 'coldWaterTemp', 'wetBulbTemp', 'dryBulbTemp'].forEach(tempKey => {
+        delete newErrors[tempKey];
+      });
+      const tempErrors = validateTemperatures({
+        ...selectionData,
+        [key]: value
+      });
+      setValidationErrors({
+        ...newErrors,
+        ...tempErrors
+      });
+    }
   };
 
   // Check form completion and validation
@@ -348,6 +457,15 @@ const validateTemperatures = (temperatures) => {
       normalizedData.waterFlowRate = convertFlowRate(normalizedData.waterFlowRate, flowRateUnit, "m³/hr");
     }
 
+    // Convert all temperature fields to °C for storage
+    if (temperatureUnit !== "°C") {
+      ["hotWaterTemp", "coldWaterTemp", "wetBulbTemp", "dryBulbTemp"].forEach(key => {
+        if (normalizedData[key] !== undefined && normalizedData[key] !== "") {
+          normalizedData[key] = convertTemperature(normalizedData[key], temperatureUnit, "°C");
+        }
+      });
+    }
+
     // Update the selection data with normalized values
     updateSelectionData(normalizedData);
     
@@ -376,7 +494,7 @@ const validateTemperatures = (temperatures) => {
     { label: "Date", key: "date", type: "date", placeholder: "" },
   ];
 
-  // Update input parameters section with more descriptive placeholder
+  // Update input parameters section with swapped order
   const inputParameters = [
     { 
       label: "Water Flow Rate", 
@@ -386,20 +504,59 @@ const validateTemperatures = (temperatures) => {
       showUnitSelector: true 
     },
     { 
-      label: "Ambient Pressure", 
-      key: "ambientPressure", 
-      unit: "kPa", 
-      placeholder: "Default: 101.325 kPa"
+      label: pressureInputMode === "pressure" ? "Ambient Pressure" : "Elevation",
+      key: "ambientPressure",
+      unit: pressureInputMode === "pressure" ? "kPa" : "m",
+      placeholder: pressureInputMode === "pressure" ? "Default: 101.325 kPa" : "Enter elevation (m)",
+      showUnitSelector: false,
+      isPressureOrElevation: true
     },
-    { label: "Hot Water Temperature", key: "hotWaterTemp", unit: "°C", placeholder: "Enter temp (required)" },
-    { label: "Cold Water Temperature", key: "coldWaterTemp", unit: "°C", placeholder: "Enter temp (required)" },
-    { label: "Wet Bulb Temperature", key: "wetBulbTemp", unit: "°C", placeholder: "Enter temp (required)" },
-    { label: "Dry Bulb Temperature", key: "dryBulbTemp", unit: "°C", placeholder: "Enter temp (not required)" }
+    { label: "Hot Water Temperature", key: "hotWaterTemp", unit: temperatureUnit, placeholder: "Enter temp (required)" },
+    { label: "Cold Water Temperature", key: "coldWaterTemp", unit: temperatureUnit, placeholder: "Enter temp (required)" },
+    { label: "Wet Bulb Temperature", key: "wetBulbTemp", unit: temperatureUnit, placeholder: "Enter temp (required)" },
+    { label: "Dry Bulb Temperature", key: "dryBulbTemp", unit: temperatureUnit, placeholder: "Enter temp (not required)" }
   ];
 
   const handleUnitChange = (newUnit) => {
+    // If switching to US GPM, also switch temperatures to °F
+    if (newUnit === "US GPM" && temperatureUnit !== "°F") {
+      // Convert all temperature fields to °F
+      const tempFields = ["hotWaterTemp", "coldWaterTemp", "wetBulbTemp", "dryBulbTemp"];
+      const updated = {};
+      tempFields.forEach(tempKey => {
+        if (selectionData[tempKey] !== undefined && selectionData[tempKey] !== "") {
+          updated[tempKey] = convertTemperature(selectionData[tempKey], temperatureUnit, "°F");
+        }
+      });
+      setTemperatureUnit("°F");
+      updateSelectionData({
+        ...updated,
+        waterFlowRate: convertFlowRate(selectionData.waterFlowRate, flowRateUnit, newUnit)
+      });
+      setFlowRateUnit(newUnit);
+      return;
+    }
+
+    // If switching away from US GPM to a metric unit, switch temperatures to °C
+    if (["m³/hr", "L/min"].includes(newUnit) && temperatureUnit !== "°C") {
+      const tempFields = ["hotWaterTemp", "coldWaterTemp", "wetBulbTemp", "dryBulbTemp"];
+      const updated = {};
+      tempFields.forEach(tempKey => {
+        if (selectionData[tempKey] !== undefined && selectionData[tempKey] !== "") {
+          updated[tempKey] = convertTemperature(selectionData[tempKey], temperatureUnit, "°C");
+        }
+      });
+      setTemperatureUnit("°C");
+      updateSelectionData({
+        ...updated,
+        waterFlowRate: convertFlowRate(selectionData.waterFlowRate, flowRateUnit, newUnit)
+      });
+      setFlowRateUnit(newUnit);
+      return;
+    }
+
+    // Normal flow rate unit change
     if (selectionData.waterFlowRate) {
-      // Convert the current value to the new unit
       const convertedValue = convertFlowRate(
         selectionData.waterFlowRate,
         flowRateUnit,
@@ -409,6 +566,18 @@ const validateTemperatures = (temperatures) => {
     }
     setFlowRateUnit(newUnit);
   };
+
+  // Utility to get min/max for temperature fields based on selected unit
+const getTempMinMax = (key, unit) => {
+  const range = parameterRanges[key];
+  if (!range) return {};
+  if (unit === "°C") return { min: range.min, max: range.max };
+  // Convert min/max to °F
+  return {
+    min: Math.round(range.min * 9/5 + 32),
+    max: Math.round(range.max * 9/5 + 32)
+  };
+};
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 md:p-6 bg-white shadow-md rounded-md">
@@ -512,51 +681,173 @@ const validateTemperatures = (temperatures) => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-8 md:gap-y-4">
-        {inputParameters.map(({ label, key, unit, placeholder, showUnitSelector }) => (
-          <div key={key} className="flex flex-col space-y-1">
-            <div className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
-              <label className={labelClass}>{label}:</label>
-              <div className={`${inputContainerClass} relative`}>
-                <input
-                  type="number"
-                  required
-                  placeholder={placeholder}
-                  className={`${parameterInputClass} ${validationErrors[key] ? 'border-red-500' : ''}`}
-                  value={selectionData[key] || ""}
-                  onChange={(e) => handleInputChange(key, e.target.value)}
-                  onBlur={() => setTouchedFields(prev => ({ ...prev, [key]: true }))}
-                  min={parameterRanges[key]?.min}
-                  max={parameterRanges[key]?.max}
-                />
-                {showUnitSelector ? (
-                  <select
-                    value={flowRateUnit}
-                    onChange={(e) => handleUnitChange(e.target.value)}
-                    className={`border-2 border-gray-150 p-1.5 rounded w-36 text-gray-900 text-sm md:text-base bg-white ml-2 focus:border-blue-400 focus:ring-1 focus:ring-blue-300 ${validationErrors[key] ? 'border-red-500' : ''}`}
-                    style={{ minWidth: 110 }}
-                  >
-                    <option value="m³/hr">m³/hr</option>
-                    <option value="L/min">L/min</option>
-                    <option value="US GPM">US GPM</option>
-                  </select>
+        {inputParameters.map(({ label, key, unit, placeholder, showUnitSelector, isPressureOrElevation }) => {
+          const isTemperature =
+            key === "hotWaterTemp" ||
+            key === "coldWaterTemp" ||
+            key === "wetBulbTemp" ||
+            key === "dryBulbTemp";
+          return (
+            <div key={key} className="flex flex-col space-y-1">
+              <div className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
+                {/* Pressure/Elevation label with dropdown */}
+                {isPressureOrElevation ? (
+                  <div className="flex items-center space-x-2 w-full md:w-auto">
+                    <select
+                      value={pressureInputMode}
+                      onChange={e => {
+                        const newMode = e.target.value;
+                        setPressureInputMode(newMode);
+                        // When switching, sync the value accordingly
+                        if (newMode === "pressure") {
+                          if (selectionData.elevation !== undefined && selectionData.elevation !== "") {
+                            const pressure = elevationToPressure(selectionData.elevation);
+                            updateSelectionData({ ambientPressure: pressure });
+                          }
+                        } else {
+                          if (selectionData.ambientPressure !== undefined && selectionData.ambientPressure !== "") {
+                            const elevation = pressureToElevation(selectionData.ambientPressure);
+                            updateSelectionData({ elevation });
+                          }
+                        }
+                      }}
+                      className="border-2 border-gray-150 p-1.5 rounded w-40 text-gray-900 text-sm md:text-base bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-300"
+                      style={{ minWidth: 140 }}
+                    >
+                      <option value="pressure">Ambient Pressure:</option>
+                      <option value="elevation">Elevation:</option>
+                    </select>
+                  </div>
                 ) : (
-                  <span className={unitClass}>{unit}</span>
+                  <label className={labelClass}>{label}:</label>
                 )}
-                {/* Show required indicator for required fields */}
-                {requiredFields.includes(key) && (
-                  <RequiredFieldIndicator 
-                    show={touchedFields[key] && !selectionData[key]}
-                    fieldKey={key}
+                <div className={`${inputContainerClass} relative w-full`}>
+                  <input
+                    type="number"
+                    required
+                    placeholder={placeholder}
+                    className={`${parameterInputClass} ${validationErrors[key] ? 'border-red-500' : ''}${isPressureOrElevation ? ' w-full' : ''}`}
+                    style={isPressureOrElevation ? { minWidth: 0, maxWidth: "100%" } : undefined}
+                    value={
+                      isPressureOrElevation
+                        ? (pressureInputMode === "pressure"
+                            ? selectionData.ambientPressure ?? ""
+                            : selectionData.elevation ?? "")
+                        : selectionData[key] || ""
+                    }
+                    onChange={e => handleInputChange(key, e.target.value)}
+                    onBlur={() => setTouchedFields(prev => ({ ...prev, [key]: true }))}
+                    min={
+                      isPressureOrElevation
+                        ? (pressureInputMode === "pressure"
+                            ? parameterRanges.ambientPressure.min
+                            : ELEVATION_MIN)
+                        : isTemperature
+                          ? getTempMinMax(key, temperatureUnit).min
+                          : parameterRanges[key]?.min
+                    }
+                    max={
+                      isPressureOrElevation
+                        ? (pressureInputMode === "pressure"
+                            ? parameterRanges.ambientPressure.max
+                            : ELEVATION_MAX)
+                        : isTemperature
+                          ? getTempMinMax(key, temperatureUnit).max
+                          : parameterRanges[key]?.max
+                    }
                   />
-                )}
+                  {showUnitSelector ? (
+                    <select
+                      value={flowRateUnit}
+                      onChange={(e) => handleUnitChange(e.target.value)}
+                      className={`border-2 border-gray-150 p-1.5 rounded w-36 text-gray-900 text-sm md:text-base bg-white ml-2 focus:border-blue-400 focus:ring-1 focus:ring-blue-300 ${validationErrors[key] ? 'border-red-500' : ''}`}
+                      style={{ minWidth: 110 }}
+                    >
+                      <option value="m³/hr">m³/hr</option>
+                      <option value="L/min">L/min</option>
+                      <option value="L/s">L/s</option>
+                      <option value="US GPM">US GPM</option>
+                    </select>
+                  ) : isTemperature ? (
+                    <select
+                      value={temperatureUnit}
+                      onChange={e => {
+                        const newUnit = e.target.value;
+                        // If switching to °F, also switch flow rate to US GPM
+                        if (newUnit === "°F" && flowRateUnit !== "US GPM") {
+                          const tempFields = ["hotWaterTemp", "coldWaterTemp", "wetBulbTemp", "dryBulbTemp"];
+                          const updated = {};
+                          tempFields.forEach(tempKey => {
+                            if (selectionData[tempKey] !== undefined && selectionData[tempKey] !== "") {
+                              updated[tempKey] = convertTemperature(selectionData[tempKey], temperatureUnit, newUnit);
+                            }
+                          });
+                          setTemperatureUnit(newUnit);
+                          updateSelectionData({
+                            ...updated,
+                            waterFlowRate: convertFlowRate(selectionData.waterFlowRate, flowRateUnit, "US GPM")
+                          });
+                          setFlowRateUnit("US GPM");
+                          return;
+                        }
+                        // If switching to °C, also switch flow rate to m³/hr (or keep as is if already metric)
+                        if (newUnit === "°C" && flowRateUnit === "US GPM") {
+                          const tempFields = ["hotWaterTemp", "coldWaterTemp", "wetBulbTemp", "dryBulbTemp"];
+                          const updated = {};
+                          tempFields.forEach(tempKey => {
+                            if (selectionData[tempKey] !== undefined && selectionData[tempKey] !== "") {
+                              updated[tempKey] = convertTemperature(selectionData[tempKey], temperatureUnit, newUnit);
+                            }
+                          });
+                          setTemperatureUnit(newUnit);
+                          updateSelectionData({
+                            ...updated,
+                            waterFlowRate: convertFlowRate(selectionData.waterFlowRate, flowRateUnit, "m³/hr")
+                          });
+                          setFlowRateUnit("m³/hr");
+                          return;
+                        }
+                        // Normal temperature unit change
+                        const tempFields = ["hotWaterTemp", "coldWaterTemp", "wetBulbTemp", "dryBulbTemp"];
+                        const updated = {};
+                        tempFields.forEach(tempKey => {
+                          if (selectionData[tempKey] !== undefined && selectionData[tempKey] !== "") {
+                            updated[tempKey] = convertTemperature(selectionData[tempKey], temperatureUnit, newUnit);
+                          }
+                        });
+                        setTemperatureUnit(newUnit);
+                        updateSelectionData(updated);
+                      }}
+                      className="border-2 border-gray-150 p-1.5 rounded w-20 text-gray-900 text-sm md:text-base bg-white ml-2 focus:border-blue-400 focus:ring-1 focus:ring-blue-300"
+                      style={{ minWidth: 70 }}
+                    >
+                      <option value="°C">°C</option>
+                      <option value="°F">°F</option>
+                    </select>
+                  ) : (
+                    <span className={unitClass}>{unit}</span>
+                  )}
+                  {/* Show required indicator for required fields */}
+                  {requiredFields.includes(key) && (
+                    <RequiredFieldIndicator 
+                      show={touchedFields[key] && !selectionData[key]}
+                      fieldKey={key}
+                    />
+                  )}
+                </div>
               </div>
+              {validationErrors[key] && (
+                <p className="text-red-500 text-sm ml-0 md:ml-48">
+                  {isPressureOrElevation ? (
+                    pressureInputMode === "pressure"
+                      ? `Must be between ${parameterRanges.ambientPressure.min} and ${parameterRanges.ambientPressure.max} kPa`
+                      : `Must be between ${ELEVATION_MIN} and ${ELEVATION_MAX} m`
+                  ) : validationErrors[key]}
+                </p>
+              )}
             </div>
-            {/* Show error message ONLY for input parameters */}
-            {validationErrors[key] && (
-              <p className="text-red-500 text-sm ml-0 md:ml-48">{validationErrors[key]}</p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Next Button - Modified for mobile */}
