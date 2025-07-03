@@ -5,7 +5,7 @@ import { useFloating, arrow, shift, offset, FloatingPortal } from '@floating-ui/
 
 // Update parameter ranges
 const parameterRanges = {
-  waterFlowRate: { min: 1, max: 100000 }, // m³/hr
+  waterFlowRate: { min: 0, max: 10000000 }, // m³/hr
   ambientPressure: { 
     min: 90, 
     max: 500,
@@ -19,6 +19,26 @@ const parameterRanges = {
 
 // Minimum approach temperature for reliable calculations
 const MIN_APPROACH_TEMP = 2; // °C
+
+// Flow rate conversion utility
+const convertFlowRate = (value, fromUnit, toUnit) => {
+  if (!value) return "";
+  const numValue = parseFloat(value);
+  if (isNaN(numValue)) return "";
+
+  if (fromUnit === toUnit) return numValue;
+  
+  // Convert L/min to m³/hr
+  if (fromUnit === "L/min" && toUnit === "m³/hr") {
+    return (numValue * 60 / 1000).toFixed(2);
+  }
+  // Convert m³/hr to L/min
+  if (fromUnit === "m³/hr" && toUnit === "L/min") {
+    return (numValue * 1000 / 60).toFixed(2);
+  }
+  
+  return numValue;
+};
 
 // Update the styling constants
 const labelClass = "w-full md:w-44 font-medium text-gray-900 whitespace-nowrap mb-1 md:mb-0";
@@ -158,6 +178,7 @@ export default function Step1ProjectDetails() {
   const [isFormComplete, setIsFormComplete] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
+  const [flowRateUnit, setFlowRateUnit] = useState("m³/hr"); // Add state for flow rate unit
 
   // Add useEffect to set default atmospheric pressure on component mount
   useEffect(() => {
@@ -245,7 +266,14 @@ const validateTemperatures = (temperatures) => {
     
     // Validate individual parameter ranges
     if (parameterRanges[key]) {
-      const error = validateInput(key, Number(value));
+      let valueToValidate = Number(value);
+      
+      // Convert L/min to m³/hr for validation if necessary
+      if (key === 'waterFlowRate' && flowRateUnit === 'L/min') {
+        valueToValidate = Number(convertFlowRate(value, 'L/min', 'm³/hr'));
+      }
+      
+      const error = validateInput(key, valueToValidate);
       setValidationErrors(prev => ({
         ...prev,
         [key]: error
@@ -309,6 +337,11 @@ const validateTemperatures = (temperatures) => {
   const handleNextStep = () => {
     // Prepare and update the data before moving to next step
     const normalizedData = prepareDataForSaving();
+
+    // Convert flow rate to m³/hr if it's in L/min
+    if (flowRateUnit === "L/min" && normalizedData.waterFlowRate) {
+      normalizedData.waterFlowRate = convertFlowRate(normalizedData.waterFlowRate, "L/min", "m³/hr");
+    }
     
     // Update the selection data with normalized values
     updateSelectionData(normalizedData);
@@ -340,7 +373,13 @@ const validateTemperatures = (temperatures) => {
 
   // Update input parameters section with more descriptive placeholder
   const inputParameters = [
-    { label: "Water Flow Rate", key: "waterFlowRate", unit: "m³/hr", placeholder: "Enter flow rate (required)" },
+    { 
+      label: "Water Flow Rate", 
+      key: "waterFlowRate", 
+      unit: flowRateUnit, 
+      placeholder: "Enter flow rate (required)",
+      showUnitSelector: true 
+    },
     { 
       label: "Ambient Pressure", 
       key: "ambientPressure", 
@@ -352,6 +391,19 @@ const validateTemperatures = (temperatures) => {
     { label: "Wet Bulb Temperature", key: "wetBulbTemp", unit: "°C", placeholder: "Enter temp (required)" },
     { label: "Dry Bulb Temperature", key: "dryBulbTemp", unit: "°C", placeholder: "Enter temp (not required)" }
   ];
+
+  const handleUnitChange = (newUnit) => {
+    if (selectionData.waterFlowRate) {
+      // Convert the current value to the new unit
+      const convertedValue = convertFlowRate(
+        selectionData.waterFlowRate,
+        flowRateUnit,
+        newUnit
+      );
+      updateSelectionData({ waterFlowRate: convertedValue });
+    }
+    setFlowRateUnit(newUnit);
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto p-4 md:p-6 bg-white shadow-md rounded-md">
@@ -454,7 +506,7 @@ const validateTemperatures = (temperatures) => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-8 md:gap-y-4">
-        {inputParameters.map(({ label, key, unit, placeholder }) => (
+        {inputParameters.map(({ label, key, unit, placeholder, showUnitSelector }) => (
           <div key={key} className="flex flex-col space-y-1">
             <div className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
               <label className={labelClass}>{label}:</label>
@@ -470,7 +522,19 @@ const validateTemperatures = (temperatures) => {
                   min={parameterRanges[key]?.min}
                   max={parameterRanges[key]?.max}
                 />
-                <span className={unitClass}>{unit}</span>
+{showUnitSelector ? (
+  <select
+    value={flowRateUnit}
+    onChange={(e) => handleUnitChange(e.target.value)}
+    className={`border-2 border-gray-150 p-1.5 rounded w-28 text-gray-900 text-sm md:text-base bg-white ml-2 focus:border-blue-400 focus:ring-1 focus:ring-blue-300 ${validationErrors[key] ? 'border-red-500' : ''}`}
+    style={{ minWidth: 75 }}
+  >
+    <option value="m³/hr">m³/hr</option>
+    <option value="L/min">L/min</option>
+  </select>
+) : (
+  <span className={unitClass}>{unit}</span>
+)}
                 {/* Show required indicator for required fields */}
                 {requiredFields.includes(key) && (
                   <RequiredFieldIndicator 
