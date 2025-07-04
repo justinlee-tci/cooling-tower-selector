@@ -550,7 +550,7 @@ page.drawText("SDN. BHD.", {
       drawTextPage2(formatValue(value2), 450, yPosition);
       yPosition -= 33;
     });
-    yPosition -= 10;
+    yPosition -= 7;
     // yPosition -= 5;
 
 
@@ -580,7 +580,7 @@ page.drawText("SDN. BHD.", {
       drawTextPage2(formatValue(value2), 450, yPosition);
       yPosition -= 25; // Reduced spacing
     });
-    yPosition -= 5;
+    yPosition -= 10;
 
     // Materials of Construction
     yPosition = addSectionTitle(page2, 'Materials of Construction', yPosition);
