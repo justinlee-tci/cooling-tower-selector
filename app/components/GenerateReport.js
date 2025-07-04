@@ -280,7 +280,7 @@ page.drawText("SDN. BHD.", {
       return yPosition - 30; // Return the new Y position
     };
 
-    // Add a styled subsection title function
+    // Add a styled subsection title
     const addSubsectionTitle = (page, title, yPosition) => {
       const { width } = page.getSize();
       
@@ -557,16 +557,18 @@ page.drawText("SDN. BHD.", {
     // Fan Details
     yPosition = addSectionTitle(page2, 'Fan Details', yPosition);
 
-    // Fan details with background
+    // Fan details with background (reduce height and spacing)
     page2.drawRectangle({
       x: 50,
-      y: yPosition - 50,
+      y: yPosition - 62,
       width: width - 100,
-      height: 70,
+      height: 82,
       color: rgb(0.97, 0.97, 1), // Very light blue
     });
 
+    // Adjusted fan details sequence and spacing
     const fanDetails = [
+      ['Fan Diameter:', modelDetails?.fan_diameter ? `${modelDetails.fan_diameter} mm` : '', 'No. of Blades:', modelDetails?.no_of_blades],
       ['Fan Type:', modelDetails?.fan_type, 'Fan Blade Material:', modelDetails?.blade_material],
       ['Drive Type:', modelDetails?.drive_type, 'Fan Hub Material:', modelDetails?.hub_material]
     ];
@@ -576,19 +578,19 @@ page.drawText("SDN. BHD.", {
       drawTextPage2(formatValue(value1), 170, yPosition);
       drawTextPage2(label2, 320, yPosition, 10, helveticaBold, primaryColor);
       drawTextPage2(formatValue(value2), 450, yPosition);
-      yPosition -= 33;
+      yPosition -= 25; // Reduced spacing
     });
     yPosition -= 5;
 
     // Materials of Construction
     yPosition = addSectionTitle(page2, 'Materials of Construction', yPosition);
 
-    // Materials with background
+    // Materials with background (reduce height)
     page2.drawRectangle({
       x: 50,
-      y: yPosition - 55,
+      y: yPosition - 42,
       width: width - 100,
-      height: 75,
+      height: 63,
       color: rgb(0.97, 0.97, 1), // Very light blue
     });
 
@@ -602,7 +604,7 @@ page.drawText("SDN. BHD.", {
       drawTextPage2(formatValue(value1), 170, yPosition);
       drawTextPage2(label2, 320, yPosition, 10, helveticaBold, primaryColor);
       drawTextPage2(formatValue(value2), 450, yPosition);
-      yPosition -= 33;
+      yPosition -= 25; // Reduced spacing
     });
 
     // Add footer to the second page
