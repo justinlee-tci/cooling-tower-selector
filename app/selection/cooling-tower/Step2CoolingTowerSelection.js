@@ -21,6 +21,8 @@ export default function Step2CoolingTowerSelection() {
   const [expandedModel, setExpandedModel] = useState(null);
   const [seriesList, setSeriesList] = useState([]);
   const [selectedSeries, setSelectedSeries] = useState("All");
+  const [typeList, setTypeList] = useState([]);
+  const [selectedType, setSelectedType] = useState("All");
 
   // Add window resize listener to update view mode
   useEffect(() => {
@@ -75,6 +77,10 @@ export default function Step2CoolingTowerSelection() {
       const uniqueSeries = ["All", ...new Set((models || []).map(m => m.series_name).filter(Boolean))];
       setSeriesList(uniqueSeries);
 
+      // Extract unique types
+      const uniqueTypes = ["All", ...new Set((models || []).map(m => m.type).filter(Boolean))];
+      setTypeList(uniqueTypes);
+
       updateSelectionData({ selectedModel: null, actualFlowRate: null, safetyFactor: null }); // Reset selection
 
       setLoading(false);
@@ -114,11 +120,12 @@ export default function Step2CoolingTowerSelection() {
         };
       });
 
-      // Filter models by user-defined safety factor range and selected series
+      // Filter models by user-defined safety factor range, selected series, and selected type
       const modelsWithValidSafetyFactor = calculatedModels.filter(model => 
         model.safetyFactor >= minSafetyFactor &&
         model.safetyFactor <= maxSafetyFactor &&
-        (selectedSeries === "All" || model.series_name === selectedSeries)
+        (selectedSeries === "All" || model.series_name === selectedSeries) &&
+        (selectedType === "All" || model.type === selectedType)
       );
 
       setFilteredModels(modelsWithValidSafetyFactor);
@@ -145,7 +152,8 @@ export default function Step2CoolingTowerSelection() {
     selectedCells,
     minSafetyFactor,
     maxSafetyFactor,
-    selectedSeries // <-- ADD THIS
+    selectedSeries,
+    selectedType // <-- ADD THIS
   ]);
 
   // Handle cells change
@@ -509,7 +517,7 @@ export default function Step2CoolingTowerSelection() {
         </div>
       </div>
 
-      {/* Series Filter - New Section */}
+      {/* Series & Type Filter - New Section */}
       <div className="mb-4 flex items-center gap-3">
         <label htmlFor="seriesFilter" className="text-sm font-semibold text-gray-700">Filter by Series:</label>
         <select
@@ -520,6 +528,17 @@ export default function Step2CoolingTowerSelection() {
         >
           {seriesList.map(series => (
             <option key={series} value={series}>{series}</option>
+          ))}
+        </select>
+        <label htmlFor="typeFilter" className="text-sm font-semibold text-gray-700">Filter by Type:</label>
+        <select
+          id="typeFilter"
+          value={selectedType}
+          onChange={e => setSelectedType(e.target.value)}
+          className="px-2 py-1 border border-gray-300 rounded text-gray-700"
+        >
+          {typeList.map(type => (
+            <option key={type} value={type}>{type}</option>
           ))}
         </select>
       </div>
