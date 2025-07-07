@@ -43,15 +43,19 @@ create table public.cooling_tower_models (
   drive_type text not null,
   inlet_pipe double precision not null,
   outlet_pipe double precision not null,
-  drain_overflow_pipe double precision not null,
-  auto_manual_pipe double precision not null,
+  drain_pipe double precision not null,
+  auto_pipe double precision not null,
   inlet_pipe_qty double precision not null,
   outlet_pipe_qty double precision not null,
-  drain_overflow_pipe_qty double precision not null,
-  auto_manual_pipe_qty double precision not null,
+  drain_pipe_qty double precision not null,
+  auto_pipe_qty double precision not null,
+  no_of_blades smallint null,
+  overflow_pipe double precision null,
+  overflow_pipe_qty double precision null,
+  manual_pipe double precision null,
+  manual_pipe_qty double precision null,
   constraint cooling_tower_models_pkey primary key (model_name)
 ) TABLESPACE pg_default;
-
 
 create table public.selections (
   id text not null,
