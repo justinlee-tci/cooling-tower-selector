@@ -509,10 +509,10 @@ page.drawText("SDN. BHD.", {
     const pipingDetails = [
       ['Inlet Pipe Diameter:', modelDetails?.inlet_pipe, 'Number of Inlet Pipes:', modelDetails?.inlet_pipe_qty],
       ['Outlet Pipe Diameter:', modelDetails?.outlet_pipe, 'Number of Outlet Pipes:', modelDetails?.outlet_pipe_qty],
-      ['Drain Pipe Diameter:', modelDetails?.drain_overflow_pipe, 'Number of Drain Pipes:', modelDetails?.drain_overflow_pipe_qty],
-      ['Overflow Pipe Diameter:', modelDetails?.drain_overflow_pipe, 'Number of Overflow Pipes:', modelDetails?.drain_overflow_pipe_qty],
-      ['Auto Make-up Pipe Diameter:', modelDetails?.auto_manual_pipe, 'Number of Auto Make-up Pipes:', modelDetails?.auto_manual_pipe_qty],
-      ['Manual Make-up Pipe Diameter:', modelDetails?.auto_manual_pipe, 'Number of Manual Make-up Pipes:', modelDetails?.auto_manual_pipe_qty]
+      ['Drain Pipe Diameter:', modelDetails?.drain_pipe, 'Number of Drain Pipes:', modelDetails?.drain_pipe_qty],
+      ['Overflow Pipe Diameter:', modelDetails?.overflow_pipe, 'Number of Overflow Pipes:', modelDetails?.overflow_pipe_qty],
+      ['Auto Make-up Pipe Diameter:', modelDetails?.auto_pipe, 'Number of Auto Make-up Pipes:', modelDetails?.auto_pipe_qty],
+      ['Manual Make-up Pipe Diameter:', modelDetails?.manual_pipe, 'Number of Manual Make-up Pipes:', modelDetails?.manual_pipe_qty]
     ];
 
     pipingDetails.forEach(([label1, value1, label2, value2]) => {
@@ -546,8 +546,8 @@ page.drawText("SDN. BHD.", {
     motorDetails.forEach(([label1, value1, label2, value2]) => {
       drawTextPage2(label1, 60, yPosition, 10, helveticaBold, primaryColor);
       drawTextPage2(formatValue(value1), 170, yPosition);
-      drawTextPage2(label2, 320, yPosition, 10, helveticaBold, primaryColor);
-      drawTextPage2(formatValue(value2), 450, yPosition);
+      drawTextPage2(label2, 280, yPosition, 10, helveticaBold, primaryColor);
+      drawTextPage2(formatValue(value2), 400, yPosition);
       yPosition -= 33;
     });
     yPosition -= 7;

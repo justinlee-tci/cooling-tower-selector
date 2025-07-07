@@ -19,6 +19,8 @@ export default function Step2CoolingTowerSelection() {
     return window.innerWidth >= 768 ? "table" : "cards";
   });
   const [expandedModel, setExpandedModel] = useState(null);
+  const [seriesList, setSeriesList] = useState([]);
+  const [selectedSeries, setSelectedSeries] = useState("All");
 
   // Add window resize listener to update view mode
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function Step2CoolingTowerSelection() {
       // Fetch models
       const { data: models, error: modelError } = await supabase
         .from("cooling_tower_models")
-        .select("model_name, type , nominal_capacity, nominal_flowrate, motor_output, fan_diameter, dry_weight, operating_weight");
+        .select("model_name, type, series_name, nominal_capacity, nominal_flowrate, motor_output, fan_diameter, dry_weight, operating_weight");
 
       if (modelError) {
         setError("Failed to load cooling tower models.");
@@ -68,6 +70,11 @@ export default function Step2CoolingTowerSelection() {
 
       setCoolingTowerModels(models || []);
       setPerformanceData(performanceMap);
+
+      // Extract unique series names
+      const uniqueSeries = ["All", ...new Set((models || []).map(m => m.series_name).filter(Boolean))];
+      setSeriesList(uniqueSeries);
+
       updateSelectionData({ selectedModel: null, actualFlowRate: null, safetyFactor: null }); // Reset selection
 
       setLoading(false);
@@ -107,9 +114,11 @@ export default function Step2CoolingTowerSelection() {
         };
       });
 
-      // Filter models by user-defined safety factor range
+      // Filter models by user-defined safety factor range and selected series
       const modelsWithValidSafetyFactor = calculatedModels.filter(model => 
-        model.safetyFactor >= minSafetyFactor && model.safetyFactor <= maxSafetyFactor
+        model.safetyFactor >= minSafetyFactor &&
+        model.safetyFactor <= maxSafetyFactor &&
+        (selectedSeries === "All" || model.series_name === selectedSeries)
       );
 
       setFilteredModels(modelsWithValidSafetyFactor);
@@ -127,8 +136,17 @@ export default function Step2CoolingTowerSelection() {
         }
       }
     }
-  }, [coolingTowerModels, selectionData.hotWaterTemp, selectionData.coldWaterTemp, 
-      selectionData.wetBulbTemp, selectionData.waterFlowRate, selectedCells, minSafetyFactor, maxSafetyFactor]);
+  }, [
+    coolingTowerModels,
+    selectionData.hotWaterTemp,
+    selectionData.coldWaterTemp,
+    selectionData.wetBulbTemp,
+    selectionData.waterFlowRate,
+    selectedCells,
+    minSafetyFactor,
+    maxSafetyFactor,
+    selectedSeries // <-- ADD THIS
+  ]);
 
   // Handle cells change
   const handleCellsChange = (e) => {
@@ -489,6 +507,21 @@ export default function Step2CoolingTowerSelection() {
             Table
           </button>
         </div>
+      </div>
+
+      {/* Series Filter - New Section */}
+      <div className="mb-4 flex items-center gap-3">
+        <label htmlFor="seriesFilter" className="text-sm font-semibold text-gray-700">Filter by Series:</label>
+        <select
+          id="seriesFilter"
+          value={selectedSeries}
+          onChange={e => setSelectedSeries(e.target.value)}
+          className="px-2 py-1 border border-gray-300 rounded text-gray-700"
+        >
+          {seriesList.map(series => (
+            <option key={series} value={series}>{series}</option>
+          ))}
+        </select>
       </div>
 
       {loading && <p className="text-gray-700">Loading...</p>}
