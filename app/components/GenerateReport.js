@@ -435,7 +435,7 @@ page.drawText("SDN. BHD.", {
     drawText(`${formatValue(Math.round(selectionData?.safety_factor))}%`, 450, yPosition);
     
     // Add footer to the first page
-    addFooter(page1, 1, 4);
+    addFooter(page1, 1, 3);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Page 2 - Tower Specifications
@@ -608,43 +608,48 @@ page.drawText("SDN. BHD.", {
     });
 
     // Add footer to the second page
-    addFooter(page2, 2, 4);
+    addFooter(page2, 2, 3);
 
     // Page 3 - Tower Model Drawing (Single Cell)
     const page3 = pdfDoc.addPage();
     await addLetterhead(page3);
-    
+
     yPosition = height - 150;
-    
+
     // 5. Tower Model Drawings
     yPosition = addSectionTitle(page3, '5. TOWER MODEL DRAWINGS', yPosition+15);
-    yPosition = addSubsectionTitle(page3, '5a. Tower Drawing (Single Cell)', yPosition);
 
     try {
-      // Try loading the tower drawing based on model
-      const modelName = selectionData.cooling_tower_model;
-      let towerDrawing;
-      
-      // Try PNG first
-      try {
-        const drawingResponse = await fetch(`/tower-drawings/${modelName}.png`);
-        const drawingArrayBuffer = await drawingResponse.arrayBuffer();
-        towerDrawing = await pdfDoc.embedPng(new Uint8Array(drawingArrayBuffer));
-      } catch (pngError) {
-        // If PNG fails, try JPG
-        try {
-          const drawingResponse = await fetch(`/tower-drawings/${modelName}.jpg`);
-          const drawingArrayBuffer = await drawingResponse.arrayBuffer();
-          towerDrawing = await pdfDoc.embedJpg(new Uint8Array(drawingArrayBuffer));
-        } catch (jpgError) {
-          throw new Error('Could not load image in either PNG or JPG format');
-        }
+      // Get the series name from the selected model
+      const seriesName = modelDetails?.series_name || 'UNKNOWN';
+      // Format the filename as SERIESNAME-SERIES.png (spaces replaced with underscores, uppercase)
+      const safeSeries = String(seriesName).replace(/\s+/g, '_').toUpperCase();
+      let drawingFileName = `/tower-drawings/${safeSeries}-SERIES.png`;
+      let drawingResponse = await fetch(drawingFileName);
+      let imageType = 'png';
+      if (!drawingResponse.ok) {
+        // Try .jpg if .png not found
+        drawingFileName = `/tower-drawings/${safeSeries}-SERIES.jpg`;
+        drawingResponse = await fetch(drawingFileName);
+        imageType = 'jpg';
       }
-      
+      if (!drawingResponse.ok) {
+        // Try .jpeg if .jpg not found
+        drawingFileName = `/tower-drawings/${safeSeries}-SERIES.jpeg`;
+        drawingResponse = await fetch(drawingFileName);
+        imageType = 'jpg';
+      }
+      if (!drawingResponse.ok) throw new Error('Drawing not found');
+      const drawingArrayBuffer = await drawingResponse.arrayBuffer();
+      let towerDrawing;
+      if (imageType === 'png') {
+        towerDrawing = await pdfDoc.embedPng(new Uint8Array(drawingArrayBuffer));
+      } else {
+        towerDrawing = await pdfDoc.embedJpg(new Uint8Array(drawingArrayBuffer));
+      }
       // Calculate aspect ratio to maintain image proportions
       const imgWidth = width - 100;
       const imgHeight = 400;
-      
       page3.drawImage(towerDrawing, {
         x: 50,
         y: yPosition - imgHeight,
@@ -653,7 +658,7 @@ page.drawText("SDN. BHD.", {
       });
     } catch (error) {
       console.error('Error loading tower drawing:', error);
-      
+
       // Draw placeholder if image loading fails
       page3.drawRectangle({
         x: 50,
@@ -666,14 +671,17 @@ page.drawText("SDN. BHD.", {
       });
 
       // Add placeholder text
-      page3.drawText(`Tower Drawing for ${selectionData.cooling_tower_model}`, {
-        x: width / 2 - 100,
-        y: yPosition - 200,
-        size: 12,
-        font: helveticaBold,
-        color: primaryColor,
-      });
-      
+      page3.drawText(
+        `Tower Drawing for ${modelDetails?.series_name || 'Unknown Series'}`,
+        {
+          x: width / 2 - 100,
+          y: yPosition - 200,
+          size: 12,
+          font: helveticaBold,
+          color: primaryColor,
+        }
+      );
+
       page3.drawText('(Drawing not available)', {
         x: width / 2 - 60,
         y: yPosition - 220,
@@ -683,83 +691,73 @@ page.drawText("SDN. BHD.", {
       });
     }
 
-    // Add footer to the third page
-    addFooter(page3, 3, 4);
-
-    // Page 4 - Foundation Drawing
-    const page4 = pdfDoc.addPage();
-    await addLetterhead(page4);
-    
-    yPosition = height - 150;
-    
-    yPosition = addSectionTitle(page4, '5. TOWER MODEL DRAWINGS (continued)', yPosition+15);
-    yPosition = addSubsectionTitle(page4, '5b. Foundation Drawing', yPosition);
-
-    try {
-      // Try loading the foundation drawing based on model
-      const modelName = selectionData.cooling_tower_model;
-      let foundationDrawing;
-      
-      // Try PNG first
-      try {
-        const foundationResponse = await fetch(`/foundation-drawings/${modelName}.png`);
-        const foundationArrayBuffer = await foundationResponse.arrayBuffer();
-        foundationDrawing = await pdfDoc.embedPng(new Uint8Array(foundationArrayBuffer));
-      } catch (pngError) {
-        // If PNG fails, try JPG
-        try {
-          const foundationResponse = await fetch(`/foundation-drawings/${modelName}.jpg`);
-          const foundationArrayBuffer = await foundationResponse.arrayBuffer();
-          foundationDrawing = await pdfDoc.embedJpg(new Uint8Array(foundationArrayBuffer));
-        } catch (jpgError) {
-          throw new Error('Could not load image in either PNG or JPG format');
-        }
-      }
-      
-      // Calculate aspect ratio to maintain image proportions
-      const imgWidth = width - 100;
-      const imgHeight = 400;
-      
-      page4.drawImage(foundationDrawing, {
-        x: 50,
-        y: yPosition - imgHeight,
-        width: imgWidth,
-        height: imgHeight,
-      });
-    } catch (error) {
-      console.error('Error loading foundation drawing:', error);
-      
-      // Draw placeholder if image loading fails
-      page4.drawRectangle({
-        x: 50,
-        y: yPosition - 400,
-        width: width - 100,
-        height: 400,
-        borderColor: secondaryColor,
+    // Draw table below the image
+    const tableY = yPosition - 400 - 40;
+    const tableX = 30;
+    const tableWidth = width - 100;
+    const rowHeight = 28;
+    const colWidths = [90, 90, 50, 50, 50, 50, 40, 40, 40, 40];
+    const headers = ['Series Name', 'Model Name', 'L', 'W', 'H', 'h', 'A', 'B', 'C', 'D'];
+    const values = [
+      modelDetails?.series_name || '',
+      modelDetails?.model_name || '',
+      modelDetails?.cell_length || '',
+      modelDetails?.cell_width || '',
+      modelDetails?.cell_height || '',
+      modelDetails?.fan_stack_height || '',
+      '', '', '', ''
+    ];
+    // Draw header row
+    let colX = tableX;
+    headers.forEach((header, i) => {
+      page3.drawRectangle({
+        x: colX,
+        y: tableY,
+        width: colWidths[i],
+        height: rowHeight,
+        color: rgb(0.92, 0.92, 0.98),
+        borderColor: primaryColor,
         borderWidth: 1,
-        color: rgb(0.98, 0.98, 0.98),
       });
-
-      // Add placeholder text
-      page4.drawText(`Foundation Drawing for ${selectionData.cooling_tower_model}`, {
-        x: width / 2 - 100,
-        y: yPosition - 200,
-        size: 12,
+      // Center header text
+      const textWidth = helveticaBold.widthOfTextAtSize(header, 11);
+      const textX = colX + (colWidths[i] - textWidth) / 2;
+      page3.drawText(header, {
+        x: textX,
+        y: tableY + (rowHeight - 11) / 2 + 2,
+        size: 11,
         font: helveticaBold,
         color: primaryColor,
       });
-      
-      page4.drawText('(Drawing not available)', {
-        x: width / 2 - 60,
-        y: yPosition - 220,
-        size: 10,
-        font: helveticaItalic,
+      colX += colWidths[i];
+    });
+    // Draw value row
+    colX = tableX;
+    values.forEach((val, i) => {
+      page3.drawRectangle({
+        x: colX,
+        y: tableY - rowHeight,
+        width: colWidths[i],
+        height: rowHeight,
+        color: rgb(1, 1, 1),
+        borderColor: primaryColor,
+        borderWidth: 1,
+      });
+      // Center value text
+      const valueStr = String(val);
+      const valueWidth = helvetica.widthOfTextAtSize(valueStr, 11);
+      const valueX = colX + (colWidths[i] - valueWidth) / 2;
+      page3.drawText(valueStr, {
+        x: valueX,
+        y: tableY - rowHeight + (rowHeight - 11) / 2 + 2,
+        size: 11,
+        font: helvetica,
         color: textColor,
       });
-    }
-
-    // Add footer to the fourth page
-    addFooter(page4, 4, 4);
+      colX += colWidths[i];
+    });
+    // Add footer to the third page
+    addFooter(page3, 3, 3);
 
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
