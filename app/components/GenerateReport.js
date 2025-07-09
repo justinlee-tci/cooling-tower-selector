@@ -693,11 +693,11 @@ page.drawText("SDN. BHD.", {
 
     // Draw table below the image
     const tableY = yPosition - 400 - 40;
-    const tableX = 30;
+    const tableX = 8;
     const tableWidth = width - 100;
     const rowHeight = 28;
-    const colWidths = [90, 90, 50, 50, 50, 50, 40, 40, 40, 40];
-    const headers = ['Series Name', 'Model Name', 'L', 'W', 'H', 'h', 'A', 'B', 'C', 'D'];
+    const colWidths = [90, 90, 50, 50, 50, 50, 40, 40, 40, 40, 40];
+    const headers = ['Series Name', 'Model Name', 'L', 'W', 'H', 'h', 'A', 'B', 'C', 'D', 'H1'];
     const values = [
       modelDetails?.series_name || '',
       modelDetails?.model_name || '',
@@ -705,7 +705,11 @@ page.drawText("SDN. BHD.", {
       modelDetails?.cell_width || '',
       modelDetails?.cell_height || '',
       modelDetails?.fan_stack_height || '',
-      '', '', '', ''
+      modelDetails?.foundation_a || '',
+      modelDetails?.foundation_b || '',
+      modelDetails?.foundation_c || '',
+      modelDetails?.foundation_d || '',
+      modelDetails?.foundation_height || ''
     ];
     // Draw header row
     let colX = tableX;

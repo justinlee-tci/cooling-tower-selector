@@ -54,6 +54,12 @@ create table public.cooling_tower_models (
   overflow_pipe_qty double precision null,
   manual_pipe double precision null,
   manual_pipe_qty double precision null,
+  series_name text null,
+  foundation_a double precision null,
+  foundation_b double precision null,
+  foundation_c double precision null,
+  foundation_d double precision null,
+  foundation_height double precision null,
   constraint cooling_tower_models_pkey primary key (model_name)
 ) TABLESPACE pg_default;
 
