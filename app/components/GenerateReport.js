@@ -622,19 +622,16 @@ page.drawText("SDN. BHD.", {
     try {
       // Get the series name from the selected model
       const seriesName = modelDetails?.series_name || 'UNKNOWN';
-      // Format the filename as SERIESNAME-SERIES.png (spaces replaced with underscores, uppercase)
       const safeSeries = String(seriesName).replace(/\s+/g, '_').toUpperCase();
       let drawingFileName = `/tower-drawings/${safeSeries}-SERIES.png`;
       let drawingResponse = await fetch(drawingFileName);
       let imageType = 'png';
       if (!drawingResponse.ok) {
-        // Try .jpg if .png not found
         drawingFileName = `/tower-drawings/${safeSeries}-SERIES.jpg`;
         drawingResponse = await fetch(drawingFileName);
         imageType = 'jpg';
       }
       if (!drawingResponse.ok) {
-        // Try .jpeg if .jpg not found
         drawingFileName = `/tower-drawings/${safeSeries}-SERIES.jpeg`;
         drawingResponse = await fetch(drawingFileName);
         imageType = 'jpg';
@@ -647,14 +644,24 @@ page.drawText("SDN. BHD.", {
       } else {
         towerDrawing = await pdfDoc.embedJpg(new Uint8Array(drawingArrayBuffer));
       }
-      // Calculate aspect ratio to maintain image proportions
-      const imgWidth = width - 100;
-      const imgHeight = 400;
+
+      // Get original image dimensions
+      const imgDims = towerDrawing.scale(1);
+      const maxWidth = width - 70; // was width - 100, now slightly wider
+      const maxHeight = 440;       // was 400, now slightly taller
+      // Calculate scale to fit within maxWidth and maxHeight, preserving aspect ratio
+      const scale = Math.min(maxWidth / imgDims.width, maxHeight / imgDims.height, 1.15); // allow up to 15% enlargement if possible
+      const drawWidth = imgDims.width * scale;
+      const drawHeight = imgDims.height * scale;
+      // Center horizontally and vertically in the allowed area
+      const drawX = 35 + (maxWidth - drawWidth) / 2; // was 50, now 35 for more space
+      const drawY = yPosition - maxHeight + (maxHeight - drawHeight) / 2;
+
       page3.drawImage(towerDrawing, {
-        x: 50,
-        y: yPosition - imgHeight,
-        width: imgWidth,
-        height: imgHeight,
+        x: drawX,
+        y: drawY,
+        width: drawWidth,
+        height: drawHeight,
       });
     } catch (error) {
       console.error('Error loading tower drawing:', error);
@@ -692,7 +699,7 @@ page.drawText("SDN. BHD.", {
     }
 
     // Draw table below the image
-    const tableY = yPosition - 400 - 40;
+    const tableY = yPosition - 500;
     const tableX = 8;
     const tableWidth = width - 100;
     const rowHeight = 28;
