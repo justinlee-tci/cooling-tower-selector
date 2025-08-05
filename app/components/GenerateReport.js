@@ -401,7 +401,7 @@ page.drawText("SDN. BHD.", {
     drawText('Range:', 60, yPosition, 10, helveticaBold, primaryColor);
     drawText(`${formatValue(hwt - cwt)} ${formatUnit.temperature}`, 190, yPosition);
     drawText('Approach:', 320, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue(cwt - wbt)} ${formatUnit.temperature}`, 450, yPosition);
+    drawText(`${formatValue((cwt - wbt).toFixed(2))} ${formatUnit.temperature}`, 450, yPosition);
     yPosition -= 45;
 
     // 3. Selection Results
