@@ -23,6 +23,10 @@ export default function Step2CoolingTowerSelection() {
   const [selectedSeries, setSelectedSeries] = useState("All");
   const [typeList, setTypeList] = useState([]);
   const [selectedType, setSelectedType] = useState("All");
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: 'asc'
+  });
 
   // Add window resize listener to update view mode
   useEffect(() => {
@@ -93,7 +97,6 @@ export default function Step2CoolingTowerSelection() {
   useEffect(() => {
     if (coolingTowerModels.length > 0 && selectionData) {
       const calculatedModels = coolingTowerModels.map((model) => {
-
         const actualFlowRate = calculateFlowRate(
           Number(selectionData.hotWaterTemp),
           Number(selectionData.coldWaterTemp),
@@ -110,7 +113,7 @@ export default function Step2CoolingTowerSelection() {
           String(model.type).toUpperCase(),
         )*selectedCells;
 
-        const safetyFactor = actualFlowRate / selectionData.waterFlowRate * 100;
+        const safetyFactor = Math.ceil(actualFlowRate / selectionData.waterFlowRate * 100);
 
         return { 
           ...model, 
@@ -122,8 +125,8 @@ export default function Step2CoolingTowerSelection() {
 
       // Filter models by user-defined safety factor range, selected series, and selected type
       const modelsWithValidSafetyFactor = calculatedModels.filter(model => 
-        model.safetyFactor >= minSafetyFactor &&
-        model.safetyFactor <= maxSafetyFactor &&
+        Math.ceil(model.safetyFactor) >= minSafetyFactor &&
+        Math.ceil(model.safetyFactor) <= maxSafetyFactor &&
         (selectedSeries === "All" || model.series_name === selectedSeries) &&
         (selectedType === "All" || model.type === selectedType)
       );
@@ -155,6 +158,37 @@ export default function Step2CoolingTowerSelection() {
     selectedSeries,
     selectedType // <-- ADD THIS
   ]);
+
+  // Add this sorting function before the return statement
+  const sortModels = (models, sortConfig) => {
+    if (!sortConfig.key) return models;
+    
+    return [...models].sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  };
+
+  // Add this handler function
+  const handleSort = (key) => {
+    setSortConfig((currentSort) => {
+      if (currentSort.key === key) {
+        return {
+          key,
+          direction: currentSort.direction === 'asc' ? 'desc' : 'asc'
+        };
+      }
+      return {
+        key,
+        direction: 'asc'
+      };
+    });
+  };
 
   // Handle cells change
   const handleCellsChange = (e) => {
@@ -252,7 +286,7 @@ export default function Step2CoolingTowerSelection() {
           <div className="text-right text-gray-900 font-medium">{model.actualFlowRate.toFixed(2)} m³/hr</div>
           
           <div className="text-gray-800 font-medium">Safety Factor:</div>
-          <div className={`text-right font-medium ${model.safetyFactor >= 100 ? "text-green-600" : "text-red-600"}`}>
+          <div className={`text-right font-medium ${Math.round(model.safetyFactor) >= 100 ? "text-green-600" : "text-red-600"}`}>
             {Math.round(model.safetyFactor)}%
           </div>
         </div>
@@ -408,7 +442,7 @@ export default function Step2CoolingTowerSelection() {
             </div>
             <div className="flex justify-between">
               <span className="text-blue-800 font-medium">Safety Factor:</span>
-              <span className={`font-semibold ${selectedModelDetails.safetyFactor >= 100 ? "text-green-600" : "text-red-600"}`}>
+              <span className={`font-semibold ${Math.round(selectedModelDetails.safetyFactor) >= 100 ? "text-green-600" : "text-red-600"}`}>
                 {Math.round(selectedModelDetails.safetyFactor)}%
               </span>
             </div>
@@ -564,21 +598,120 @@ export default function Step2CoolingTowerSelection() {
             <thead>
               <tr className="bg-gray-200">
                 <th className="border p-2 text-center text-gray-900">Select</th>
-                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Model</th>
-                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Type</th>
-                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Nominal Capacity/cell (RT)</th>
-                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Nominal Flow Rate/cell (m³/hr)</th>
-                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Motor Output (kW)</th>
-                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Fan Diameter (mm)</th>
-                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Dry Weight (kg)</th>
-                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Operating Weight (kg)</th>
-                {/* <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Actual Capacity (RT)</th> */}
-                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Actual Flow Rate (m³/hr)</th>
-                <th className="border p-2 text-center text-gray-900 whitespace-nowrap">Safety Factor (%)</th>
+                <th className="border p-2 text-center text-gray-900">
+                  <button 
+                    onClick={() => handleSort('model_name')}
+                    className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
+                  >
+                    Model
+                    {sortConfig.key === 'model_name' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </th>
+                <th className="border p-2 text-center text-gray-900">
+                  <button 
+                    onClick={() => handleSort('type')}
+                    className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
+                  >
+                    Type
+                    {sortConfig.key === 'type' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </th>
+                <th className="border p-2 text-center text-gray-900">
+                  <button 
+                    onClick={() => handleSort('nominal_capacity')}
+                    className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
+                  >
+                    Nominal Capacity/cell (RT)
+                    {sortConfig.key === 'nominal_capacity' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </th>
+                <th className="border p-2 text-center text-gray-900">
+                  <button 
+                    onClick={() => handleSort('nominal_flowrate')}
+                    className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
+                  >
+                    Nominal Flow Rate/cell (m³/hr)
+                    {sortConfig.key === 'nominal_flowrate' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </th>
+                <th className="border p-2 text-center text-gray-900">
+                  <button 
+                    onClick={() => handleSort('motor_output')}
+                    className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
+                  >
+                    Motor Output (kW)
+                    {sortConfig.key === 'motor_output' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </th>
+                <th className="border p-2 text-center text-gray-900">
+                  <button 
+                    onClick={() => handleSort('fan_diameter')}
+                    className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
+                  >
+                    Fan Diameter (mm)
+                    {sortConfig.key === 'fan_diameter' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </th>
+                <th className="border p-2 text-center text-gray-900">
+                  <button 
+                    onClick={() => handleSort('dry_weight')}
+                    className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
+                  >
+                    Dry Weight (kg)
+                    {sortConfig.key === 'dry_weight' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </th>
+                <th className="border p-2 text-center text-gray-900">
+                  <button 
+                    onClick={() => handleSort('operating_weight')}
+                    className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
+                  >
+                    Operating Weight (kg)
+                    {sortConfig.key === 'operating_weight' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </th>
+                <th className="border p-2 text-center text-gray-900">
+                  <button 
+                    onClick={() => handleSort('actualFlowRate')}
+                    className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
+                  >
+                    Actual Flow Rate (m³/hr)
+                    {sortConfig.key === 'actualFlowRate' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </th>
+                <th className="border p-2 text-center text-gray-900">
+                  <button 
+                    onClick={() => handleSort('safetyFactor')}
+                    className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
+                  >
+                    Safety Factor (%)
+                    {sortConfig.key === 'safetyFactor' && (
+                      <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {filteredModels.map((model) => (
+              {sortModels(filteredModels, sortConfig).map((model) => (
                 <tr
                   key={model.model_name}
                   onClick={() => handleModelSelection(model)}
@@ -610,7 +743,7 @@ export default function Step2CoolingTowerSelection() {
                   {/* <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualCapacity.toFixed(2)}</td> */}
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualFlowRate.toFixed(2)}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">
-                    <span className={model.safetyFactor >= 100 ? "text-green-600" : "text-red-600"}>
+                    <span className={Math.round(model.safetyFactor) >= 100 ? "text-green-600" : "text-red-600"}>
                       {Math.round(model.safetyFactor)}%
                     </span>
                   </td>
