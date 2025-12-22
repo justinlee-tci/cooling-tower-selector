@@ -377,20 +377,45 @@ export default function Step2CoolingTowerSelection() {
               <span className="text-gray-700">Dry Bulb Temp:</span>
               <span className="font-medium text-gray-700">{selectionData.dryBulbTemp} °C</span>
             </div>
-            {selectedModelDetails && (
-              <div className="flex justify-between">
-                <span className="text-gray-700">Design Condition RT:</span>
-                <span className="font-medium text-gray-700">
-                  {calculateCoolingCapacity(
-                    Number(selectionData.hotWaterTemp),
-                    Number(selectionData.coldWaterTemp),
-                    Number(selectionData.wetBulbTemp),
-                    Number(selectionData.waterFlowRate),
-                    String(selectedModelDetails.type).toUpperCase()
-                  ).toFixed(2)} RT
-                </span>
-              </div>
-            )}
+            <div className="flex justify-between">
+              <span className="text-gray-700">Design Condition RT:</span>
+              <span className="font-medium text-gray-700">
+                {(() => {
+                  // Determine type to use for design calculation
+                  let designType = null;
+                  if (selectedModelDetails && selectedModelDetails.type) {
+                    designType = selectedModelDetails.type;
+                  } else if (selectedType && selectedType !== "All") {
+                    designType = selectedType;
+                  } else if (typeList && typeList.length > 1) {
+                    // typeList[0] is "All", so take the next available real type
+                    designType = typeList[1];
+                  } else if (filteredModels && filteredModels.length > 0) {
+                    designType = filteredModels[0].type;
+                  } else {
+                    designType = "CROSSFLOW"; // sensible fallback
+                  }
+
+                  // Ensure we have required inputs
+                  if (!selectionData.waterFlowRate || !selectionData.hotWaterTemp || !selectionData.coldWaterTemp || !selectionData.wetBulbTemp) {
+                    return "-";
+                  }
+
+                  try {
+                    const value = calculateCoolingCapacity(
+                      Number(selectionData.hotWaterTemp),
+                      Number(selectionData.coldWaterTemp),
+                      Number(selectionData.wetBulbTemp),
+                      Number(selectionData.waterFlowRate),
+                      String(designType).toUpperCase()
+                    );
+                    return Number.isFinite(value) ? value.toFixed(2) + " RT" : "-";
+                  } catch (err) {
+                    return "-";
+                  }
+                })()}
+              </span>
+            </div>
           </div>
         </div>
       </div>
