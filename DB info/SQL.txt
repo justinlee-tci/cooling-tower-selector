@@ -104,6 +104,65 @@ create table public.cooling_tower_performance (
   constraint cooling_tower_performance_model_name_fkey foreign KEY (model_name) references cooling_tower_models (model_name) on delete CASCADE
 ) TABLESPACE pg_default;
 
+-- ===== COOLING TOWER MODELS (Public Read) =====
+CREATE POLICY "Allow public read models"
+ON public.cooling_tower_models
+FOR SELECT
+TO authenticated
+USING (true);
+
+-- Only service_role can write to models
+-- (No INSERT/UPDATE/DELETE policies = blocked for anon key)
+
+-- ===== COOLING TOWER PERFORMANCE (Public Read) =====
+CREATE POLICY "Allow public read performance"
+ON public.cooling_tower_performance
+FOR SELECT
+TO authenticated
+USING (true);
+
+-- Only service_role can write to performance
+-- (No INSERT/UPDATE/DELETE policies = blocked for anon key)
+
+-- ===== SELECTIONS (User-Isolated) =====
+CREATE POLICY "Users can see own selections"
+ON public.selections
+FOR SELECT
+TO authenticated
+USING (user_email = auth.jwt()->>'email');
+
+CREATE POLICY "Users can insert own selections"
+ON public.selections
+FOR INSERT
+TO authenticated
+WITH CHECK (user_email = auth.jwt()->>'email');
+
+CREATE POLICY "Users can update own selections"
+ON public.selections
+FOR UPDATE
+TO authenticated
+USING (user_email = auth.jwt()->>'email')
+WITH CHECK (user_email = auth.jwt()->>'email');
+
+CREATE POLICY "Users can delete own selections"
+ON public.selections
+FOR DELETE
+TO authenticated
+USING (user_email = auth.jwt()->>'email');
+
+-- ===== USERS (User-Isolated) =====
+CREATE POLICY "Users can see own profile"
+ON public.users
+FOR SELECT
+TO authenticated
+USING (email = auth.jwt()->>'email');
+
+CREATE POLICY "Users can update own profile"
+ON public.users
+FOR UPDATE
+TO authenticated
+USING (email = auth.jwt()->>'email')
+WITH CHECK (email = auth.jwt()->>'email');
 
 app
 -account-details
