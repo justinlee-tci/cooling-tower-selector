@@ -29,14 +29,23 @@ const Navbar = () => {
           .from("users")
           .select("role")
           .eq("email", user.email)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to handle 0 rows gracefully
+
         if (error) {
           console.error("Error fetching user role:", error);
+          // Fallback to user role if query fails
+          setRole("user");
+        } else if (data) {
+          setRole(data.role.toLowerCase());
         } else {
-          setRole(data?.role.toLowerCase());
+          // No user record found - set default role
+          console.warn("No user record found for email:", user.email);
+          setRole("user");
         }
       } catch (err) {
         console.error("Unexpected error:", err);
+        // Fallback to user role on error
+        setRole("user");
       } finally {
         setLoading(false);
       }
