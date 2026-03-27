@@ -200,15 +200,16 @@ function PerformanceContent() {
     if (flowRate === 100) {
       const designWBT = parseFloat(params.wetBulbTemp);
       const designCWT = parseFloat(params.coldWaterTemp);
-      
-      // Check if design WBT exists in the table
-      const wbtExists = wbtValues.some(wbt => Math.abs(wbt - designWBT) < 0.01);
-      
-      // Check if design CWT exists in any of the calculated values
-      const cwtExists = ranges.some(range => {
-        const calculatedCWT = calculateColdWaterTemp(designWBT, range, 100);
-        return Math.abs(calculatedCWT - designCWT) < 0.01;
-      });
+      const designRange = parseFloat(params.hotWaterTemp) - parseFloat(params.coldWaterTemp);
+
+      // Check if design WBT exists in the table with more lenient tolerance
+      const wbtExists = wbtValues.some(wbt => Math.abs(wbt - designWBT) < 0.5);
+
+      // Calculate the expected CWT for the design range and design WBT
+      const expectedCWT = calculateColdWaterTemp(designWBT, designRange, 100);
+
+      // Check if actual design CWT is within reasonable tolerance of expected CWT
+      const cwtExists = Math.abs(expectedCWT - designCWT) < 1.0;
 
       if (wbtExists && cwtExists) {
         datasets.push({
