@@ -2,8 +2,7 @@ name: Keep Alive Ping
 
 on:
   schedule:
-    # Runs every 7 days at 12:00 UTC
-    - cron: '0 12 * * 0'
+    - cron: '0 12 */3 * *'  # Every 3 days at 12:00 UTC
   workflow_dispatch: # Allows manual trigger
 
 jobs:
