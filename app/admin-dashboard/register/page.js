@@ -119,38 +119,58 @@ export default function AdminRegister() {
     try {
       console.log("Registering user with password:", dynamicPassword);
       
-      // Call the API route which uses service role to register the user
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password: dynamicPassword,
-          name,
-          company,
-          country,
-        }),
+      // Step 1: Sign up with Supabase Auth using the dynamic password
+      const { data, error: authError } = await supabase.auth.signUp({
+        email,
+        password: dynamicPassword,
+        options: {
+          data: {
+            name,
+            company,
+            country,
+          }
+        }
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.error === 'User already exists') {
-          setError("User already exists, please proceed to login with email");
-        } else {
-          setError("Registration error: " + (data.error || 'Unknown error'));
-        }
-        console.error("Registration error:", data.error);
+      if (authError) {
+        setError("Authentication error: " + authError.message);
+        console.error("Auth error: ", authError);
         setLoading(false);
         return;
       }
 
-      // Show success message and clean up
-      setRegisteredEmail(email);
-      setShowVerificationPopup(true);
-      setLoading(false);
+      console.log("Auth signup successful, user:", data?.user?.email);
+
+      // Step 2: Insert user into the users table
+      if (data.user) {
+        const { error: insertError } = await supabase
+          .from("users")
+          .insert([{
+            email, // Using email as primary key (matches your schema)
+            name,
+            password: dynamicPassword, // Store the generated password
+            company,
+            country,
+            role: "user",
+            last_logged_in: null
+          }]);
+
+        if (insertError) {
+          if (insertError.code === '23505') {
+            setError("User already exists, please proceed to login with email");
+          } else {
+            setError("Database error saving new user: " + insertError.message);
+          }
+          console.error("Insert error: ", insertError);
+          setLoading(false);
+          return;
+        }
+
+        // Show success message and clean up
+        setRegisteredEmail(email);
+        setShowVerificationPopup(true);
+        setLoading(false);
+      }
     } catch (err) {
       console.error("Registration error:", err);
       setError(err.message || "Failed to register user");

@@ -68,34 +68,18 @@ export default function AdminDashboard() {
     const fetchAllSelections = async () => {
       if (user) {
         setIsLoading(true);
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const token = session?.access_token;
+        const { data, error } = await supabase
+          .from("selections")
+          .select("id, user_email, project_name, location, date_created")
+          .order("date_created", { ascending: false });
 
-          if (!token) {
-            toast.error("Authentication required");
-            return;
-          }
-
-          const response = await fetch('/api/admin/selections', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch selections');
-          }
-
-          const { selections: data } = await response.json();
-          setSelections(data || []);
-        } catch (error) {
+        if (error) {
           console.error("Error fetching all selections:", error);
           toast.error("Failed to load selections");
-        } finally {
-          setIsLoading(false);
+        } else {
+          setSelections(data || []);
         }
+        setIsLoading(false);
       }
     };
 
@@ -105,31 +89,17 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchUsers = async () => {
       if (user) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const token = session?.access_token;
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('role', 'user')
+          .order('name');
 
-          if (!token) {
-            toast.error("Authentication required");
-            return;
-          }
-
-          const response = await fetch('/api/admin/users', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to fetch users');
-          }
-
-          const { users: data } = await response.json();
-          setUsers(data || []);
-        } catch (error) {
+        if (error) {
           console.error("Error fetching users:", error);
           toast.error("Failed to load users");
+        } else {
+          setUsers(data || []);
         }
       }
     };
@@ -145,32 +115,22 @@ export default function AdminDashboard() {
     if (!selectionToDelete) return;
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const { error } = await supabase
+        .from("selections")
+        .delete()
+        .eq("id", selectionToDelete.id);
 
-      if (!token) {
-        toast.error("Authentication required");
-        return;
-      }
-
-      const response = await fetch(`/api/admin/selections/${selectionToDelete.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete selection');
+      if (error) {
+        throw new Error(`Failed to delete selection: ${error.message}`);
       }
 
       // Remove the deleted selection from the local state
       setSelections(selections.filter(selection => selection.id !== selectionToDelete.id));
       
-      toast.success("Selection deleted successfully", {
-        duration: 1000
-      });
-    } catch (error) {
+        toast.success("Selection deleted successfully", {
+          duration: 1000 // 2 seconds
+        });
+      } catch (error) {
       console.error("Error deleting selection:", error);
       toast.error("Failed to delete selection");
     } finally {
@@ -187,29 +147,18 @@ export default function AdminDashboard() {
     if (!userToDelete) return;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      if (!token) {
-        toast.error("Authentication required");
-        return;
-      }
-
-      const response = await fetch(`/api/admin/users/${encodeURIComponent(userToDelete.email)}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete user');
+      // Delete from users table only
+      const { error: dbError } = await supabase
+        .from('users')
+        .delete()
+        .eq('email', userToDelete.email);      if (dbError) {
+        throw new Error(`Failed to delete user: ${dbError.message}`);
       }
 
       setUsers(users.filter(u => u.email !== userToDelete.email));
-      toast.success("User deleted successfully", {
-        duration: 1000
-      });
+        toast.success("User deleted successfully", {
+          duration: 1000 // 2 seconds
+        });
     } catch (error) {
       console.error('Error deleting user:', error);
       toast.error('Failed to delete user');
