@@ -62,13 +62,27 @@ export default function ViewUserPage() {
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      const { data: userData, error: dbError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("email", userEmail)
-        .single();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
 
-      if (dbError) throw dbError;
+      if (!token) {
+        toast.error("Authentication required");
+        router.push('/auth/login');
+        return;
+      }
+
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(userEmail)}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const { user: userData } = await response.json();
 
       // Set form values
       setName(userData.name || "");
@@ -134,12 +148,26 @@ export default function ViewUserPage() {
       setSaving(true);
       setError(null);
 
-      const { error: dbError } = await supabase
-        .from("users")
-        .update(pendingChanges)
-        .eq("email", userEmail);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
 
-      if (dbError) throw dbError;
+      if (!token) {
+        toast.error("Authentication required");
+        return;
+      }
+
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(userEmail)}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(pendingChanges),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save changes');
+      }
 
       setSuccess("Changes saved successfully");
       setPendingChanges({});
