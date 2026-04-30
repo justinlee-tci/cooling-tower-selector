@@ -20,7 +20,7 @@ const parameterRanges = {
 };
 
 // Minimum approach temperature for reliable calculations
-const MIN_APPROACH_TEMP = 2; // °C
+const MIN_APPROACH_TEMP = 1.8; // °C
 
 // Flow rate conversion utility (now supports m³/hr, L/min, US GPM, L/s)
 const convertFlowRate = (value, fromUnit, toUnit) => {
@@ -290,8 +290,8 @@ const validateTemperatures = (temperatures) => {
     const requiredColdTemp = wet + MIN_APPROACH_TEMP;
     const requiredWetBulbTemp = cold - MIN_APPROACH_TEMP;
     
-    errors.coldWaterTemp = `Approach temperature (${approachTemp.toFixed(1)}°C) is too small. Cold water must be at least ${requiredColdTemp.toFixed(1)}°C for reliable calculations`;
-    errors.wetBulbTemp = `Approach temperature (${approachTemp.toFixed(1)}°C) is too small. Wet bulb must be at most ${requiredWetBulbTemp.toFixed(1)}°C for reliable calculations`;
+    errors.coldWaterTemp = `Approach temperature (${approachTemp.toFixed(2)}°C) is too small. Cold water must be at least ${requiredColdTemp.toFixed(1)}°C for reliable calculations`;
+    errors.wetBulbTemp = `Approach temperature (${approachTemp.toFixed(2)}°C) is too small. Wet bulb must be at most ${requiredWetBulbTemp.toFixed(1)}°C for reliable calculations`;
   }
 
   // Only validate dry bulb if it's provided

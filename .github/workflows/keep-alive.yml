@@ -1,0 +1,18 @@
+name: Keep Alive Ping
+
+on:
+  schedule:
+    - cron: '0 12 */5 * *'  # Every 5 days at 12:00 UTC
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger keep-alive endpoint
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.KEEP_ALIVE_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.KEEP_ALIVE_URL }}/api/keep-alive"

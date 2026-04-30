@@ -180,12 +180,13 @@ const { data, error } = await supabase
   .from('users')
   .select('role')
   .eq('email', email)
-  .single();
+  .maybeSingle();
 
 if (error) {
   console.error("Error fetching user role:", error);
+  router.push("/user-dashboard");
 } else {
-  const role = data.role;
+  const role = data?.role || 'user';
   console.log("User role:", role);
 
   if (role === 'superadmin') {
@@ -219,7 +220,7 @@ if (error) {
           .from('cooling_tower_models')
           .select('motor_output, fan_diameter, nominal_flowrate, type')
           .eq('model_name', selectionData.selectedModel)
-          .single();
+          .maybeSingle();
 
         if (!error && data) {
           setModelDetails(data);

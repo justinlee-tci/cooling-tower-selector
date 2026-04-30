@@ -45,11 +45,15 @@ export async function generateReport(selectionData, performanceCurveImage) {
       .from('cooling_tower_models')
       .select('*')
       .eq('model_name', selectionData.cooling_tower_model)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching model details:', error);
       throw new Error('Failed to fetch cooling tower model details');
+    }
+
+    if (!modelDetails) {
+      throw new Error(`Cooling tower model "${selectionData.cooling_tower_model}" not found`);
     }
 
     const pdfDoc = await PDFDocument.create();
@@ -401,7 +405,7 @@ page.drawText("SDN. BHD.", {
     drawText('Range:', 60, yPosition, 10, helveticaBold, primaryColor);
     drawText(`${formatValue(hwt - cwt)} ${formatUnit.temperature}`, 190, yPosition);
     drawText('Approach:', 320, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue(cwt - wbt)} ${formatUnit.temperature}`, 450, yPosition);
+    drawText(`${formatValue((cwt - wbt).toFixed(2))} ${formatUnit.temperature}`, 450, yPosition);
     yPosition -= 45;
 
     // 3. Selection Results
