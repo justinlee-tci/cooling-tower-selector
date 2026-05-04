@@ -12,35 +12,37 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [userEmail, setUserEmail] = useState(null);
 
   useEffect(() => {
     const tryRecoverSession = async () => {
       try {
-        // Get the URL parameters
         const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        
+        const code = params.get("code");
+
         if (!code) {
-          console.log('No code found in URL');
+          console.log("No code found in URL");
           return;
         }
 
-        // Exchange the code for a session
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        
+
         if (error) {
-          console.error('Session exchange error:', error);
-          if (error.message.includes('expired')) {
-            setError('Your password reset link has expired. Please request a new one.');
+          console.error("Session exchange error:", error);
+          if (error.message.includes("expired")) {
+            setError("Your password reset link has expired. Please request a new one.");
           } else {
-            setError('An unknown error occurred. Please try again.');
+            setError("An unknown error occurred. Please try again.");
           }
           return;
         }
 
+        if (data?.user?.email) {
+          setUserEmail(data.user.email);
+        }
       } catch (err) {
-        console.error('Recovery error:', err);
-        setError('Failed to process reset link. Please request a new one.');
+        console.error("Recovery error:", err);
+        setError("Failed to process reset link. Please request a new one.");
       }
     };
 
@@ -64,24 +66,18 @@ export default function ResetPasswordPage() {
     try {
       setLoading(true);
 
-      // First update the auth password
       const { data: userData, error: updateError } = await supabase.auth.updateUser({
-        password: password
+        password: password,
       });
 
-      if (updateError) {
-        throw updateError;
-      }
+      if (updateError) throw updateError;
 
-      // Then update the password in your users table using email as the primary key
       const { error: dbError } = await supabase
-        .from('users')
+        .from("users")
         .update({ password: password })
-        .eq('email', userData.user.email); // Changed from id to email
+        .eq("email", userData.user.email);
 
-      if (dbError) {
-        throw dbError;
-      }
+      if (dbError) throw dbError;
 
       toast.success("Password updated successfully");
       router.push("/auth/login");
@@ -97,29 +93,44 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-200">
       <div className="flex-grow flex items-center justify-center p-6">
-        
         <div className="bg-white p-12 rounded-2xl shadow-lg w-[500px]">
-        {/* Add Logo Image with increased bottom margin */}
-        <div className="flex justify-center mb-12">
-          <img 
-            src="/company-logo.jpg" 
-            alt="Company Logo" 
-            className="h-24 w-auto object-contain"
-          />
-        </div>
 
-          <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">Reset Your Password</h2>
-          <p className="text-center text-gray-600 mb-8">Enter your new password below</p>
+          {/* Logo */}
+          <div className="flex justify-center mb-12">
+            <img
+              src="/company-logo.jpg"
+              alt="Company Logo"
+              className="h-24 w-auto object-contain"
+            />
+          </div>
 
+          <h2 className="text-3xl font-bold mb-2 text-center text-gray-900">
+            Reset Your Password
+          </h2>
+          <p className="text-center text-gray-600 mb-4">
+            Enter your new password below
+          </p>
+
+          {/* User email display */}
+          {userEmail && (
+            <div className="flex items-center gap-3 bg-gray-100 rounded-lg px-4 py-3 mb-6">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-semibold flex-shrink-0">
+                {userEmail[0].toUpperCase()}
+              </div>
+              <span className="text-gray-700 text-sm">{userEmail}</span>
+            </div>
+          )}
+
+          {/* Error message */}
           {error && (
             <div className="text-center mb-4">
               <p className="text-red-600 text-lg">{error}</p>
-              {error.includes('expired') && (
+              {error.includes("expired") && (
                 <div className="mt-4">
                   <p>Your password reset link has expired. Please request a new one.</p>
                   <button
                     className="text-blue-600"
-                    onClick={() => router.push('/auth/recover')}
+                    onClick={() => router.push("/auth/recover")}
                   >
                     Request New Reset Link
                   </button>
@@ -168,6 +179,7 @@ export default function ResetPasswordPage() {
               {loading ? "Updating..." : "Update Password"}
             </button>
           </form>
+
         </div>
       </div>
     </div>
