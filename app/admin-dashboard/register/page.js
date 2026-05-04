@@ -141,27 +141,30 @@ export default function AdminRegister() {
 
       console.log("Auth signup successful, user:", data?.user?.email);
 
-      // Step 2: Insert user into the users table
+      // Step 2: Insert user into the users table via backend API
       if (data.user) {
-        const { error: insertError } = await supabase
-          .from("users")
-          .insert([{
-            email, // Using email as primary key (matches your schema)
+        const insertResponse = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
             name,
-            password: dynamicPassword, // Store the generated password
+            password: dynamicPassword,
             company,
             country,
             role: "user",
-            last_logged_in: null
-          }]);
+          }),
+        });
 
-        if (insertError) {
-          if (insertError.code === '23505') {
+        const insertData = await insertResponse.json();
+
+        if (!insertResponse.ok) {
+          if (insertResponse.status === 409) {
             setError("User already exists, please proceed to login with email");
           } else {
-            setError("Database error saving new user: " + insertError.message);
+            setError("Database error saving new user: " + insertData.error);
           }
-          console.error("Insert error: ", insertError);
+          console.error("Insert error: ", insertData);
           setLoading(false);
           return;
         }

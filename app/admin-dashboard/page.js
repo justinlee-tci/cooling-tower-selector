@@ -23,6 +23,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('users'); // For mobile tabs: 'users' or 'selections'
   const [userName, setUserName] = useState('');  // Added state for user's name
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
 
   useEffect(() => {
     // Check if screen width is mobile on initial load
@@ -54,15 +55,25 @@ export default function AdminDashboard() {
           .single();
         if (error) {
           console.error("Error fetching user data:", error);
+          router.replace("/user-dashboard");
+          setIsAuthorized(false);
+          return;
         } else {
+          if (data?.role !== 'superadmin') {
+            // Redirect non-superadmins to user dashboard
+            router.replace("/user-dashboard");
+            setIsAuthorized(false);
+            return;
+          }
           setLastLoggedIn(data?.last_logged_in);
           setUserName(data?.name || ''); // Set the user's name
           setIsSuperAdmin(data?.role === 'superadmin'); // Check if the user is superadmin
+          setIsAuthorized(true);
         }
       };
       fetchUserData();
     }
-  }, [user]);
+  }, [user, router]);
 
   useEffect(() => {
     const fetchAllSelections = async () => {
@@ -288,7 +299,7 @@ export default function AdminDashboard() {
     </div>
   );
   
-  if (!user) {
+  if (!user || !isAuthorized) {
     return null;
   }
 

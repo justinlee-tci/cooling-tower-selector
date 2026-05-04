@@ -133,11 +133,18 @@ export default function Step3Confirmation() {
         actual_flowrate: parseFloat(selectionData.actualFlowRate), // Changed from actual_flowrate to actualFlowRate
       };
 
-      const { error: insertError } = await supabase
-        .from("selections")
-        .insert([selectionToSave]);
+      // Use backend API to save selection (bypasses RLS with service_role)
+      const saveResponse = await fetch("/api/selection/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(selectionToSave),
+      });
 
-      if (insertError) throw new Error(insertError.message);
+      const saveData = await saveResponse.json();
+
+      if (!saveResponse.ok) {
+        throw new Error(saveData.error || "Failed to save selection");
+      }
 
       // Convert local state format to database format for generateReport
       const selectionForReport = {

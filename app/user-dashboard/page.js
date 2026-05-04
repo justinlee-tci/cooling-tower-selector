@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [mobileView, setMobileView] = useState(false);
   const [showDeleteSelectionConfirm, setShowDeleteSelectionConfirm] = useState(false);
   const [selectionToDelete, setSelectionToDelete] = useState(null);
+  const [isAuthorized, setIsAuthorized] = useState(true);
 
   useEffect(() => {
     // Check if screen width is mobile on initial load
@@ -32,8 +33,37 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) {
-      router.push("/auth/login");
+      router.replace("/auth/login");
+      return;
     }
+
+    // Check if user is superadmin and redirect to admin dashboard
+    const checkUserRole = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select("role")
+          .eq("email", user.email)
+          .single();
+
+        if (error) {
+          console.error("Error fetching user role:", error);
+          return;
+        }
+
+        if (data && data.role === "superadmin") {
+          router.replace("/admin-dashboard");
+          setIsAuthorized(false);
+        } else {
+          setIsAuthorized(true);
+        }
+      } catch (err) {
+        console.error("Error checking user role:", err);
+        setIsAuthorized(true);
+      }
+    };
+
+    checkUserRole();
   }, [user, router]);
 
   useEffect(() => {
@@ -180,7 +210,7 @@ export default function Dashboard() {
     </div>
   );
 
-  if (!user) {
+  if (!user || !isAuthorized) {
     return null;
   }
 

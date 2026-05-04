@@ -104,60 +104,95 @@ create table public.cooling_tower_performance (
   constraint cooling_tower_performance_model_name_fkey foreign KEY (model_name) references cooling_tower_models (model_name) on delete CASCADE
 ) TABLESPACE pg_default;
 
--- ===== COOLING TOWER MODELS (Public Read) =====
-CREATE POLICY "Allow public read models"
+-- ===== ENABLE RLS ON ALL TABLES =====
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.selections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cooling_tower_models ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cooling_tower_performance ENABLE ROW LEVEL SECURITY;
+
+-- ===== DROP ALL EXISTING POLICIES (to avoid conflicts) =====
+DROP POLICY IF EXISTS "Allow public read models" ON public.cooling_tower_models;
+DROP POLICY IF EXISTS "models_select_authenticated" ON public.cooling_tower_models;
+DROP POLICY IF EXISTS "models_write_service_role" ON public.cooling_tower_models;
+DROP POLICY IF EXISTS "models_update_service_role" ON public.cooling_tower_models;
+DROP POLICY IF EXISTS "models_delete_service_role" ON public.cooling_tower_models;
+
+DROP POLICY IF EXISTS "Allow public read performance" ON public.cooling_tower_performance;
+DROP POLICY IF EXISTS "performance_select_authenticated" ON public.cooling_tower_performance;
+DROP POLICY IF EXISTS "performance_write_service_role" ON public.cooling_tower_performance;
+DROP POLICY IF EXISTS "performance_update_service_role" ON public.cooling_tower_performance;
+DROP POLICY IF EXISTS "performance_delete_service_role" ON public.cooling_tower_performance;
+
+DROP POLICY IF EXISTS "Users can see own selections" ON public.selections;
+DROP POLICY IF EXISTS "Users can insert own selections" ON public.selections;
+DROP POLICY IF EXISTS "Users can update own selections" ON public.selections;
+DROP POLICY IF EXISTS "Users can delete own selections" ON public.selections;
+DROP POLICY IF EXISTS "selections_select_own_or_admin" ON public.selections;
+DROP POLICY IF EXISTS "selections_update_own_or_admin" ON public.selections;
+DROP POLICY IF EXISTS "selections_delete_own_or_admin" ON public.selections;
+
+DROP POLICY IF EXISTS "Users can see own profile" ON public.users;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.users;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
+DROP POLICY IF EXISTS "users_select_own_or_admin" ON public.users;
+DROP POLICY IF EXISTS "users_update_own_or_admin" ON public.users;
+DROP POLICY IF EXISTS "users_insert_service_role" ON public.users;
+DROP POLICY IF EXISTS "users_delete_service_role" ON public.users;
+
+-- ===== COOLING TOWER MODELS (Public Read for authenticated users) =====
+CREATE POLICY "models_read_all"
 ON public.cooling_tower_models
 FOR SELECT
 TO authenticated
 USING (true);
 
--- Only service_role can write to models
--- (No INSERT/UPDATE/DELETE policies = blocked for anon key)
-
--- ===== COOLING TOWER PERFORMANCE (Public Read) =====
-CREATE POLICY "Allow public read performance"
+-- ===== COOLING TOWER PERFORMANCE (Public Read for authenticated users) =====
+CREATE POLICY "performance_read_all"
 ON public.cooling_tower_performance
 FOR SELECT
 TO authenticated
 USING (true);
 
--- Only service_role can write to performance
--- (No INSERT/UPDATE/DELETE policies = blocked for anon key)
-
--- ===== SELECTIONS (User-Isolated) =====
-CREATE POLICY "Users can see own selections"
+-- ===== SELECTIONS (User-Isolated - Users can only see/modify their own) =====
+CREATE POLICY "selections_read_own"
 ON public.selections
 FOR SELECT
 TO authenticated
 USING (user_email = auth.jwt()->>'email');
 
-CREATE POLICY "Users can insert own selections"
+CREATE POLICY "selections_insert_own"
 ON public.selections
 FOR INSERT
 TO authenticated
 WITH CHECK (user_email = auth.jwt()->>'email');
 
-CREATE POLICY "Users can update own selections"
+CREATE POLICY "selections_update_own"
 ON public.selections
 FOR UPDATE
 TO authenticated
 USING (user_email = auth.jwt()->>'email')
 WITH CHECK (user_email = auth.jwt()->>'email');
 
-CREATE POLICY "Users can delete own selections"
+CREATE POLICY "selections_delete_own"
 ON public.selections
 FOR DELETE
 TO authenticated
 USING (user_email = auth.jwt()->>'email');
 
--- ===== USERS (User-Isolated) =====
-CREATE POLICY "Users can see own profile"
+-- ===== USERS (User-Isolated - Users can only see/modify their own) =====
+CREATE POLICY "users_read_own"
 ON public.users
 FOR SELECT
 TO authenticated
 USING (email = auth.jwt()->>'email');
 
-CREATE POLICY "Users can update own profile"
+CREATE POLICY "users_insert_own"
+ON public.users
+FOR INSERT
+TO authenticated
+WITH CHECK (email = auth.jwt()->>'email');
+
+CREATE POLICY "users_update_own"
 ON public.users
 FOR UPDATE
 TO authenticated

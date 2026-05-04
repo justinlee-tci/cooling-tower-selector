@@ -40,17 +40,15 @@ const formatUnit = {
 
 export async function generateReport(selectionData, performanceCurveImage) {
   try {
-    // Fetch tower model details from cooling_tower_models table
-    const { data: modelDetails, error } = await supabase
-      .from('cooling_tower_models')
-      .select('*')
-      .eq('model_name', selectionData.cooling_tower_model)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching model details:', error);
-      throw new Error('Failed to fetch cooling tower model details');
+    // Fetch tower model details via backend API (bypasses RLS with service_role)
+    const modelResponse = await fetch(`/api/model/get?model_name=${encodeURIComponent(selectionData.cooling_tower_model)}`);
+    
+    if (!modelResponse.ok) {
+      const errorData = await modelResponse.json();
+      throw new Error(errorData.error || 'Failed to fetch cooling tower model details');
     }
+
+    const { data: modelDetails } = await modelResponse.json();
 
     if (!modelDetails) {
       throw new Error(`Cooling tower model "${selectionData.cooling_tower_model}" not found`);
