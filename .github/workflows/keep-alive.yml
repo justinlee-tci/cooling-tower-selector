@@ -2,7 +2,7 @@ name: Keep Alive Ping
 
 on:
   schedule:
-    - cron: '0 12 */5 * *'  # Every 5 days at 12:00 UTC
+    - cron: '0 12 * * *'  # Daily at 12:00 UTC
   workflow_dispatch: # Allows manual trigger
 
 jobs:
@@ -10,7 +10,24 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Random interval check (1-4 days)
+        id: random_check
+        run: |
+          # Generate random number 1-100 to determine if we should run
+          # This gives roughly 33% chance per day, resulting in average 1-4 day intervals
+          RANDOM_NUM=$((RANDOM % 100 + 1))
+          
+          # 33% chance to run = roughly every 3 days on average (1-4 day range)
+          if [ $RANDOM_NUM -le 33 ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "Random check passed: Running keep-alive (random=$RANDOM_NUM)"
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "Random check failed: Skipping keep-alive (random=$RANDOM_NUM)"
+          fi
+      
       - name: Trigger keep-alive endpoint
+        if: steps.random_check.outputs.should_run == 'true'
         run: |
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.KEEP_ALIVE_SECRET }}" \
