@@ -14,8 +14,6 @@ export default function Dashboard() {
   const [selections, setSelections] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [mobileView, setMobileView] = useState(false);
-  const [showDeleteSelectionConfirm, setShowDeleteSelectionConfirm] = useState(false);
-  const [selectionToDelete, setSelectionToDelete] = useState(null);
   const [isAuthorized, setIsAuthorized] = useState(true);
 
   useEffect(() => {
@@ -111,37 +109,6 @@ export default function Dashboard() {
     router.push(`/viewSelection/${selectionId}`);
   };
 
-  const handleDeleteClick = (selection) => {
-    setSelectionToDelete(selection);
-    setShowDeleteSelectionConfirm(true);
-  };
-
-  const handleDeleteSelection = async () => {
-    if (!selectionToDelete) return;
-    
-    try {
-      const { error } = await supabase
-        .from("selections")
-        .delete()
-        .eq("id", selectionToDelete.id);
-
-      if (error) throw error;
-
-      // Remove the deleted selection from the local state
-      setSelections(selections.filter(selection => selection.id !== selectionToDelete.id));
-      // Show success message
-      toast.success("Selection deleted successfully", {
-      duration: 1000 // 2 seconds
-      });
-    } catch (error) {
-      console.error("Error deleting selection:", error);
-      toast.error("Failed to delete selection");
-    } finally {
-      setShowDeleteSelectionConfirm(false);
-      setSelectionToDelete(null);
-    }
-  };
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -197,12 +164,6 @@ export default function Dashboard() {
               className="flex-1 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
             >
               View
-            </button>
-            <button
-              onClick={() => handleDeleteClick(selection)}
-              className="flex-1 px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
-            >
-              Delete
             </button>
           </div>
         </div>
@@ -297,12 +258,6 @@ export default function Dashboard() {
                             >
                               View
                             </button>
-                            <button
-                              onClick={() => handleDeleteClick(selection)}
-                              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                            >
-                              Delete
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -315,33 +270,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {showDeleteSelectionConfirm && (
-        <div className="fixed inset-0 bg-opacity-40 flex items-center backdrop-blur-sm justify-center z-50 p-4">
-          <div className="bg-white p-4 md:p-8 rounded-lg shadow-lg max-w-md w-full">
-            <h3 className="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-900">Confirm Delete</h3>
-            <p className="mb-4 md:mb-6 text-gray-700">
-              Are you sure you want to delete the selection "{selectionToDelete?.project_name}"? This action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-3 md:space-x-4">
-              <button
-                onClick={() => {
-                  setShowDeleteSelectionConfirm(false);
-                  setSelectionToDelete(null);
-                }}
-                className="px-3 md:px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 text-gray-700 text-sm md:text-base"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteSelection}
-                className="px-3 md:px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm md:text-base"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 }
