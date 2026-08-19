@@ -298,9 +298,10 @@ export default function Step2CoolingTowerSelection() {
 
   return (
     <div className="w-full mx-auto mt-4 p-4 bg-white shadow-md rounded-md">
-      {/* Navigation sits at the top so it is reachable without scrolling
-          past the whole model list */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+      {/* Navigation is pinned to the top so Back/Next stay reachable while
+          scrolling the model list. -mx-4/px-4 lets the white background span
+          the full card width so rows do not show through in the gutters. */}
+      <div className="sticky top-0 z-20 bg-white -mx-4 px-4 py-3 mb-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="text-xl font-bold text-gray-900">Cooling Tower Selection</h2>
 
         <div className="flex flex-col sm:flex-row gap-3">
