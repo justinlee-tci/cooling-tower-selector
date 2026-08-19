@@ -126,13 +126,20 @@ export default function AdminDashboard() {
     if (!selectionToDelete) return;
     
     try {
-      const { error } = await supabase
+      const { data: deleted, error } = await supabase
         .from("selections")
         .delete()
-        .eq("id", selectionToDelete.id);
+        .eq("id", selectionToDelete.id)
+        .select();
 
       if (error) {
         throw new Error(`Failed to delete selection: ${error.message}`);
+      }
+
+      // A DELETE matching zero rows is not an error in Postgres. Without this
+      // check, an RLS-blocked delete reports success and silently does nothing.
+      if (!deleted?.length) {
+        throw new Error("Nothing was deleted - you may not have permission to remove this selection");
       }
 
       // Remove the deleted selection from the local state
@@ -159,11 +166,19 @@ export default function AdminDashboard() {
 
     try {
       // Delete from users table only
-      const { error: dbError } = await supabase
+      const { data: deleted, error: dbError } = await supabase
         .from('users')
         .delete()
-        .eq('email', userToDelete.email);      if (dbError) {
+        .eq('email', userToDelete.email)
+        .select();
+
+      if (dbError) {
         throw new Error(`Failed to delete user: ${dbError.message}`);
+      }
+
+      // See note above: zero rows deleted is not reported as an error.
+      if (!deleted?.length) {
+        throw new Error("Nothing was deleted - you may not have permission to remove this user");
       }
 
       setUsers(users.filter(u => u.email !== userToDelete.email));

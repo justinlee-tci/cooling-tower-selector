@@ -105,11 +105,13 @@ export default function Step2CoolingTowerSelection() {
           String(model.type).toUpperCase(),
         )*selectedCells;
 
+        // calculateCoolingCapacity takes a FLOW RATE (m3/hr), not a capacity (RT).
+        // Passing nominal_capacity here overstated the result by ~28%.
         const actualCapacity = calculateCoolingCapacity(
           Number(selectionData.hotWaterTemp),
           Number(selectionData.coldWaterTemp),
           Number(selectionData.wetBulbTemp),
-          Number(model.nominal_capacity),
+          Number(model.nominal_flowrate),
           String(model.type).toUpperCase(),
         )*selectedCells;
 
@@ -296,7 +298,30 @@ export default function Step2CoolingTowerSelection() {
 
   return (
     <div className="w-full mx-auto mt-4 p-4 bg-white shadow-md rounded-md">
-      <h2 className="text-xl font-bold mb-4 text-gray-900">Cooling Tower Selection</h2>
+      {/* Navigation sits at the top so it is reachable without scrolling
+          past the whole model list */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h2 className="text-xl font-bold text-gray-900">Cooling Tower Selection</h2>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={prevStep}
+            className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 w-full sm:w-auto"
+          >
+            Back
+          </button>
+
+          <button
+            onClick={handleNextStep}
+            disabled={!selectionData.selectedModel}
+            className={`px-4 py-2 rounded w-full sm:w-auto ${
+              selectionData.selectedModel ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-300 text-gray-600 cursor-not-allowed"
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
 
       {/* Top section with Safety Factor and Input Parameters side by side */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -753,26 +778,6 @@ export default function Step2CoolingTowerSelection() {
           </table>
         </div>
       )}
-
-      {/* Buttons */}
-      <div className="mt-6 flex flex-col sm:flex-row gap-3 sm:justify-between">
-        <button 
-          onClick={prevStep} 
-          className="px-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-600 w-full sm:w-auto"
-        >
-          Back
-        </button>
-
-        <button
-          onClick={handleNextStep}
-          disabled={!selectionData.selectedModel}
-          className={`px-4 py-2 rounded w-full sm:w-auto ${
-            selectionData.selectedModel ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-gray-300 text-gray-600 cursor-not-allowed"
-          }`}
-        >
-          Next
-        </button>
-      </div>
     </div>
   );
 }

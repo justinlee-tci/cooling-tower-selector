@@ -7,7 +7,7 @@ Cooling Tower Selector is a web-based application designed to assist engineers a
 - **Cooling Tower Model Selection**: Choose from a range of cooling tower models with detailed specifications.
 - **Performance Analysis**: Calculate actual capacity and safety factors based on user inputs.
 - **Dynamic Inputs**: Adjust the number of cells using a synchronized slider and text input.
-- **PDF Report Generation**: Generate detailed reports with tower specifications, performance curves, and drawings.
+- **PDF Report Generation**: Generate detailed reports with tower specifications and drawings.
 - **Error Handling**: Robust error handling for data fetching and report generation.
 
 ## Technologies Used

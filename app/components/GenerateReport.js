@@ -1,8 +1,6 @@
 "use client";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-
-const supabase = createClientComponentClient();
+import { supabase } from '@/lib/supabaseClient';
 
 const formatValue = (value) => {
   if (value === null || value === undefined) return '';
@@ -38,10 +36,18 @@ const formatUnit = {
   length: "mm"
 };
 
-export async function generateReport(selectionData, performanceCurveImage) {
+export async function generateReport(selectionData) {
   try {
     // Fetch tower model details via backend API (bypasses RLS with service_role)
-    const modelResponse = await fetch(`/api/model/get?model_name=${encodeURIComponent(selectionData.cooling_tower_model)}`);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Your session has expired. Please log in again.');
+    }
+
+    const modelResponse = await fetch(
+      `/api/model/get?model_name=${encodeURIComponent(selectionData.cooling_tower_model)}`,
+      { headers: { Authorization: `Bearer ${session.access_token}` } }
+    );
     
     if (!modelResponse.ok) {
       const errorData = await modelResponse.json();
@@ -779,72 +785,3 @@ page.drawText("SDN. BHD.", {
     throw error;
   }
 }
-
-// Example usage in your component - with toast example included
-export const handleGenerateReport = async (selectionData, performanceCurveImage, showToast) => {
-  try {
-    // Make sure the image is in the correct format
-    let imageData = null;
-    
-    if (performanceCurveImage) {
-      try {
-        // If it's a URL/path to an image, fetch it first
-        if (typeof performanceCurveImage === 'string' && (performanceCurveImage.startsWith('http') || performanceCurveImage.startsWith('/'))) {
-          const response = await fetch(performanceCurveImage);
-          const blob = await response.blob();
-          const arrayBuffer = await blob.arrayBuffer();
-          imageData = new Uint8Array(arrayBuffer);
-        } 
-        // If it's an image element from the DOM
-        else if (typeof performanceCurveImage === 'object' && performanceCurveImage.tagName === 'IMG') {
-          // Create a canvas and draw the image to it
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          canvas.width = performanceCurveImage.width;
-          canvas.height = performanceCurveImage.height;
-          ctx.drawImage(performanceCurveImage, 0, 0);
-          
-          // Convert to PNG data URL
-          const dataUrl = canvas.toDataURL('image/png');
-          // Use the data URL directly - pdf-lib can handle data URLs
-          imageData = dataUrl;
-        }
-        // If it's already in the right format (Uint8Array, ArrayBuffer, or data URL)
-        else {
-          imageData = performanceCurveImage;
-        }
-      } catch (error) {
-        console.error('Error processing performance curve image:', error);
-        // Continue without the image
-        imageData = null;
-      }
-    }
-    
-    const pdfBytes = await generateReport(selectionData, imageData);
-    
-    // Create a Blob from the PDF bytes
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    
-    // Create a download link and trigger download
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${selectionData?.project_name || 'cooling-tower'}-report.pdf`;
-    link.click();
-    
-    // Optionally show success message if toast function is provided
-    if (showToast?.success) {
-      showToast.success('Report generated successfully');
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Error generating report:', error);
-    
-    // Only call toast if it's been provided
-    if (showToast?.error) {
-      showToast.error('Failed to generate report: ' + error.message);
-    }
-    
-    return false;
-  }
-};

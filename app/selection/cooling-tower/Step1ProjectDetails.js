@@ -313,15 +313,17 @@ const validateTemperatures = (temperatures) => {
     // Update the selection data first
     updateSelectionData({ [key]: value });
     
-    // Validate individual parameter ranges
+    // Validate individual parameter ranges. parameterRanges is defined in °C and
+    // m³/hr, so convert out of whatever unit the user is working in before checking.
     if (parameterRanges[key]) {
       let valueToValidate = Number(value);
-      
-      // Convert L/min to m³/hr for validation if necessary
-      if (key === 'waterFlowRate' && flowRateUnit === 'L/min') {
-        valueToValidate = Number(convertFlowRate(value, 'L/min', 'm³/hr'));
+
+      if (key === 'waterFlowRate') {
+        valueToValidate = Number(convertFlowRate(value, flowRateUnit, 'm³/hr'));
+      } else if (['hotWaterTemp', 'coldWaterTemp', 'wetBulbTemp', 'dryBulbTemp'].includes(key)) {
+        valueToValidate = Number(convertTemperature(value, temperatureUnit, '°C'));
       }
-      
+
       const error = validateInput(key, valueToValidate);
       setValidationErrors(prev => ({
         ...prev,
@@ -538,7 +540,7 @@ const validateTemperatures = (temperatures) => {
     }
 
     // If switching away from US GPM to a metric unit, switch temperatures to °C
-    if (["m³/hr", "L/min"].includes(newUnit) && temperatureUnit !== "°C") {
+    if (["m³/hr", "L/min", "L/s"].includes(newUnit) && temperatureUnit !== "°C") {
       const tempFields = ["hotWaterTemp", "coldWaterTemp", "wetBulbTemp", "dryBulbTemp"];
       const updated = {};
       tempFields.forEach(tempKey => {

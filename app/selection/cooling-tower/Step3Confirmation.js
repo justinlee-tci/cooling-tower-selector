@@ -134,9 +134,17 @@ export default function Step3Confirmation() {
       };
 
       // Use backend API to save selection (bypasses RLS with service_role)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Your session has expired. Please log in again.");
+      }
+
       const saveResponse = await fetch("/api/selection/save", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify(selectionToSave),
       });
 
@@ -168,7 +176,7 @@ export default function Step3Confirmation() {
 
       // After successful save, generate the report with properly formatted data
       try {
-        const pdfBytes = await generateReport(selectionForReport, modelDetails);
+        const pdfBytes = await generateReport(selectionForReport);
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -283,7 +291,7 @@ if (error) {
         number_of_cells: parseInt(selectionData.numberOfCells)
       };
       
-      const pdfBytes = await generateReport(selectionForReport, modelDetails);
+      const pdfBytes = await generateReport(selectionForReport);
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');

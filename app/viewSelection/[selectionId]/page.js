@@ -69,7 +69,7 @@ export default function ViewSelection() {
       const pdfBytes = await generateReport({
         ...selectionData,
         tower_type: modelDetails?.type // Add tower type to report data
-      }, modelDetails);
+      });
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
