@@ -5,6 +5,16 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/authContext";
 import Navbar from "@/components/Navbar";
 import { generateReport } from '@/components/GenerateReport';
+import {
+  displayFlowRate,
+  displayTemperature,
+  safeFlowRateUnit,
+  safeTemperatureUnit,
+  FLOW_RATE_UNITS,
+  TEMPERATURE_UNITS,
+  DEFAULT_FLOW_RATE_UNIT,
+  DEFAULT_TEMPERATURE_UNIT,
+} from '@/lib/units';
 import LiveWallpaper from "@/components/LiveWallpaper-2";
 
 // Add consistent class definitions with mobile-first approach
@@ -23,6 +33,11 @@ export default function ViewSelection() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  // Units this page is rendering in. Stored values are always canonical metric,
+  // so this toggle is display-only: it changes what is shown here and what the
+  // exported PDF and performance curve use. Nothing is written back.
+  const [flowUnit, setFlowUnit] = useState(DEFAULT_FLOW_RATE_UNIT);
+  const [tempUnit, setTempUnit] = useState(DEFAULT_TEMPERATURE_UNIT);
 
   // Format date consistently
   const formatDate = (dateString) => {
@@ -68,7 +83,10 @@ export default function ViewSelection() {
       // Make sure modelDetails is included in the report generation
       const pdfBytes = await generateReport({
         ...selectionData,
-        tower_type: modelDetails?.type // Add tower type to report data
+        tower_type: modelDetails?.type, // Add tower type to report data
+        // Export in whatever units the page is currently showing
+        flow_rate_unit: flowUnit,
+        temperature_unit: tempUnit,
       });
       const blob = new Blob([pdfBytes], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -175,7 +193,9 @@ export default function ViewSelection() {
       wetBulb: (selectionData.wet_bulb_temp || '').toString(),
       dryBulb: (selectionData.dry_bulb_temp || '').toString(),
       date: formatDate(selectionData.date_created) || '',
-      towerType: modelDetails?.type || ''
+      towerType: modelDetails?.type || '',
+      flowUnit,
+      tempUnit
     });
 
     window.open(`/PerformanceCurve?${params.toString()}`, '_blank');
@@ -195,6 +215,9 @@ export default function ViewSelection() {
   }
 
   // Project details fields
+  const activeFlowUnit = safeFlowRateUnit(flowUnit);
+  const activeTempUnit = safeTemperatureUnit(tempUnit);
+
   const projectDetailsFields = [
     { label: "Project Name", value: selectionData.project_name },
     { label: "Customer Name", value: selectionData.customer_name },
@@ -204,12 +227,12 @@ export default function ViewSelection() {
 
   // Input parameters fields
   const inputParametersFields = [
-    { label: "Water Flow Rate", value: selectionData.water_flow_rate, unit: "m³/hr" },
+    { label: "Water Flow Rate", value: displayFlowRate(selectionData.water_flow_rate, activeFlowUnit), unit: activeFlowUnit },
     { label: "Ambient Pressure", value: selectionData.ambient_pressure, unit: "kPa" },
-    { label: "Hot Water Temp", value: selectionData.hot_water_temp, unit: "°C" },
-    { label: "Cold Water Temp", value: selectionData.cold_water_temp, unit: "°C" },
-    { label: "Wet Bulb Temp", value: selectionData.wet_bulb_temp, unit: "°C" },
-    { label: "Dry Bulb Temp", value: selectionData.dry_bulb_temp, unit: "°C" },
+    { label: "Hot Water Temp", value: displayTemperature(selectionData.hot_water_temp, activeTempUnit), unit: activeTempUnit },
+    { label: "Cold Water Temp", value: displayTemperature(selectionData.cold_water_temp, activeTempUnit), unit: activeTempUnit },
+    { label: "Wet Bulb Temp", value: displayTemperature(selectionData.wet_bulb_temp, activeTempUnit), unit: activeTempUnit },
+    { label: "Dry Bulb Temp", value: displayTemperature(selectionData.dry_bulb_temp, activeTempUnit), unit: activeTempUnit },
   ];
 
   // Split tower selection fields into left and right columns for better layout
@@ -224,13 +247,13 @@ export default function ViewSelection() {
   const rightColumnFields = [
     { 
       label: "Nominal Flow Rate/Cell", 
-      value: modelDetails?.nominal_flowrate.toFixed(2), 
-      unit: "m³/hr" 
+      value: displayFlowRate(modelDetails?.nominal_flowrate, activeFlowUnit), 
+      unit: activeFlowUnit 
     },
     { 
       label: "Actual Flow Rate", 
-      value: Number(selectionData.actual_flowrate).toFixed(2), 
-      unit: "m³/hr" 
+      value: displayFlowRate(selectionData.actual_flowrate, activeFlowUnit), 
+      unit: activeFlowUnit 
     },
     { 
       label: "Safety Factor", 
@@ -297,7 +320,37 @@ export default function ViewSelection() {
           </div>
 
           {/* Input Parameters */}
-          <h3 className="text-base md:text-lg font-bold mt-5 md:mt-6 mb-3 md:mb-4 text-gray-900">Input Parameters</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-5 md:mt-6 mb-3 md:mb-4">
+            <h3 className="text-base md:text-lg font-bold text-gray-900">Input Parameters</h3>
+
+            {/* Display-unit toggle. Stored values are canonical metric, so this
+                only changes how they are rendered here, in the PDF and in the
+                performance curve. It never rewrites the saved selection. */}
+            <div className="flex items-center gap-2 text-sm">
+              <label htmlFor="tempUnitToggle" className="text-gray-700">Units:</label>
+              <select
+                id="tempUnitToggle"
+                value={activeTempUnit}
+                onChange={(e) => setTempUnit(e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1 text-gray-900 bg-white"
+              >
+                {TEMPERATURE_UNITS.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+              <select
+                id="flowUnitToggle"
+                aria-label="Flow rate unit"
+                value={activeFlowUnit}
+                onChange={(e) => setFlowUnit(e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1 text-gray-900 bg-white"
+              >
+                {FLOW_RATE_UNITS.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-8 md:gap-y-4">
             {inputParametersFields.map(({ label, value, unit }) => (
               <div key={label} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">

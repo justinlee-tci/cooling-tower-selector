@@ -1,5 +1,12 @@
 "use client";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import {
+  displayFlowRate,
+  displayTemperature,
+  displayTemperatureDelta,
+  safeFlowRateUnit,
+  safeTemperatureUnit,
+} from '@/lib/units';
 import { supabase } from '@/lib/supabaseClient';
 
 const formatValue = (value) => {
@@ -321,7 +328,7 @@ page.drawText("SDN. BHD.", {
       if (text) {
         try {
           // Don't use formatValue for the entire string when it includes units
-          if (typeof text === 'string' && text.includes('m³/hr') || text.includes('°C')) {
+          if (typeof text === 'string' && (text.includes('³') || text.includes('°'))) {
             page1.drawText(text, { x, y, size, font, color });
           } else {
             page1.drawText(formatValue(text), { x, y, size, font, color });
@@ -374,6 +381,10 @@ page.drawText("SDN. BHD.", {
     // 2. Design Conditions
     yPosition = addSectionTitle(page1, '2. DESIGN CONDITIONS', yPosition-35);
 
+    // Display units recorded with the selection. Stored values stay metric.
+    const flowUnit = safeFlowRateUnit(selectionData?.flow_rate_unit);
+    const tempUnit = safeTemperatureUnit(selectionData?.temperature_unit);
+
     const hwt = parseFloat(selectionData?.hot_water_temp) || 0;
     const cwt = parseFloat(selectionData?.cold_water_temp) || 0;
     const wbt = parseFloat(selectionData?.wet_bulb_temp) || 0;
@@ -389,27 +400,27 @@ page.drawText("SDN. BHD.", {
 
     // Design Conditions in two columns
     drawText('Water Flow Rate:', 60, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${selectionData?.water_flow_rate} m³/hr`, 190, yPosition);
+    drawText(`${displayFlowRate(selectionData?.water_flow_rate, flowUnit)} ${flowUnit}`, 190, yPosition);
     drawText('Ambient Pressure:', 320, yPosition, 10, helveticaBold, primaryColor);
     drawText(`${formatValue(selectionData?.ambient_pressure)} ${formatUnit.pressure}`, 450, yPosition);
     yPosition -= 45;
 
     drawText('Hot Water Temperature:', 60, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${hwt} °C`, 190, yPosition);
+    drawText(`${displayTemperature(hwt, tempUnit)} ${tempUnit}`, 190, yPosition);
     drawText('Cold Water Temperature:', 320, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue(cwt)} ${formatUnit.temperature}`, 450, yPosition);
+    drawText(`${displayTemperature(cwt, tempUnit)} ${tempUnit}`, 450, yPosition);
     yPosition -= 45;
 
     drawText('Wet Bulb Temperature:', 60, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue(wbt)} ${formatUnit.temperature}`, 190, yPosition);
+    drawText(`${displayTemperature(wbt, tempUnit)} ${tempUnit}`, 190, yPosition);
     drawText('Dry Bulb Temperature:', 320, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue(selectionData?.dry_bulb_temp)} ${formatUnit.temperature}`, 450, yPosition);
+    drawText(`${displayTemperature(selectionData?.dry_bulb_temp, tempUnit)} ${tempUnit}`, 450, yPosition);
     yPosition -= 45;
 
     drawText('Range:', 60, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue(hwt - cwt)} ${formatUnit.temperature}`, 190, yPosition);
+    drawText(`${displayTemperatureDelta(hwt - cwt, tempUnit)} ${tempUnit}`, 190, yPosition);
     drawText('Approach:', 320, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue((cwt - wbt).toFixed(2))} ${formatUnit.temperature}`, 450, yPosition);
+    drawText(`${displayTemperatureDelta(cwt - wbt, tempUnit)} ${tempUnit}`, 450, yPosition);
     yPosition -= 45;
 
     // 3. Selection Results
@@ -432,13 +443,13 @@ page.drawText("SDN. BHD.", {
     yPosition -= 45;
 
     drawText('Nominal Flow Rate/Cell:', 60, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${modelDetails?.nominal_flowrate.toFixed(2)} m³/hr`, 190, yPosition);
+    drawText(`${displayFlowRate(modelDetails?.nominal_flowrate, flowUnit)} ${flowUnit}`, 190, yPosition);
     drawText('Number of Cells:', 320, yPosition, 10, helveticaBold, primaryColor);
     drawText(formatValue(selectionData?.number_of_cells), 450, yPosition);
     yPosition -= 45;
 
     drawText('Actual Flow Rate:', 60, yPosition, 10, helveticaBold, primaryColor);
-    drawText(`${formatValue(selectionData?.actual_flowrate.toFixed(2))} ${formatUnit.flowRate}`, 190, yPosition);
+    drawText(`${displayFlowRate(selectionData?.actual_flowrate, flowUnit)} ${flowUnit}`, 190, yPosition);
     drawText('Safety Factor:', 320, yPosition, 10, helveticaBold, primaryColor);
     drawText(`${formatValue(Math.round(selectionData?.safety_factor))}%`, 450, yPosition);
     
@@ -456,7 +467,7 @@ page.drawText("SDN. BHD.", {
     const drawTextPage2 = (text, x, y, size = 10, font = helvetica, color = textColor) => {
       if (text) {
         try {
-          if (typeof text === 'string' && (text.includes('m³/hr') || text.includes('°C') || text.includes('mm') || text.includes('kg'))) {
+          if (typeof text === 'string' && (text.includes('³') || text.includes('°') || text.includes('mm') || text.includes('kg'))) {
             page2.drawText(text, { x, y, size, font, color });
           } else {
             page2.drawText(formatValue(text), { x, y, size, font, color });

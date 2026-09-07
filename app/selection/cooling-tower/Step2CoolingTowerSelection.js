@@ -3,9 +3,18 @@ import { useEffect, useState } from "react";
 import { useSelection } from "./SelectionContext";
 import { supabase } from "../../lib/supabaseClient";
 import { calculateCoolingCapacity, calculateFlowRate } from '@/formula/coolingTowerCalculations';
+import {
+  displayFlowRate,
+  displayTemperature,
+  safeFlowRateUnit,
+  safeTemperatureUnit,
+} from "@/lib/units";
 
 export default function Step2CoolingTowerSelection() {
   const { selectionData, updateSelectionData, nextStep, prevStep } = useSelection();
+  // Values in context are canonical metric; render them in the Step 1 units.
+  const flowUnit = safeFlowRateUnit(selectionData.flowRateUnit);
+  const tempUnit = safeTemperatureUnit(selectionData.temperatureUnit);
   const [coolingTowerModels, setCoolingTowerModels] = useState([]);
   const [filteredModels, setFilteredModels] = useState([]); // State for filtered models
   const [performanceData, setPerformanceData] = useState({});
@@ -267,7 +276,7 @@ export default function Step2CoolingTowerSelection() {
           <div className="text-right text-gray-900 font-medium">{model.nominal_capacity} RT</div>
           
           <div className="text-gray-800 font-medium">Nominal Flow Rate/cell:</div>
-          <div className="text-right text-gray-900 font-medium">{model.nominal_flowrate.toFixed(2)} m³/hr</div>
+          <div className="text-right text-gray-900 font-medium">{displayFlowRate(model.nominal_flowrate, flowUnit)} {flowUnit}</div>
           
           <div className="text-gray-800 font-medium">Motor Output:</div>
           <div className="text-right text-gray-900 font-medium">{model.motor_output} kW</div>
@@ -285,7 +294,7 @@ export default function Step2CoolingTowerSelection() {
           <div className="text-right text-gray-900 font-medium">{model.actualCapacity.toFixed(2)} RT</div> */}
           
           <div className="text-gray-800 font-medium">Actual Flow Rate:</div>
-          <div className="text-right text-gray-900 font-medium">{model.actualFlowRate.toFixed(2)} m³/hr</div>
+          <div className="text-right text-gray-900 font-medium">{displayFlowRate(model.actualFlowRate, flowUnit)} {flowUnit}</div>
           
           <div className="text-gray-800 font-medium">Safety Factor:</div>
           <div className={`text-right font-medium ${Math.round(model.safetyFactor) >= 100 ? "text-green-600" : "text-red-600"}`}>
@@ -381,7 +390,7 @@ export default function Step2CoolingTowerSelection() {
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-700">Water Flow Rate:</span>
-              <span className="font-medium text-gray-700">{selectionData.waterFlowRate} m³/hr</span>
+              <span className="font-medium text-gray-700">{displayFlowRate(selectionData.waterFlowRate, flowUnit)} {flowUnit}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-700">Ambient Pressure:</span>
@@ -389,19 +398,19 @@ export default function Step2CoolingTowerSelection() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-700">Hot Water Temp:</span>
-              <span className="font-medium text-gray-700">{selectionData.hotWaterTemp} °C</span>
+              <span className="font-medium text-gray-700">{displayTemperature(selectionData.hotWaterTemp, tempUnit)} {tempUnit}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-700">Cold Water Temp:</span>
-              <span className="font-medium text-gray-700">{selectionData.coldWaterTemp} °C</span>
+              <span className="font-medium text-gray-700">{displayTemperature(selectionData.coldWaterTemp, tempUnit)} {tempUnit}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-700">Wet Bulb Temp:</span>
-              <span className="font-medium text-gray-700">{selectionData.wetBulbTemp} °C</span>
+              <span className="font-medium text-gray-700">{displayTemperature(selectionData.wetBulbTemp, tempUnit)} {tempUnit}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-700">Dry Bulb Temp:</span>
-              <span className="font-medium text-gray-700">{selectionData.dryBulbTemp} °C</span>
+              <span className="font-medium text-gray-700">{displayTemperature(selectionData.dryBulbTemp, tempUnit)} {tempUnit}</span>
             </div>
             {selectedModelDetails && (
               <div className="flex justify-between">
@@ -440,7 +449,7 @@ export default function Step2CoolingTowerSelection() {
             </div>
             <div className="flex justify-between">
               <span className="text-blue-800 font-medium">Nominal Flow Rate/cell:</span>
-              <span className="font-semibold text-blue-900">{selectedModelDetails.nominal_flowrate.toFixed(2)} m³/hr</span>
+              <span className="font-semibold text-blue-900">{displayFlowRate(selectedModelDetails.nominal_flowrate, flowUnit)} {flowUnit}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-blue-800 font-medium">Motor Output:</span>
@@ -464,7 +473,7 @@ export default function Step2CoolingTowerSelection() {
             </div> */}
             <div className="flex justify-between">
               <span className="text-blue-800 font-medium">Actual Flow Rate:</span>
-              <span className="font-semibold text-blue-900">{selectedModelDetails.actualFlowRate.toFixed(2)} m³/hr</span>
+              <span className="font-semibold text-blue-900">{displayFlowRate(selectedModelDetails.actualFlowRate, flowUnit)} {flowUnit}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-blue-800 font-medium">Safety Factor:</span>
@@ -662,7 +671,7 @@ export default function Step2CoolingTowerSelection() {
                     onClick={() => handleSort('nominal_flowrate')}
                     className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
                   >
-                    Nominal Flow Rate/cell (m³/hr)
+                    Nominal Flow Rate/cell ({flowUnit})
                     {sortConfig.key === 'nominal_flowrate' && (
                       <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                     )}
@@ -717,7 +726,7 @@ export default function Step2CoolingTowerSelection() {
                     onClick={() => handleSort('actualFlowRate')}
                     className="w-full flex items-center justify-center gap-1 hover:bg-gray-300 p-1 rounded"
                   >
-                    Actual Flow Rate (m³/hr)
+                    Actual Flow Rate ({flowUnit})
                     {sortConfig.key === 'actualFlowRate' && (
                       <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                     )}
@@ -761,13 +770,13 @@ export default function Step2CoolingTowerSelection() {
                     {model.type}
                   </td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.nominal_capacity}</td>
-                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.nominal_flowrate.toFixed(2)}</td>
+                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{displayFlowRate(model.nominal_flowrate, flowUnit)}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.motor_output}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.fan_diameter}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.dry_weight}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.operating_weight}</td>
                   {/* <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualCapacity.toFixed(2)}</td> */}
-                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{model.actualFlowRate.toFixed(2)}</td>
+                  <td className="border p-2 text-right text-gray-900 whitespace-nowrap">{displayFlowRate(model.actualFlowRate, flowUnit)}</td>
                   <td className="border p-2 text-right text-gray-900 whitespace-nowrap">
                     <span className={Math.round(model.safetyFactor) >= 100 ? "text-green-600" : "text-red-600"}>
                       {Math.round(model.safetyFactor)}%

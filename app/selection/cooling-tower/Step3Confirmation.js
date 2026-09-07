@@ -6,6 +6,12 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast"; // Add this import for notifications
 import { generateReport } from '@/components/GenerateReport';
+import {
+  displayFlowRate,
+  displayTemperature,
+  safeFlowRateUnit,
+  safeTemperatureUnit,
+} from "@/lib/units";
 
 // Add consistent class definitions with mobile-first approach
 const labelClass = "w-full md:w-44 font-medium text-gray-900 whitespace-nowrap mb-1 md:mb-0";
@@ -67,6 +73,13 @@ const generateSelectionId = async (projectName, modelName, numberOfCells) => {
 
 export default function Step3Confirmation() {
   const { selectionData, prevStep } = useSelection();
+  // Stored values are canonical metric; show them in the Step 1 units.
+  const flowUnit = safeFlowRateUnit(selectionData.flowRateUnit);
+  const tempUnit = safeTemperatureUnit(selectionData.temperatureUnit);
+  const showFlow = (v) =>
+    v === "" || v === null || v === undefined ? "" : displayFlowRate(v, flowUnit);
+  const showTemp = (v) =>
+    v === "" || v === null || v === undefined ? "" : displayTemperature(v, tempUnit);
   const { user } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -171,7 +184,9 @@ export default function Step3Confirmation() {
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
         actual_flowrate: parseFloat(selectionData.actualFlowRate), // Changed from actual_flowrate to actualFlowRate
-        number_of_cells: parseInt(selectionData.numberOfCells)
+        number_of_cells: parseInt(selectionData.numberOfCells),
+        flow_rate_unit: flowUnit,
+        temperature_unit: tempUnit,
       };
 
       // After successful save, generate the report with properly formatted data
@@ -262,7 +277,9 @@ if (error) {
       wetBulb: selectionData.wetBulbTemp,
       dryBulb: selectionData.dryBulbTemp,
       date: selectionData.date,
-      towerType: modelDetails?.type || ''  // Add the tower type parameter
+      towerType: modelDetails?.type || '',  // Add the tower type parameter
+      flowUnit,
+      tempUnit
     });
 
     // Open in a new window
@@ -288,7 +305,9 @@ if (error) {
         cooling_tower_model: selectionData.selectedModel,
         safety_factor: parseFloat(selectionData.safetyFactor),
         actual_flowrate: parseFloat(selectionData.actualFlowRate),
-        number_of_cells: parseInt(selectionData.numberOfCells)
+        number_of_cells: parseInt(selectionData.numberOfCells),
+        flow_rate_unit: flowUnit,
+        temperature_unit: tempUnit,
       };
       
       const pdfBytes = await generateReport(selectionForReport);
@@ -343,14 +362,14 @@ if (error) {
     { 
       label: "Nominal Flow Rate/Cell", 
       key: "nominalFlowRate", 
-      value: modelDetails?.nominal_flowrate?.toFixed(2),
-      unit: "m³/hr" 
+      value: showFlow(modelDetails?.nominal_flowrate),
+      unit: flowUnit 
     },
     { 
       label: "Actual Flow Rate", 
       key: "actualFlowRate", 
-      value: Number(selectionData.actualFlowRate).toFixed(2), // Changed from actual_flowrate to actualFlowRate
-      unit: "m³/hr" 
+      value: showFlow(selectionData.actualFlowRate),
+      unit: flowUnit 
     },
     { 
       label: "Safety Factor", 
@@ -369,12 +388,12 @@ if (error) {
 
   // Input parameters fields
   const inputParamsFields = [
-    { label: "Water Flow Rate", key: "waterFlowRate", unit: "m³/hr" },
-    { label: "Ambient Pressure", key: "ambientPressure", unit: "kPa" },
-    { label: "Hot Water Temp", key: "hotWaterTemp", unit: "°C" },
-    { label: "Cold Water Temp", key: "coldWaterTemp", unit: "°C" },
-    { label: "Wet Bulb Temp", key: "wetBulbTemp", unit: "°C" },
-    { label: "Dry Bulb Temp", key: "dryBulbTemp", unit: "°C" },
+    { label: "Water Flow Rate", key: "waterFlowRate", value: showFlow(selectionData.waterFlowRate), unit: flowUnit },
+    { label: "Ambient Pressure", key: "ambientPressure", value: selectionData.ambientPressure, unit: "kPa" },
+    { label: "Hot Water Temp", key: "hotWaterTemp", value: showTemp(selectionData.hotWaterTemp), unit: tempUnit },
+    { label: "Cold Water Temp", key: "coldWaterTemp", value: showTemp(selectionData.coldWaterTemp), unit: tempUnit },
+    { label: "Wet Bulb Temp", key: "wetBulbTemp", value: showTemp(selectionData.wetBulbTemp), unit: tempUnit },
+    { label: "Dry Bulb Temp", key: "dryBulbTemp", value: showTemp(selectionData.dryBulbTemp), unit: tempUnit },
   ];
 
   return (
@@ -483,14 +502,14 @@ if (error) {
         {/* Input Parameters */}
         <h3 className="text-base md:text-lg font-bold mt-5 md:mt-6 mb-3 md:mb-4 text-gray-900">Input Parameters</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-x-8 md:gap-y-4">
-          {inputParamsFields.map(({ label, key, unit }) => (
+          {inputParamsFields.map(({ label, key, value, unit }) => (
             <div key={key} className="flex flex-col md:flex-row md:items-center space-y-1 md:space-y-0 md:space-x-3">
               <label className={labelClass}>{label}:</label>
               <div className={inputContainerClass}>
                 <input
                   type="text"
                   className={inputClass}
-                  value={selectionData[key] || ""}
+                  value={value ?? ""}
                   disabled
                 />
                 <span className={unitClass}>{unit}</span>

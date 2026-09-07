@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useState } from "react";
+import { DEFAULT_FLOW_RATE_UNIT, DEFAULT_TEMPERATURE_UNIT } from "@/lib/units";
 
 const SelectionContext = createContext();
 
@@ -17,7 +18,11 @@ export function SelectionProvider({ children }) {
     wetBulbTemp: "",
     dryBulbTemp: "",
     selectedCoolingTower: null,
-    numberOfCells: ""
+    numberOfCells: "",
+    // Display units chosen on Step 1. Values above are always stored canonical
+    // (°C, m³/hr, kPa); these only control how they are rendered downstream.
+    flowRateUnit: DEFAULT_FLOW_RATE_UNIT,
+    temperatureUnit: DEFAULT_TEMPERATURE_UNIT
   });
 
   const nextStep = () => setStep((prev) => prev + 1);

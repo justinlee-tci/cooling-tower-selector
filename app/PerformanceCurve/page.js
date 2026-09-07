@@ -15,6 +15,16 @@ import {
 } from 'chart.js';
 import { useState, useEffect, Suspense } from 'react';
 import { calculateCWT, UTN_by_CTI } from '@/formula/performanceCurveCalculations';
+import {
+  convertTemperature,
+  convertTemperatureDelta,
+  displayFlowRate,
+  displayTemperature,
+  displayTemperatureDelta,
+  safeFlowRateUnit,
+  safeTemperatureUnit,
+  DEFAULT_TEMPERATURE_UNIT,
+} from '@/lib/units';
 import { createClient } from '@supabase/supabase-js';
 
 ChartJS.register(
@@ -74,8 +84,19 @@ function PerformanceContent() {
     wetBulbTemp: searchParams.get('wetBulb') || '',
     dryBulbTemp: searchParams.get('dryBulb') || '',
     date: formatDate(searchParams.get('date')) || '',
-    towerType: searchParams.get('towerType') || ''
+    towerType: searchParams.get('towerType') || '',
+    flowUnit: searchParams.get('flowUnit') || '',
+    tempUnit: searchParams.get('tempUnit') || ''
   };
+
+  // Everything below computes in °C / m³/hr; these only affect presentation.
+  const flowUnit = safeFlowRateUnit(params.flowUnit);
+  const tempUnit = safeTemperatureUnit(params.tempUnit);
+  // WBT values and ranges are held in °C and converted at the input boundary.
+  const toDisplayTemp = (c) => convertTemperature(c, DEFAULT_TEMPERATURE_UNIT, tempUnit);
+  const fromDisplayTemp = (v) => Number(convertTemperature(v, tempUnit, DEFAULT_TEMPERATURE_UNIT)) || 0;
+  const toDisplayDelta = (c) => convertTemperatureDelta(c, DEFAULT_TEMPERATURE_UNIT, tempUnit);
+  const fromDisplayDelta = (v) => Number(convertTemperatureDelta(v, tempUnit, DEFAULT_TEMPERATURE_UNIT)) || 0;
 
   // Fetch performance data from Supabase
   useEffect(() => {
@@ -149,13 +170,13 @@ function PerformanceContent() {
 
   const handleRangeChange = (index, value) => {
     const newRanges = [...ranges];
-    newRanges[index] = parseFloat(value) || 0;
+    newRanges[index] = fromDisplayDelta(value);
     setRanges(newRanges);
   };
 
   const handleWbtChange = (index, value) => {
     const newWbtValues = [...wbtValues];
-    newWbtValues[index] = parseFloat(value) || 0;
+    newWbtValues[index] = fromDisplayTemp(value);
     setWbtValues(newWbtValues);
   };
 
@@ -190,8 +211,8 @@ function PerformanceContent() {
 
   const createDatasetForFlowRate = (flowRate) => {
     const datasets = ranges.map((range, rangeIndex) => ({
-      label: `Range ${range}°C`,
-      data: wbtValues.map(wbt => calculateColdWaterTemp(wbt, range, flowRate)),
+      label: `Range ${toDisplayDelta(range)}${tempUnit}`,
+      data: wbtValues.map(wbt => Number(toDisplayTemp(calculateColdWaterTemp(wbt, range, flowRate)))),
       borderColor: `hsl(${220 + rangeIndex * 30}, 70%, 50%)`,
       tension: 0.4,
     }));
@@ -202,8 +223,11 @@ function PerformanceContent() {
       const designCWT = parseFloat(params.coldWaterTemp);
       const designRange = parseFloat(params.hotWaterTemp) - parseFloat(params.coldWaterTemp);
 
-      // Check if design WBT exists in the table with more lenient tolerance
-      const wbtExists = wbtValues.some(wbt => Math.abs(wbt - designWBT) < 0.5);
+      // Locate the table column the design WBT lands on. On a category axis
+      // Chart.js matches x against the labels by equality, so the point has to
+      // be plotted at the matched wbtValue rather than at designWBT itself --
+      // a near-miss would silently fall back to index 0 (the leftmost tick).
+      const designIndex = wbtValues.findIndex(wbt => Math.abs(wbt - designWBT) < 0.5);
 
       // Calculate the expected CWT for the design range and design WBT
       const expectedCWT = calculateColdWaterTemp(designWBT, designRange, 100);
@@ -211,12 +235,14 @@ function PerformanceContent() {
       // Check if actual design CWT is within reasonable tolerance of expected CWT
       const cwtExists = Math.abs(expectedCWT - designCWT) < 1.0;
 
-      if (wbtExists && cwtExists) {
+      if (designIndex !== -1 && cwtExists) {
         datasets.push({
           label: 'Design Point',
+          // Converted like every other plotted value. The axes are drawn in
+          // tempUnit, so an unconverted °C value lands far below the curves.
           data: [{
-            x: designWBT,
-            y: designCWT
+            x: toDisplayTemp(wbtValues[designIndex]),
+            y: Number(toDisplayTemp(designCWT))
           }],
           backgroundColor: 'red',
           borderColor: 'red',
@@ -255,7 +281,7 @@ function PerformanceContent() {
       x: {
         title: {
           display: true,
-          text: 'Inlet Wet Bulb Temperature (°C)',
+          text: `Inlet Wet Bulb Temperature (${tempUnit})`,
           font: {
             size: isMobile ? 10 : 12
           }
@@ -269,7 +295,7 @@ function PerformanceContent() {
       y: {
         title: {
           display: true,
-          text: 'Cold Water Temperature (°C)',
+          text: `Cold Water Temperature (${tempUnit})`,
           font: {
             size: isMobile ? 10 : 12
           }
@@ -284,7 +310,7 @@ function PerformanceContent() {
   };
 
   const createChartData = (flowRate) => ({
-    labels: wbtValues,
+    labels: wbtValues.map(toDisplayTemp),
     datasets: createDatasetForFlowRate(flowRate)
   });
 
@@ -333,7 +359,7 @@ function PerformanceContent() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
         <div>
           <span className="text-gray-700 font-medium">Water Flow Rate:</span>
-          <span className="text-gray-900 ml-2">{params.waterFlowRate} m³/hr</span>
+          <span className="text-gray-900 ml-2">{displayFlowRate(params.waterFlowRate, flowUnit)} {flowUnit}</span>
         </div>
         <div>
           <span className="text-gray-700 font-medium">Ambient Pressure:</span>
@@ -341,19 +367,19 @@ function PerformanceContent() {
         </div>
         <div>
           <span className="text-gray-700 font-medium">Hot Water Temp:</span>
-          <span className="text-gray-900 ml-2">{params.hotWaterTemp} °C</span>
+          <span className="text-gray-900 ml-2">{displayTemperature(params.hotWaterTemp, tempUnit)} {tempUnit}</span>
         </div>
         <div>
           <span className="text-gray-700 font-medium">Cold Water Temp:</span>
-          <span className="text-gray-900 ml-2">{params.coldWaterTemp} °C</span>
+          <span className="text-gray-900 ml-2">{displayTemperature(params.coldWaterTemp, tempUnit)} {tempUnit}</span>
         </div>
         <div>
           <span className="text-gray-700 font-medium">Wet Bulb Temp:</span>
-          <span className="text-gray-900 ml-2">{params.wetBulbTemp} °C</span>
+          <span className="text-gray-900 ml-2">{displayTemperature(params.wetBulbTemp, tempUnit)} {tempUnit}</span>
         </div>
         <div>
           <span className="text-gray-700 font-medium">Dry Bulb Temp:</span>
-          <span className="text-gray-900 ml-2">{params.dryBulbTemp} °C</span>
+          <span className="text-gray-900 ml-2">{displayTemperature(params.dryBulbTemp, tempUnit)} {tempUnit}</span>
         </div>
       </div>
       
@@ -392,21 +418,20 @@ function PerformanceContent() {
         {flowRates.map(flowRate => (
           <div key={flowRate} className="overflow-x-auto pb-4">
             <h3 className="text-base font-bold text-gray-900 mb-2">
-              Performance Data - {flowRate}% Flow ({flowRate === 100 
-                ? parseFloat(params.waterFlowRate) 
-                : (parseFloat(params.waterFlowRate) * flowRate / 100).toFixed(1)} m³/hr)
+              Performance Data - {flowRate}% Flow ({displayFlowRate(
+                parseFloat(params.waterFlowRate) * flowRate / 100, flowUnit, 1)} {flowUnit})
             </h3>
             <table className="min-w-full border-collapse border border-gray-300">
               <thead>
                 <tr>
                   <th className={`border border-gray-300 ${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2 text-sm'} text-black font-bold`}>
-                    WBT (°C)
+                    WBT ({tempUnit})
                   </th>
                   {ranges.map((range, index) => (
                     <th key={index} className={`border border-gray-300 ${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2 text-sm'}`}>
                       <input
                         type="number"
-                        value={range}
+                        value={toDisplayDelta(range)}
                         onChange={(e) => handleRangeChange(index, e.target.value)}
                         className={`${isMobile ? 'w-12 text-xs' : 'w-20 text-sm'} text-center text-black`}
                         step="1"
@@ -420,10 +445,10 @@ function PerformanceContent() {
                   <tr key={wbtIndex}>
                     <td className={`border border-gray-300 ${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2 text-sm'}`}>
                       <div className="flex items-center">
-                        <span className={`${isMobile ? 'mr-1 text-xs' : 'mr-2 text-sm'} text-black font-bold`}>WBT (°C):</span>
+                        <span className={`${isMobile ? 'mr-1 text-xs' : 'mr-2 text-sm'} text-black font-bold`}>WBT ({tempUnit}):</span>
                         <input
                           type="number"
-                          value={wbt}
+                          value={toDisplayTemp(wbt)}
                           onChange={(e) => handleWbtChange(wbtIndex, e.target.value)}
                           className={`${isMobile ? 'w-12 text-xs' : 'w-16 text-sm'} text-center text-black`}
                           step="1"
@@ -432,7 +457,7 @@ function PerformanceContent() {
                     </td>
                     {ranges.map((range, rangeIndex) => (
                       <td key={rangeIndex} className={`border border-gray-300 ${isMobile ? 'px-2 py-1 text-xs' : 'px-4 py-2 text-sm'} text-center bg-gray-50 text-black`}>
-                        {calculateColdWaterTemp(wbt, range, flowRate).toFixed(1)}
+                        {displayTemperature(calculateColdWaterTemp(wbt, range, flowRate), tempUnit, 1)}
                       </td>
                     ))}
                   </tr>
@@ -494,7 +519,7 @@ function PerformanceContent() {
           <div className="space-y-8">
             <div>
               <h3 className="text-base font-bold text-gray-900 mb-2">
-                {params.towerType} Performance - 90% Flow ({(parseFloat(params.waterFlowRate) * 0.9).toFixed(1)} m³/hr)
+                {params.towerType} Performance - 90% Flow ({displayFlowRate(parseFloat(params.waterFlowRate) * 0.9, flowUnit, 1)} {flowUnit})
               </h3>
               <div className="w-full h-72">
                 <Line data={createChartData(90)} options={chartOptions} />
@@ -502,7 +527,7 @@ function PerformanceContent() {
             </div>
             <div>
               <h3 className="text-base font-bold text-gray-900 mb-2">
-                {params.towerType} Performance - 100% Flow ({parseFloat(params.waterFlowRate)} m³/hr)
+                {params.towerType} Performance - 100% Flow ({displayFlowRate(params.waterFlowRate, flowUnit, 1)} {flowUnit})
               </h3>
               <div className="w-full h-72">
                 <Line data={createChartData(100)} options={chartOptions} />
@@ -510,7 +535,7 @@ function PerformanceContent() {
             </div>
             <div>
               <h3 className="text-base font-bold text-gray-900 mb-2">
-                {params.towerType} Performance - 110% Flow ({(parseFloat(params.waterFlowRate) * 1.1).toFixed(1)} m³/hr)
+                {params.towerType} Performance - 110% Flow ({displayFlowRate(parseFloat(params.waterFlowRate) * 1.1, flowUnit, 1)} {flowUnit})
               </h3>
               <div className="w-full h-72">
                 <Line data={createChartData(110)} options={chartOptions} />
@@ -571,7 +596,7 @@ function PerformanceContent() {
           <div className="space-y-12">
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                {params.towerType} Performance Curve - 90% Flow Rate ({(parseFloat(params.waterFlowRate) * 0.9).toFixed(1)} m³/hr)
+                {params.towerType} Performance Curve - 90% Flow Rate ({displayFlowRate(parseFloat(params.waterFlowRate) * 0.9, flowUnit, 1)} {flowUnit})
               </h3>
               <div className="w-full h-96">
                 <Line data={createChartData(90)} options={chartOptions} />
@@ -580,7 +605,7 @@ function PerformanceContent() {
 
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                {params.towerType} Performance Curve - 100% Flow Rate ({parseFloat(params.waterFlowRate)} m³/hr)
+                {params.towerType} Performance Curve - 100% Flow Rate ({displayFlowRate(params.waterFlowRate, flowUnit, 1)} {flowUnit})
               </h3>
               <div className="w-full h-96">
                 <Line data={createChartData(100)} options={chartOptions} />
@@ -589,7 +614,7 @@ function PerformanceContent() {
 
             <div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
-                {params.towerType} Performance Curve - 110% Flow Rate ({(parseFloat(params.waterFlowRate) * 1.1).toFixed(1)} m³/hr)
+                {params.towerType} Performance Curve - 110% Flow Rate ({displayFlowRate(parseFloat(params.waterFlowRate) * 1.1, flowUnit, 1)} {flowUnit})
               </h3>
               <div className="w-full h-96">
                 <Line data={createChartData(110)} options={chartOptions} />

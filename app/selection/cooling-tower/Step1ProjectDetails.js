@@ -1,7 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelection } from "./SelectionContext";
 import { useFloating, arrow, shift, offset, FloatingPortal } from '@floating-ui/react';
+import {
+  convertFlowRate,
+  convertTemperature,
+  elevationToPressure,
+  pressureToElevation,
+  DEFAULT_FLOW_RATE_UNIT,
+  DEFAULT_TEMPERATURE_UNIT,
+} from "@/lib/units";
 
 // Update parameter ranges with general cooling tower application limits
 const parameterRanges = {
@@ -21,59 +29,6 @@ const parameterRanges = {
 
 // Minimum approach temperature for reliable calculations
 const MIN_APPROACH_TEMP = 1.8; // °C
-
-// Flow rate conversion utility (now supports m³/hr, L/min, US GPM, L/s)
-const convertFlowRate = (value, fromUnit, toUnit) => {
-  if (!value) return "";
-  const numValue = parseFloat(value);
-  if (isNaN(numValue)) return "";
-
-  // Conversion factors
-  // 1 m³/hr = 1000/60 L/min = 4.40287 US GPM = 1000/3600 L/s
-  // 1 US GPM = 0.2271247 m³/hr = 3.78541 L/min = 0.0630902 L/s
-  // 1 L/s = 3.6 m³/hr = 60 L/min = 15.8503 US GPM
-
-  if (fromUnit === toUnit) return numValue;
-
-  // Convert input to m³/hr first
-  let valueInM3hr = numValue;
-  if (fromUnit === "L/min") valueInM3hr = numValue * 60 / 1000;
-  if (fromUnit === "US GPM") valueInM3hr = numValue * 0.2271247;
-  if (fromUnit === "L/s") valueInM3hr = numValue * 3.6;
-
-  // Convert from m³/hr to target unit
-  if (toUnit === "m³/hr") return Number(valueInM3hr.toFixed(2));
-  if (toUnit === "L/min") return Number((valueInM3hr * 1000 / 60).toFixed(2));
-  if (toUnit === "US GPM") return Number((valueInM3hr / 0.2271247).toFixed(2));
-  if (toUnit === "L/s") return Number((valueInM3hr / 3.6).toFixed(2));
-
-  return numValue;
-};
-
-// Temperature conversion utility (°C ↔ °F)
-const convertTemperature = (value, fromUnit, toUnit) => {
-  if (value === "" || value === undefined || value === null) return "";
-  const numValue = parseFloat(value);
-  if (isNaN(numValue) || fromUnit === toUnit) return value;
-  if (fromUnit === "°C" && toUnit === "°F") return Number((numValue * 9/5 + 32).toFixed(2));
-  if (fromUnit === "°F" && toUnit === "°C") return Number(((numValue - 32) * 5/9).toFixed(2));
-  return value;
-};
-
-// Add this utility for elevation <-> pressure conversion
-// Standard atmosphere: P = 101.325 * (1 - 2.25577e-5 * h)^5.25588
-const elevationToPressure = (elevationMeters) => {
-  if (elevationMeters === "" || elevationMeters === undefined || elevationMeters === null) return "";
-  const h = parseFloat(elevationMeters);
-  if (isNaN(h)) return "";
-  return Number((101.325 * Math.pow(1 - 2.25577e-5 * h, 5.25588)).toFixed(3));
-};
-const pressureToElevation = (pressureKpa) => {
-  if (pressureKpa === "" || pressureKpa === undefined || pressureKpa === null) return "";
-  const p = parseFloat(pressureKpa);
-  if (isNaN(p) || p <= 0) return "";
-  return Number(((1 - Math.pow(p / 101.325, 1 / 5.25588)) / 2.25577e-5).toFixed(1));
-};
 
 // Update the styling constants
 const labelClass = "w-full md:w-44 font-medium text-gray-900 whitespace-nowrap mb-1 md:mb-0";
@@ -226,8 +181,12 @@ export default function Step1ProjectDetails() {
   const [isFormComplete, setIsFormComplete] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
-  const [flowRateUnit, setFlowRateUnit] = useState("m³/hr"); // Add state for flow rate unit
-  const [temperatureUnit, setTemperatureUnit] = useState("°C");
+  // Units live in the shared context so they persist to later steps, into the
+  // saved selection, and back again if the user returns to this step.
+  const flowRateUnit = selectionData.flowRateUnit || DEFAULT_FLOW_RATE_UNIT;
+  const temperatureUnit = selectionData.temperatureUnit || DEFAULT_TEMPERATURE_UNIT;
+  const setFlowRateUnit = (unit) => updateSelectionData({ flowRateUnit: unit });
+  const setTemperatureUnit = (unit) => updateSelectionData({ temperatureUnit: unit });
   const [pressureInputMode, setPressureInputMode] = useState("pressure"); // "pressure" or "elevation"
 
   // Add useEffect to set default atmospheric pressure on component mount
@@ -244,6 +203,31 @@ export default function Step1ProjectDetails() {
         date: formatDateForDisplay(selectionData.date)
       });
     }
+  }, []);
+
+  // handleNextStep normalises every value to °C / m³/hr before leaving this step,
+  // so on the way back the context holds metric while the inputs are labelled with
+  // the user's chosen units. Convert once per mount so the fields match their
+  // labels. No-op on a first visit, where the units are still the metric defaults.
+  const hydratedForUnits = useRef(false);
+  useEffect(() => {
+    if (hydratedForUnits.current) return;
+    hydratedForUnits.current = true;
+
+    const patch = {};
+    if (flowRateUnit !== DEFAULT_FLOW_RATE_UNIT && selectionData.waterFlowRate !== "") {
+      patch.waterFlowRate = convertFlowRate(
+        selectionData.waterFlowRate, DEFAULT_FLOW_RATE_UNIT, flowRateUnit);
+    }
+    if (temperatureUnit !== DEFAULT_TEMPERATURE_UNIT) {
+      ["hotWaterTemp", "coldWaterTemp", "wetBulbTemp", "dryBulbTemp"].forEach((key) => {
+        if (selectionData[key] !== undefined && selectionData[key] !== "") {
+          patch[key] = convertTemperature(
+            selectionData[key], DEFAULT_TEMPERATURE_UNIT, temperatureUnit);
+        }
+      });
+    }
+    if (Object.keys(patch).length > 0) updateSelectionData(patch);
   }, []);
 
   // Validate input value against range
